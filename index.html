@@ -156,7 +156,7 @@
 
 <div id="title-screen" class="screen title-screen-bg hidden">
     <div class="title-logo">STUDY<br>QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.27</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.29</div>
     
     <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; width: 92%; max-width: 380px; margin: 0 auto;">
         <select id="grade-select" class="select-box" onchange="filterSubjects()">
@@ -228,7 +228,7 @@
 <div id="material-select-overlay" class="overlay hidden" style="z-index: 160;"><div class="modal" style="max-width:350px;"><h3 style="margin:0; color:#e67e22;">強化素材を選択</h3><div id="material-list" class="material-list"></div><button class="menu-btn" style="margin-top:20px; background:#bdc3c7;" onclick="closeEnhanceMenu()">戻る</button></div></div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
 <div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
-<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.27 (Official)</h4><ul><li><b>BugFix</b>: 解答が「0」の場合の正誤判定不具合を完全修正</li><li><b>System</b>: データの読み込み処理を強化(0を文字として認識)</li></ul><h4>Ver 5.14.25</h4><ul><li>AI自動生成機能実装</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
+<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.29 (Official)</h4><ul><li><b>BugFix</b>: ショップ画面で所持XPが正しく表示されない問題を修正</li><li><b>BugFix</b>: ゲームオーバー時の獲得経験値をスコア等倍(1.0倍)に修正</li><li><b>System</b>: AI自動生成の強化(問題数指定)</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycby54ewlale8B2ivoL-nUvEFPdNYRmYCo2GeS1noeBHZOAs6GIQ9_IxAVQV95e_o7w9M/exec';
@@ -327,7 +327,7 @@
                             subject: getVal(q, ['subject', '教科']),
                             unit: getVal(q, ['unit', '単元']),
                             q: getVal(q, ['q', 'question', '問題', '問題文']),
-                            a: getVal(q, ['a', 'answer', '正解']), // ★ Now safe for "0"
+                            a: getVal(q, ['a', 'answer', '正解']),
                             choices: q.choices ? String(q.choices).split(',') : [
                                 getVal(q, ['誤答1']), getVal(q, ['誤答2']), getVal(q, ['誤答3']), getVal(q, ['a', '正解'])
                             ].filter(x => x !== "")
@@ -511,7 +511,24 @@
     function resumeGame() { isPaused = false; document.getElementById('pause-overlay').classList.add('hidden'); }
     function retryGame() { if(confirm("やり直しますか？")){ isGameActive=false; clearInterval(gameState.timer); resumeGame(); startGame(); } }
     function backToTitleFromPause() { if(confirm("戻りますか？")){ isGameActive=false; clearInterval(gameState.timer); backToTitle(); } }
-    function finishGame(isClear) { isGameActive=false; clearInterval(gameState.timer); const stats=getCharaStats(); let earned=Math.floor((isClear?gameState.score*1.2:gameState.score*0.5)*stats.exp); gameState.xp+=earned; saveGame(); updateMissionProgress('play',1); if(isClear) updateMissionProgress('kill',1); document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; document.getElementById('res-score').innerText=gameState.score; document.getElementById('res-xp').innerText="+"+earned; document.getElementById('game-screen').classList.add('hidden'); document.getElementById('result-overlay').classList.remove('hidden'); }
+    
+    function finishGame(isClear) { 
+        isGameActive=false; clearInterval(gameState.timer); 
+        const stats=getCharaStats(); 
+        // ★修正: ゲームオーバー時(false)の倍率を0.5から1.0に変更 (クリア時は1.2)
+        let earned = Math.floor((isClear ? gameState.score * 1.2 : gameState.score * 1.0) * stats.exp); 
+        gameState.xp += earned; 
+        saveGame(); 
+        updateMissionProgress('play',1); 
+        if(isClear) updateMissionProgress('kill',1); 
+        document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; 
+        document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; 
+        document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; 
+        document.getElementById('res-score').innerText=gameState.score; 
+        document.getElementById('res-xp').innerText="+"+earned; 
+        document.getElementById('game-screen').classList.add('hidden'); 
+        document.getElementById('result-overlay').classList.remove('hidden'); 
+    }
     
     function backToTitle() { 
         document.getElementById('result-overlay').classList.add('hidden'); 
@@ -719,19 +736,41 @@
         }, 100);
     }
     
-    function openShop() { document.getElementById('shop-overlay').classList.remove('hidden'); const l=document.getElementById('shop-list'); l.innerHTML=''; if(rawData.shopItems) rawData.shopItems.forEach(i=>{ const lv=gameState.itemLevels[i.id]||0; const p=i.price*(lv+1); l.innerHTML+=`<div class="shop-item">
-        <div class="shop-icon">${i.icon}</div>
-        <div class="shop-info">
-            <div class="shop-name">${i.name}</div>
-            <div class="shop-desc">${i.desc}</div>
-        </div>
-        <div class="shop-right">
-            <div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div>
-            <button class="shop-buy-btn" onclick="buyItem('${i.id}',${p})">${lv>=10?'MAX':'⬆ '+p+'XP'}</button>
-        </div>
-    </div>`; }); }
+    function openShop() { 
+        document.getElementById('shop-overlay').classList.remove('hidden'); 
+        // ★修正: ショップを開いた時にXPを更新
+        document.getElementById('shop-xp').innerText = gameState.xp;
+        
+        const l=document.getElementById('shop-list'); 
+        l.innerHTML=''; 
+        if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
+            const lv=gameState.itemLevels[i.id]||0; 
+            const p=i.price*(lv+1); 
+            l.innerHTML+=`<div class="shop-item">
+                <div class="shop-icon">${i.icon}</div>
+                <div class="shop-info">
+                    <div class="shop-name">${i.name}</div>
+                    <div class="shop-desc">${i.desc}</div>
+                </div>
+                <div class="shop-right">
+                    <div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div>
+                    <button class="shop-buy-btn" onclick="buyItem('${i.id}',${p})">${lv>=10?'MAX':'⬆ '+p+'XP'}</button>
+                </div>
+            </div>`; 
+        }); 
+    }
+    
     function closeShop() { document.getElementById('shop-overlay').classList.add('hidden'); }
-    function buyItem(id,p) { if((gameState.itemLevels[id]||0)>=10)return; if(gameState.xp<p)return alert("XP不足"); gameState.xp-=p; gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; saveGame(); openShop(); updateTitleInfo(); }
+    
+    function buyItem(id,p) { 
+        if((gameState.itemLevels[id]||0)>=10)return; 
+        if(gameState.xp<p)return alert("XP不足"); 
+        gameState.xp-=p; 
+        gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; 
+        saveGame(); 
+        openShop(); // リロードして更新
+        updateTitleInfo(); 
+    }
 
     function openVersionHistory() { document.getElementById('version-overlay').classList.remove('hidden'); }
     function closeVersionHistory() { document.getElementById('version-overlay').classList.add('hidden'); }
