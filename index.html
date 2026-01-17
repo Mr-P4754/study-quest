@@ -66,9 +66,37 @@
 
         /* Game & Modals */
         .battle-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: #222; background-image: radial-gradient(#333 15%, transparent 16%), radial-gradient(#333 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; overflow: hidden; padding: 10px 0; min-height: 0; }
-        .enemy-visual-box { animation: float 3s ease-in-out infinite; margin-bottom: 10px; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 180px; min-height: 80px; width: 100%; }
-        .enemy-visual { font-size: 80px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); display: flex; justify-content: center; align-items: center; }
-        .enemy-visual img { width: 120px; height: 120px; object-fit: contain; }
+        
+        /* ★修正: 敵表示エリアを拡大 */
+        .enemy-visual-box { 
+            animation: float 3s ease-in-out infinite; 
+            margin-bottom: 5px; 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            max-height: 35vh; /* 画面高さの35%まで許容 */
+            min-height: 150px; /* 最低でも150pxは確保 */
+            width: 100%; 
+        }
+        /* ★修正: 敵画像を枠いっぱいまで拡大 */
+        .enemy-visual { 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            font-size: 120px; /* 絵文字も大きく */
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); 
+        }
+        .enemy-visual img { 
+            width: auto; 
+            height: auto; 
+            max-width: 90%; /* 横幅は90%まで */
+            max-height: 100%; /* 高さは枠いっぱいまで */
+            object-fit: contain; 
+        }
+
         .enemy-stats-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 90%; max-width: 500px; margin-bottom: 10px; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 12px; border: 1px solid #555; flex-shrink: 0; }
         #ui-enemy-name { font-weight: bold; color: #f1c40f; text-shadow: 1px 1px 0 #000; white-space: nowrap; font-size: 1.1em; max-width: 40%; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.05em;}
         .enemy-hp-frame { flex-grow: 1; height: 20px; background: #111; border: 2px solid #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 2px 0 rgba(0,0,0,0.5); }
@@ -156,7 +184,7 @@
 
 <div id="title-screen" class="screen title-screen-bg hidden">
     <div class="title-logo">STUDY<br>QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.29</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.32</div>
     
     <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; width: 92%; max-width: 380px; margin: 0 auto;">
         <select id="grade-select" class="select-box" onchange="filterSubjects()">
@@ -228,7 +256,7 @@
 <div id="material-select-overlay" class="overlay hidden" style="z-index: 160;"><div class="modal" style="max-width:350px;"><h3 style="margin:0; color:#e67e22;">強化素材を選択</h3><div id="material-list" class="material-list"></div><button class="menu-btn" style="margin-top:20px; background:#bdc3c7;" onclick="closeEnhanceMenu()">戻る</button></div></div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
 <div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
-<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.29 (Official)</h4><ul><li><b>BugFix</b>: ショップ画面で所持XPが正しく表示されない問題を修正</li><li><b>BugFix</b>: ゲームオーバー時の獲得経験値をスコア等倍(1.0倍)に修正</li><li><b>System</b>: AI自動生成の強化(問題数指定)</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
+<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.32 (Official)</h4><ul><li><b>Feature</b>: ボス画像を大きく表示するようスタイル修正</li></ul><h4>Ver 5.14.31</h4><ul><li>画像の読み込み処理を修正</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycby54ewlale8B2ivoL-nUvEFPdNYRmYCo2GeS1noeBHZOAs6GIQ9_IxAVQV95e_o7w9M/exec';
@@ -307,7 +335,7 @@
             if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             
-            // ★ FIX: Helper to preserve "0" as string
+            // Helper to preserve "0" as string
             const getVal = (obj, keys) => {
                 for (const k of keys) {
                     const v = obj[k];
@@ -315,13 +343,36 @@
                 }
                 return "";
             };
+            
+            // Helper to match fuzzy keys (e.g. "ボス画像（絵文字等）")
+            const getFuzzyVal = (obj, keyword, defaultVal) => {
+                const key = Object.keys(obj).find(k => k.includes(keyword));
+                const val = key ? obj[key] : "";
+                return (val !== undefined && val !== null && val !== "") ? String(val) : defaultVal;
+            };
+
+            // Helper to convert Google Drive URL to viewable format
+            const convertDriveUrl = (url) => {
+                if(!url || !url.startsWith('http')) return url;
+                // Check if it's a Drive share link
+                if(url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('id='))) {
+                    let id = "";
+                    const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                    if(match1) id = match1[1];
+                    else {
+                        const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+                        if(match2) id = match2[1];
+                    }
+                    if(id) return `https://drive.google.com/thumbnail?sz=w1000&id=${id}`;
+                }
+                return url;
+            };
 
             rawData = {};
             for (let key in data) {
                 const lowerKey = key.toLowerCase();
                 try {
                     if (lowerKey.includes('questions') || lowerKey.includes('question')) {
-                        
                         rawData.questions = data[key].filter(d => d).map(q => ({
                             grade: getVal(q, ['grade', '学年']),
                             subject: getVal(q, ['subject', '教科']),
@@ -334,19 +385,26 @@
                         }));
                     } else if (lowerKey.includes('character')) {
                         rawData.characters = data[key].filter(d => d).map(c => ({
-                            id: String(c.id || c.ID || Math.random()), name: String(c.name || c.名前 || "Unknown"), rarity: String(c.rarity || c.レア || "N"),
-                            type: String(c.type || c.タイプ || "ATK"), value: Number(c.value || c.補正値 || c.効果値 || 1.0), desc: String(c.desc || c.解説 || ""),
-                            imageUrl: String(c.imageUrl || c.画像URL || c.画像 || "").replace('http:', 'https:')
+                            id: String(c.id || c.ID || Math.random()), 
+                            name: getVal(c, ['name', '名前']) || "Unknown",
+                            rarity: getVal(c, ['rarity', 'レア']) || "N",
+                            type: getVal(c, ['type', 'タイプ']) || "ATK",
+                            value: Number(getVal(c, ['value', '補正値', '効果値']) || 1.0),
+                            desc: getVal(c, ['desc', '解説']),
+                            imageUrl: convertDriveUrl(getVal(c, ['imageUrl', '画像URL', '画像']))
                         }));
                     } else if (lowerKey.includes('boss')) {
                         rawData.bosses = data[key].filter(d => d).map(b => ({
-                            grade: String(b.grade || b.学年 || ""), unit: String(b.unit || b.単元 || ""), name: String(b.name || b.bossName || b.ボス名 || "Boss"),
-                            hp: Number(b.hp || b.bossHP || b.ボスHP || 1000), icon: String(b.icon || b.bossIcon || b.ボス画像 || "👾")
+                            grade: getVal(b, ['grade', '学年']),
+                            unit: getVal(b, ['unit', '単元']),
+                            name: getVal(b, ['name', 'bossName', 'ボス名']) || "Boss",
+                            hp: Number(getVal(b, ['hp', 'bossHP', 'ボスHP']) || 1000),
+                            icon: convertDriveUrl(getFuzzyVal(b, 'ボス画像', "👾"))
                         }));
                     } else if (lowerKey.includes('shop')) {
                         rawData.shopItems = data[key].filter(d => d).map(i => ({
-                            id: String(i.id || i.ID || Math.random()), name: String(i.name || i.アイテム名 || "Item"), price: Number(i.price || i.価格 || 1000),
-                            type: String(i.type || i.タイプ || "ATK"), value: Number(i.value || i.効果値 || 0.1), desc: String(i.desc || i.説明 || ""), icon: String(i.icon || i.アイコン || "🎁")
+                            id: String(i.id || i.ID || Math.random()), name: getVal(i, ['name', 'アイテム名']) || "Item", price: Number(getVal(i, ['price', '価格']) || 1000),
+                            type: getVal(i, ['type', 'タイプ']) || "ATK", value: Number(getVal(i, ['value', '効果値']) || 0.1), desc: getVal(i, ['desc', '説明']), icon: getVal(i, ['icon', 'アイコン']) || "🎁"
                         }));
                     }
                 } catch(e) { console.warn("Skip row"); }
@@ -424,7 +482,13 @@
         document.getElementById('game-screen').classList.remove('hidden');
         document.getElementById('ui-enemy-name').innerText = boss.name;
         const ic = document.getElementById('ui-enemy-icon');
-        if(boss.icon.startsWith('http')) ic.innerHTML = `<img src="${boss.icon}" style="width:100px;height:100px;object-fit:contain;">`; else ic.innerHTML = boss.icon;
+        
+        // ★修正: 固定サイズ指定を削除 (CSSに任せる)
+        if(boss.icon.startsWith('http')) {
+            ic.innerHTML = `<img src="${boss.icon}">`; 
+        } else {
+            ic.innerHTML = boss.icon;
+        }
         
         updateUI(); nextQuestion();
     }
@@ -466,7 +530,7 @@
         const div = document.getElementById('ui-choices'); div.innerHTML = '';
         choices.forEach(c => {
             const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c;
-            // ★ FIX: String comparison for "0"
+            // FIX: String comparison for "0"
             btn.onclick = () => judge(String(c) === String(q.a), btn); 
             div.appendChild(btn);
         });
@@ -481,7 +545,7 @@
         if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
         
         if(!isCorrect) {
-            // ★ FIX: String comparison here too
+            // FIX: String comparison here too
             document.querySelectorAll('.choice-btn').forEach(b => { 
                 if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
             });
@@ -515,7 +579,6 @@
     function finishGame(isClear) { 
         isGameActive=false; clearInterval(gameState.timer); 
         const stats=getCharaStats(); 
-        // ★修正: ゲームオーバー時(false)の倍率を0.5から1.0に変更 (クリア時は1.2)
         let earned = Math.floor((isClear ? gameState.score * 1.2 : gameState.score * 1.0) * stats.exp); 
         gameState.xp += earned; 
         saveGame(); 
