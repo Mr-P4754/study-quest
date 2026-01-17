@@ -97,10 +97,11 @@
         .char-lvl-badge { position: absolute; top: -5px; right: -5px; background: #3498db; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7em; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 2px rgba(0,0,0,0.3); z-index: 2; }
         .char-stock-badge { position: absolute; bottom: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7em; font-weight: bold; border: 1px solid white; z-index: 2; }
         
-        .shop-item { display: flex; align-items: center; justify-content: space-between; background: #fff; margin-bottom: 10px; padding: 10px; border-radius: 10px; border: 2px solid #bdc3c7; text-align: left; transition: transform 0.1s; width: 100%; box-sizing: border-box; }
+        /* ★ Shop Item Layout */
+        .shop-item { display: flex; align-items: center; justify-content: space-between; background: #fff; margin-bottom: 10px; padding: 10px; border-radius: 10px; border: 2px solid #bdc3c7; text-align: left; transition: transform 0.1s; width: 100%; box-sizing: border-box; gap: 10px; }
         .shop-item:active { transform: scale(0.98); }
         .shop-icon { width: 50px; height: 50px; font-size: 2.2em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .shop-info { flex: 1; margin-right: 10px; display: flex; flex-direction: column; justify-content: center; }
+        .shop-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .shop-name { font-weight: bold; font-size: 1.1em; color: #2c3e50; line-height: 1.3; }
         .shop-desc { font-size: 0.85em; color: #7f8c8d; margin-top: 3px; line-height: 1.3; }
         .shop-right { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; flex-shrink: 0; gap: 5px; }
@@ -155,7 +156,7 @@
 
 <div id="title-screen" class="screen title-screen-bg hidden">
     <div class="title-logo">STUDY<br>QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.15</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.27</div>
     
     <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; width: 92%; max-width: 380px; margin: 0 auto;">
         <select id="grade-select" class="select-box" onchange="filterSubjects()">
@@ -227,7 +228,7 @@
 <div id="material-select-overlay" class="overlay hidden" style="z-index: 160;"><div class="modal" style="max-width:350px;"><h3 style="margin:0; color:#e67e22;">強化素材を選択</h3><div id="material-list" class="material-list"></div><button class="menu-btn" style="margin-top:20px; background:#bdc3c7;" onclick="closeEnhanceMenu()">戻る</button></div></div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
 <div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
-<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.15 (Release)</h4><ul><li><b>新機能</b>: ガチャ、図鑑、ショップ、強化、ミッション</li><li><b>システム</b>: ログインボーナス、コンボ機能追加</li><li><b>データ</b>: 旧バージョンからの自動引き継ぎ対応</li><li><b>その他</b>: 画面デザインと演出の全面リニューアル</li></ul><h4>Ver 4.4 以前</h4><ul><li>クエスト機能の基本実装</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
+<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.27 (Official)</h4><ul><li><b>BugFix</b>: 解答が「0」の場合の正誤判定不具合を完全修正</li><li><b>System</b>: データの読み込み処理を強化(0を文字として認識)</li></ul><h4>Ver 5.14.25</h4><ul><li>AI自動生成機能実装</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycby54ewlale8B2ivoL-nUvEFPdNYRmYCo2GeS1noeBHZOAs6GIQ9_IxAVQV95e_o7w9M/exec';
@@ -306,15 +307,30 @@
             if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             
+            // ★ FIX: Helper to preserve "0" as string
+            const getVal = (obj, keys) => {
+                for (const k of keys) {
+                    const v = obj[k];
+                    if (v !== undefined && v !== null && v !== "") return String(v);
+                }
+                return "";
+            };
+
             rawData = {};
             for (let key in data) {
                 const lowerKey = key.toLowerCase();
                 try {
                     if (lowerKey.includes('questions') || lowerKey.includes('question')) {
+                        
                         rawData.questions = data[key].filter(d => d).map(q => ({
-                            grade: String(q.grade || q.学年 || ""), subject: String(q.subject || q.教科 || ""), unit: String(q.unit || q.単元 || ""),
-                            q: String(q.q || q.question || q.問題 || q.問題文 || ""), a: String(q.a || q.answer || q.正解 || ""),
-                            choices: q.choices ? String(q.choices).split(',') : [String(q.誤答1||""), String(q.誤答2||""), String(q.誤答3||""), String(q.a||q.正解||"")].filter(x=>x)
+                            grade: getVal(q, ['grade', '学年']),
+                            subject: getVal(q, ['subject', '教科']),
+                            unit: getVal(q, ['unit', '単元']),
+                            q: getVal(q, ['q', 'question', '問題', '問題文']),
+                            a: getVal(q, ['a', 'answer', '正解']), // ★ Now safe for "0"
+                            choices: q.choices ? String(q.choices).split(',') : [
+                                getVal(q, ['誤答1']), getVal(q, ['誤答2']), getVal(q, ['誤答3']), getVal(q, ['a', '正解'])
+                            ].filter(x => x !== "")
                         }));
                     } else if (lowerKey.includes('character')) {
                         rawData.characters = data[key].filter(d => d).map(c => ({
@@ -450,7 +466,9 @@
         const div = document.getElementById('ui-choices'); div.innerHTML = '';
         choices.forEach(c => {
             const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c;
-            btn.onclick = () => judge(c === q.a, btn); div.appendChild(btn);
+            // ★ FIX: String comparison for "0"
+            btn.onclick = () => judge(String(c) === String(q.a), btn); 
+            div.appendChild(btn);
         });
         startTimer();
     }
@@ -463,7 +481,10 @@
         if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
         
         if(!isCorrect) {
-            document.querySelectorAll('.choice-btn').forEach(b => { if(b.innerText === playData.currentQ.a) b.classList.add('btn-miss-answer'); });
+            // ★ FIX: String comparison here too
+            document.querySelectorAll('.choice-btn').forEach(b => { 
+                if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
+            });
         }
 
         if(isCorrect) {
@@ -490,52 +511,15 @@
     function resumeGame() { isPaused = false; document.getElementById('pause-overlay').classList.add('hidden'); }
     function retryGame() { if(confirm("やり直しますか？")){ isGameActive=false; clearInterval(gameState.timer); resumeGame(); startGame(); } }
     function backToTitleFromPause() { if(confirm("戻りますか？")){ isGameActive=false; clearInterval(gameState.timer); backToTitle(); } }
+    function finishGame(isClear) { isGameActive=false; clearInterval(gameState.timer); const stats=getCharaStats(); let earned=Math.floor((isClear?gameState.score*1.2:gameState.score*0.5)*stats.exp); gameState.xp+=earned; saveGame(); updateMissionProgress('play',1); if(isClear) updateMissionProgress('kill',1); document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; document.getElementById('res-score').innerText=gameState.score; document.getElementById('res-xp').innerText="+"+earned; document.getElementById('game-screen').classList.add('hidden'); document.getElementById('result-overlay').classList.remove('hidden'); }
     
-    function finishGame(isClear) { 
-        isGameActive=false; 
-        clearInterval(gameState.timer); 
-        const stats=getCharaStats(); 
-        
-        // ★ FIX: EXP Calc Logic (Explicit)
-        // Clear: (Score + 20%) * Bonus -> Score * 1.2 * Bonus
-        // Fail: Score * Bonus
-        let baseEarned = isClear ? Math.floor(gameState.score * 1.2) : gameState.score;
-        let earned = Math.floor(baseEarned * stats.exp); 
-        
-        gameState.xp+=earned; 
-        
-        // ★ FIX: Reset Combo
-        gameState.combo = 0;
-        
-        saveGame(); 
-        updateMissionProgress('play',1); 
-        if(isClear) updateMissionProgress('kill',1); 
-        
-        document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; 
-        document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; 
-        document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; 
-        document.getElementById('res-score').innerText=gameState.score; 
-        document.getElementById('res-xp').innerText="+"+earned; 
-        document.getElementById('game-screen').classList.add('hidden'); 
-        document.getElementById('result-overlay').classList.remove('hidden'); 
-    }
-    
-    // Back to Title without Reload
     function backToTitle() { 
         document.getElementById('result-overlay').classList.add('hidden'); 
         document.getElementById('game-screen').classList.add('hidden'); 
         document.getElementById('title-screen').classList.remove('hidden'); 
         document.getElementById('pause-overlay').classList.add('hidden'); 
-        isGameActive = false; 
-        isPaused = false; 
-        clearInterval(gameState.timer);
-        
-        // ★ FIX: Reset Combo on Back to Title
-        gameState.combo = 0;
-        gameState.score = 0;
-        
-        updateTitleInfo(); 
-        updateMissionBadge(); 
+        isGameActive = false; isPaused = false; clearInterval(gameState.timer);
+        updateTitleInfo(); updateMissionBadge(); 
     }
     
     // --- System Functions ---
@@ -607,7 +591,6 @@
     }
     function closeGachaResult() { document.getElementById('gacha-result-overlay').classList.add('hidden'); }
 
-    // ★ FIX: Zukan Display (Rarity / Type)
     function renderZukan() { 
         const g=document.getElementById('zukan-grid'); g.innerHTML=''; 
         if(rawData.characters) {
