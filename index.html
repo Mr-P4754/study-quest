@@ -16,6 +16,10 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes damageFloat { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -150%) scale(1.0); opacity: 0; } }
+        @keyframes shake { 0% { transform: translate(0, 0) rotate(0deg); } 20% { transform: translate(-10px, 0) rotate(-5deg); } 40% { transform: translate(10px, 0) rotate(5deg); } 60% { transform: translate(-10px, 0) rotate(-5deg); } 80% { transform: translate(10px, 0) rotate(5deg); } 100% { transform: translate(0, 0) rotate(0deg); } }
+        .shake-anim { animation: shake 0.4s ease-in-out; }
+        .fade-out { opacity: 0 !important; transform: scale(0.8) !important; transition: all 1.0s ease-out; }
+        .anim-paused { animation-play-state: paused !important; }
         .cutin { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5em; font-weight: 900; color: #f1c40f; -webkit-text-stroke: 3px #c0392b; text-shadow: 4px 4px 0 #000; pointer-events: none; z-index: 2000; animation: damageFloat 1.2s ease-out forwards; white-space: nowrap; }
         
         /* UI Components */
@@ -31,71 +35,24 @@
 
         /* Title Area */
         .title-screen-bg { background: linear-gradient(135deg, #2c3e50, #1a252f); }
-        .title-logo { font-size: 3.5em; font-weight: 900; margin-top: 40px; color: #f1c40f; text-shadow: 4px 4px 0 #e67e22, 0 0 20px rgba(241, 196, 15, 0.5); line-height: 1.1; letter-spacing: 0.05em; }
+        .title-logo { font-size: 2.8em; font-weight: 900; margin-top: 20px; color: #f1c40f; text-shadow: 4px 4px 0 #e67e22, 0 0 20px rgba(241, 196, 15, 0.5); line-height: 1.1; letter-spacing: 0.05em; }
         .version-text { color:#bdc3c7; margin-bottom: 20px; cursor: pointer; text-decoration: underline; font-size: 0.9em; transition: color 0.2s; }
         .version-text:hover { color: #fff; }
         
-        .menu-btn-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; width: 90%; max-width: 400px; margin-left: auto; margin-right: auto; }
-        
-        /* Menu Buttons */
-        .menu-btn { 
-            flex: 1; min-width: 120px; height: 65px; margin: 0; padding: 5px 10px;
-            background: #e67e22; color: white; border: none; border-radius: 15px; 
-            font-weight: bold; border-bottom: 6px solid #d35400; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.1s; 
-            position: relative;
-            display: flex; align-items: center; justify-content: center; 
-            flex-direction: row; gap: 5px;
-            font-family: 'BIZ UDPGothic', sans-serif; font-size: 1.0em; 
-            white-space: nowrap;
-        }
-        .menu-btn:active { transform: translateY(6px); border-bottom: none; box-shadow: none; margin-bottom: 6px; }
-
-        /* Gacha Button (2 lines) */
-        .menu-btn.multi-line {
-            flex-direction: column; line-height: 1.3; font-size: 0.9em; height: 75px; white-space: normal;
-        }
-        
-        /* Modal Buttons */
-        .modal .menu-btn, .pause-menu-box .menu-btn, #result-overlay .menu-btn {
-            height: auto; padding: 12px; font-size: 1.1em; display: block; width: 100%; flex: none; min-width: auto;
-        }
+        .menu-btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; width: 90%; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .menu-btn { width: 100%; height: 65px; margin: 0; padding: 5px 10px; background: #e67e22; color: white; border: none; border-radius: 15px; font-weight: bold; border-bottom: 6px solid #d35400; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.1s; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: row; gap: 5px; font-family: 'BIZ UDPGothic', sans-serif; font-size: 1.0em; white-space: nowrap; box-sizing: border-box; }
+        .menu-btn:active { transform: translateY(4px); box-shadow: none; }
+        .menu-btn.multi-line { flex-direction: column; line-height: 1.3; font-size: 0.9em; height: 65px; white-space: normal; }
+        .menu-btn.full-width { grid-column: span 2; }
 
         .select-box { margin: 5px; padding: 12px; font-size: 1.0em; width: 90%; max-width: 320px; border-radius: 8px; border: 2px solid #95a5a6; background: #ecf0f1; font-family: inherit; font-weight: bold;}
         .badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 0.9em; display: flex; justify-content: center; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid white; z-index: 10; }
 
         /* Game & Modals */
         .battle-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: #222; background-image: radial-gradient(#333 15%, transparent 16%), radial-gradient(#333 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; overflow: hidden; padding: 10px 0; min-height: 0; }
-        
-        /* ★修正: 敵表示エリアを拡大 */
-        .enemy-visual-box { 
-            animation: float 3s ease-in-out infinite; 
-            margin-bottom: 5px; 
-            flex-grow: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            max-height: 35vh; /* 画面高さの35%まで許容 */
-            min-height: 150px; /* 最低でも150pxは確保 */
-            width: 100%; 
-        }
-        /* ★修正: 敵画像を枠いっぱいまで拡大 */
-        .enemy-visual { 
-            width: 100%; 
-            height: 100%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            font-size: 120px; /* 絵文字も大きく */
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); 
-        }
-        .enemy-visual img { 
-            width: auto; 
-            height: auto; 
-            max-width: 90%; /* 横幅は90%まで */
-            max-height: 100%; /* 高さは枠いっぱいまで */
-            object-fit: contain; 
-        }
+        .enemy-visual-box { animation: float 3s ease-in-out infinite; margin-bottom: 5px; flex-grow: 1; display: flex; align-items: center; justify-content: center; max-height: 35vh; min-height: 150px; width: 100%; }
+        .enemy-visual { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 120px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)); }
+        .enemy-visual img { width: auto; height: auto; max-width: 90%; max-height: 100%; object-fit: contain; }
 
         .enemy-stats-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 90%; max-width: 500px; margin-bottom: 10px; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 12px; border: 1px solid #555; flex-shrink: 0; }
         #ui-enemy-name { font-weight: bold; color: #f1c40f; text-shadow: 1px 1px 0 #000; white-space: nowrap; font-size: 1.1em; max-width: 40%; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.05em;}
@@ -105,15 +62,19 @@
         .question-box { background: #fff; color: #2c3e50; width: 90%; max-width: 600px; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 1.4em; min-height: 80px; max-height: 180px; overflow-y: auto; display: flex; align-items: center; justify-content: center; border: 4px solid #bdc3c7; box-shadow: 0 6px 0 #7f8c8d; margin-bottom: 15px; text-align: center; line-height: 1.5; flex-shrink: 0; font-family: 'BIZ UDPGothic', sans-serif; }
         .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 94%; max-width: 600px; padding: 10px; padding-bottom: 20px; margin: 0 auto; flex-shrink: 0; }
         .choice-btn { padding: 15px 5px; background: #3498db; border: none; border-radius: 12px; color: white; font-size: 1.1em; font-weight: bold; border-bottom: 6px solid #2980b9; transition: transform 0.05s, background 0.2s; position: relative; overflow: hidden; min-height: 60px; display: flex; align-items: center; justify-content: center; line-height: 1.3; font-family: 'BIZ UDPGothic', sans-serif;}
-        .choice-btn:active { transform: translateY(6px); border-bottom: none; margin-bottom: 6px; background: #2980b9; }
-        .choice-btn.btn-correct { background: #27ae60 !important; border-bottom: 6px solid #1e8449 !important; transform: translateY(4px); border-bottom-width: 2px !important; margin-bottom: 4px; opacity: 1 !important; }
+        .choice-btn:active { transform: translateY(4px); border-bottom: 6px solid #2980b9; margin-bottom: 0; background: #2980b9; }
+        .choice-btn.btn-correct { background: #27ae60 !important; border-bottom: 6px solid #1e8449 !important; transform: translateY(4px); opacity: 1 !important; }
         .choice-btn.btn-wrong { background: #7f8c8d !important; border-bottom: 6px solid #555 !important; opacity: 0.6 !important; }
         .choice-btn.btn-miss-answer { background: #e74c3c !important; border-color: #c0392b !important; color: #fff !important; opacity: 1 !important; animation: pulseRed 0.8s ease-in-out infinite alternate; }
 
+        /* Overlay & Modal */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal { background: #fdfefe; color: #333; width: 92%; max-width: 450px; border-radius: 20px; padding: 20px; max-height: 85vh; overflow-y: auto; text-align: center; border: 6px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.3); }
-        .pause-menu-box { background: #2c3e50; padding: 30px; border: 4px solid #ecf0f1; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 280px; text-align: center; }
-        .pause-note { color: #bdc3c7; font-size: 0.8em; margin-top: 10px; }
+        .modal { background: #fdfefe; color: #333; width: 92%; max-width: 450px; border-radius: 20px; padding: 20px; max-height: 85vh; overflow: hidden; text-align: center; border: 6px solid #f1c40f; box-shadow: 0 0 30px rgba(241, 196, 15, 0.3); display: flex; flex-direction: column; }
+        .modal .menu-btn, .pause-menu-box .menu-btn, #result-overlay .menu-btn { height: auto; padding: 12px; font-size: 1.1em; display: block; width: 100%; flex: none; min-width: auto; }
+
+        .pause-menu-box { background: #2c3e50; padding: 20px; border: 4px solid #ecf0f1; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; width: 300px; text-align: center; }
+        #pause-chara-info { background: #34495e; border-radius: 10px; padding: 10px; margin: 5px 0; border: 2px solid #95a5a6; color: #fff; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+        .pause-note { color: #bdc3c7; font-size: 0.7em; margin-top: 5px; }
 
         /* Cards & Shop & Mission */
         .char-card { border: 2px solid #ddd; padding: 8px; border-radius: 10px; margin: 4px; display: inline-block; width: 70px; font-size: 0.7em; cursor: pointer; background: #f9f9f9; vertical-align: top; transition: all 0.2s; position: relative; }
@@ -121,11 +82,9 @@
         .char-card.owned { background: #fff; border-color: #bdc3c7; }
         .char-card.active { background: #fffbe6; border: 3px solid #e67e22; transform: scale(1.05); box-shadow: 0 0 10px rgba(230, 126, 34, 0.4); }
         .char-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 4px; }
-        
         .char-lvl-badge { position: absolute; top: -5px; right: -5px; background: #3498db; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7em; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 2px rgba(0,0,0,0.3); z-index: 2; }
         .char-stock-badge { position: absolute; bottom: -5px; right: -5px; background: #e74c3c; color: white; border-radius: 10px; padding: 2px 6px; font-size: 0.7em; font-weight: bold; border: 1px solid white; z-index: 2; }
         
-        /* ★ Shop Item Layout */
         .shop-item { display: flex; align-items: center; justify-content: space-between; background: #fff; margin-bottom: 10px; padding: 10px; border-radius: 10px; border: 2px solid #bdc3c7; text-align: left; transition: transform 0.1s; width: 100%; box-sizing: border-box; gap: 10px; }
         .shop-item:active { transform: scale(0.98); }
         .shop-icon { width: 50px; height: 50px; font-size: 2.2em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -137,6 +96,25 @@
         .shop-buy-btn { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; border-bottom: 4px solid #1e8449; width: 100%; font-size: 0.9em; min-width: 70px; }
         .shop-buy-btn:active { transform: translateY(4px); border-bottom: none; }
         .shop-buy-btn:disabled { background: #95a5a6; border-bottom: none; cursor: default; transform: none; }
+
+        .mat-card { border: 2px solid #ccc; position: relative; transition: all 0.1s; }
+        .mat-card.selected { border-color: #e67e22; background: #fffbe6; transform: scale(0.95); }
+        .mat-select-badge { position: absolute; top: -5px; right: -5px; background: #e67e22; color: white; width: 24px; height: 24px; border-radius: 50%; font-weight: bold; font-size: 0.9em; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 2px rgba(0,0,0,0.3); z-index: 5; }
+
+        .enhance-footer { border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .enhance-info { display: flex; justify-content: space-between; font-weight: bold; color: #2c3e50; font-size: 0.9em; }
+        .enhance-preview { color: #27ae60; }
+
+        /* Title List Styles */
+        .title-item { background: #fdfefe; border: 2px solid #bdc3c7; border-radius: 10px; padding: 10px; margin-bottom: 10px; text-align: left; opacity: 0.7; transition: all 0.2s; position: relative; }
+        .title-item.unlocked { border-color: #f1c40f; opacity: 1; box-shadow: 0 4px 10px rgba(241, 196, 15, 0.2); background: #fffbe6; }
+        .title-item.claimed { border-color: #27ae60; background: #eafaf1; opacity: 0.8; }
+        .title-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .title-name { font-weight: bold; font-size: 1.1em; color: #2c3e50; }
+        .title-req { font-size: 0.8em; color: #7f8c8d; }
+        .title-reward-btn { padding: 6px 12px; font-size: 0.8em; border-radius: 15px; border: none; cursor: pointer; font-weight: bold; background: #95a5a6; color: white; border-bottom: 3px solid #7f8c8d; }
+        .title-item.unlocked .title-reward-btn { background: #f1c40f; border-bottom-color: #d35400; animation: pulseRed 1s infinite alternate; }
+        .title-item.claimed .title-reward-btn { background: #27ae60; border: none; cursor: default; transform: none; animation: none; }
 
         .rarity-SSR { color: #f1c40f; text-shadow: 0 0 1px #000; font-weight: 900; } .rarity-SR { color: #e74c3c; font-weight: bold; } .rarity-R { color: #3498db; font-weight: bold; } .rarity-N { color: #7f8c8d; }
         .gacha-result-card { background: #fff; padding: 20px; border-radius: 15px; border: 4px solid #ccc; text-align: center; margin-bottom: 20px; position: relative; }
@@ -184,7 +162,7 @@
 
 <div id="title-screen" class="screen title-screen-bg hidden">
     <div class="title-logo">STUDY<br>QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 5.14.32</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 6.0.0</div>
     
     <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; width: 92%; max-width: 380px; margin: 0 auto;">
         <select id="grade-select" class="select-box" onchange="filterSubjects()">
@@ -213,14 +191,44 @@
             <span>📖 図鑑</span>
         </button>
         
+        <button class="menu-btn" style="background:#f39c12; border-color:#d35400;" onclick="openTitles()">
+            🏆 称号
+            <div id="title-badge" class="badge hidden">!</div>
+        </button>
+
         <button class="menu-btn" style="background:#27ae60; border-color:#1e8449;" onclick="openShop()">
             🛒 ショップ
         </button>
+
+        <button class="menu-btn" style="background:#3498db; border-color:#2980b9;" onclick="openSyncMenu()">
+            ☁️ クラウドセーブ
+        </button>
     </div>
     
-    <div style="position: absolute; bottom: 15px; width: 100%; color: #95a5a6; font-size: 0.9em; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <div style="margin-top: 15px; padding-bottom: 20px; width: 100%; color: #95a5a6; font-size: 0.9em; display: flex; justify-content: center; align-items: center; gap: 10px;">
         <div id="title-chara-img" style="width: 40px; height: 40px; background: #333; border-radius: 5px; overflow: hidden;"></div>
         <div>装備: <span id="title-equipped-name" style="color:#fff; font-weight:bold;">なし</span><br>所持XP: <span id="title-xp" style="color:#f1c40f;">0</span></div>
+    </div>
+</div>
+
+<div id="sync-overlay" class="overlay hidden" style="z-index: 400;">
+    <div class="modal" style="max-width: 400px;">
+        <h2 style="color:#3498db; margin-top:0;">☁️ クラウドセーブ</h2>
+        <p style="text-align:left; font-size:0.9em;">この機能を使うと、スマホや別のPCにデータを引き継げます。</p>
+        
+        <div style="background:#eee; padding:10px; border-radius:8px; margin:10px 0;">
+            <div style="font-weight:bold; color:#2c3e50;">あなたのID</div>
+            <div id="my-user-id" style="font-size:2em; font-weight:900; letter-spacing:2px; color:#3498db;">--------</div>
+            <button class="menu-btn" style="height:40px; font-size:0.9em; margin-top:5px; background:#2980b9;" onclick="uploadData()">☁️ このデータをクラウドに保存</button>
+        </div>
+
+        <hr style="margin:20px 0; border:1px dashed #ccc;">
+
+        <div style="text-align:left; font-size:0.9em; font-weight:bold; color:#e67e22;">データを読み込む (上書き注意)</div>
+        <input type="text" id="input-sync-id" placeholder="IDを入力 (例: a1b2c3d4)" style="width:90%; padding:10px; font-size:1.2em; border:2px solid #ccc; border-radius:5px; text-align:center; margin-top:5px;">
+        <button class="menu-btn" style="margin-top:10px; background:#e67e22;" onclick="downloadData()">📥 データをダウンロード</button>
+
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeSyncMenu()">閉じる</button>
     </div>
 </div>
 
@@ -240,6 +248,7 @@
     <div id="pause-overlay" class="overlay hidden">
         <div class="pause-menu-box">
             <h2 style="color:#f1c40f; margin:0;">PAUSE</h2>
+            <div id="pause-chara-info">装備情報を読み込み中...</div>
             <button class="menu-btn" style="background:#27ae60;" onclick="resumeGame()">つづきから</button>
             <button class="menu-btn" style="background:#e67e22;" onclick="retryGame()">最初から</button>
             <button class="menu-btn" style="background:#c0392b;" onclick="backToTitleFromPause()">タイトルへ</button>
@@ -250,16 +259,93 @@
 
 <div id="result-overlay" class="overlay hidden"><div class="modal"><h2 id="res-title">QUEST CLEAR!</h2><div id="res-icon" style="font-size: 4em;"></div><p>獲得スコア: <span id="res-score">0</span></p><div style="background:#eee; padding:15px; border-radius:10px; margin:10px 0;">獲得XP<br><span id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em;">+0</span></div><button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button></div></div>
 <div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+3000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
-<div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list"></div><div id="mission-all-clear" class="hidden" style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;"><div style="font-weight:bold; color:#e67e22;">コンプリート報酬</div><button id="btn-all-clear" class="menu-btn" style="width:100%; margin-top:5px; background:#f1c40f; border-color:#d35400;">3000 XPを受け取る</button></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
-<div id="gacha-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2><div style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; border: 2px solid #ccc;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><span>所持XP: <span id="gacha-xp" style="color:#f39c12; font-weight:bold;">0</span></span></div><button onclick="rollGacha(1)" style="background:linear-gradient(to bottom, #3498db, #2980b9); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #1f618d; width:100%; font-size:1em; margin-bottom:10px;">💎 3,000 XP (1回)</button><button onclick="rollGacha(10)" style="background:linear-gradient(to bottom, #f1c40f, #f39c12); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #d35400; width:100%; font-size:1.1em; border: 2px solid white;">💎 30,000 XP (10連!)</button></div><div id="zukan-grid" style="max-height: 400px; overflow-y: auto; text-align: left;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeGacha()">閉じる</button></div></div>
-<div id="chara-detail-overlay" class="overlay hidden" style="z-index: 150;"><div class="modal" style="max-width:350px;"><h3 id="cd-name" style="margin:0; font-size:1.5em; color:#2c3e50;">キャラ名</h3><div class="rarity-SSR" id="cd-rarity" style="margin-bottom:10px;">SSR</div><img id="cd-img" src="" class="detail-img"><div style="background:#f9f9f9; padding:10px; border-radius:8px; text-align:left; font-size:0.9em;"><div class="detail-stat-row"><span>レベル</span><span id="cd-lv" style="font-weight:bold; color:#2980b9;">Lv.0 / 20</span></div><div class="detail-stat-row" style="align-items:center;"><span>EXP</span><div style="flex:1; margin-left:10px;"><div class="exp-bar-container"><div id="cd-exp-bar" class="exp-bar-fill"></div></div><div id="cd-exp-text" style="font-size:0.7em; text-align:right;">0 / 100</div></div></div><div class="detail-stat-row"><span>スキル</span><span id="cd-type">ATK</span></div><div class="detail-stat-row"><span>効果</span><span id="cd-val" style="font-weight:bold; color:#e74c3c;">x1.5</span></div><div class="detail-stat-row"><span>在庫数</span><span id="cd-stock" style="font-weight:bold;">0個</span></div></div><p id="cd-desc" style="font-size:0.8em; color:#7f8c8d; margin:10px 0; min-height:3em;">説明文</p><div class="detail-btn-row"><button class="detail-btn" style="background:#2ecc71;" onclick="equipCurrentChara()">装備する</button></div><div class="detail-btn-row"><button id="btn-enhance" class="detail-btn" style="background:#e67e22;" onclick="openEnhanceMenu()">強化<br><span style="font-size:0.7em;">素材選択へ</span></button><button id="btn-sell" class="detail-btn" style="background:#95a5a6;" onclick="sellCharaStock()">売却</button></div><button class="menu-btn" style="margin-top:20px; font-size:0.9em; padding:8px; background:#bdc3c7; border-color:#95a5a6;" onclick="closeCharaDetail()">閉じる</button></div></div>
-<div id="material-select-overlay" class="overlay hidden" style="z-index: 160;"><div class="modal" style="max-width:350px;"><h3 style="margin:0; color:#e67e22;">強化素材を選択</h3><div id="material-list" class="material-list"></div><button class="menu-btn" style="margin-top:20px; background:#bdc3c7;" onclick="closeEnhanceMenu()">戻る</button></div></div>
+<div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
+<div id="gacha-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2><div style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; border: 2px solid #ccc;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><span>所持XP: <span id="gacha-xp" style="color:#f39c12; font-weight:bold;">0</span></span></div><button onclick="rollGacha(1)" style="background:linear-gradient(to bottom, #3498db, #2980b9); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #1f618d; width:100%; font-size:1em; margin-bottom:10px;">💎 3,000 XP (1回)</button><button onclick="rollGacha(10)" style="background:linear-gradient(to bottom, #f1c40f, #f39c12); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #d35400; width:100%; font-size:1.1em; border: 2px solid white;">💎 30,000 XP (10連!)</button></div><div id="zukan-grid" style="flex: 1; overflow-y: auto; text-align: left; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeGacha()">閉じる</button></div></div>
+<div id="chara-detail-overlay" class="overlay hidden" style="z-index: 150;">
+    <div class="modal" style="max-width:350px;">
+        <div style="flex: 1; overflow-y: auto; width: 100%; padding: 5px;">
+            <h3 id="cd-name" style="margin:0; font-size:1.5em; color:#2c3e50;">キャラ名</h3>
+            <div class="rarity-SSR" id="cd-rarity" style="margin-bottom:10px;">SSR</div>
+            <img id="cd-img" src="" class="detail-img">
+            
+            <div style="background:#f9f9f9; padding:10px; border-radius:8px; text-align:left; font-size:0.9em;">
+                <div class="detail-stat-row"><span>レベル</span><span id="cd-lv" style="font-weight:bold; color:#2980b9;">Lv.0 / 20</span></div>
+                <div class="detail-stat-row" style="align-items:center;"><span>EXP</span><div style="flex:1; margin-left:10px;"><div class="exp-bar-container"><div id="cd-exp-bar" class="exp-bar-fill"></div></div><div id="cd-exp-text" style="font-size:0.7em; text-align:right;">0 / 100</div></div></div>
+                <div class="detail-stat-row"><span>スキル</span><span id="cd-type">ATK</span></div>
+                <div class="detail-stat-row"><span>効果</span><span id="cd-val" style="font-weight:bold; color:#e74c3c;">x1.5</span></div>
+                <div class="detail-stat-row"><span>在庫数</span><span id="cd-stock" style="font-weight:bold;">0個</span></div>
+            </div>
+            
+            <p id="cd-desc" style="font-size:0.8em; color:#7f8c8d; margin:10px 0; min-height:3em;">説明文</p>
+            
+            <div class="detail-btn-row">
+                <button class="detail-btn" style="background:#2ecc71;" onclick="equipCurrentChara()">装備する</button>
+            </div>
+            <div class="detail-btn-row">
+                <button id="btn-enhance" class="detail-btn" style="background:#e67e22;" onclick="openEnhanceMenu()">強化<br><span style="font-size:0.7em;">素材選択へ</span></button>
+                <button id="btn-sell" class="detail-btn" style="background:#95a5a6;" onclick="sellCharaStock()">売却</button>
+            </div>
+
+            <button class="menu-btn" style="margin-top:20px; font-size:0.9em; padding:8px; background:#bdc3c7; border-color:#95a5a6;" onclick="closeCharaDetail()">閉じる</button>
+        </div>
+    </div>
+</div>
+<div id="material-select-overlay" class="overlay hidden" style="z-index: 160;">
+    <div class="modal" style="max-width:350px;">
+        <h3 style="margin:0; color:#e67e22;">強化素材を選択</h3>
+        <div id="material-list" class="material-list" style="flex: 1; overflow-y: auto; min-height: 0; padding: 5px; margin: 10px 0;"></div>
+        <div class="enhance-footer">
+            <div class="enhance-info">
+                <span>獲得EXP: <span id="enhance-total-exp">0</span></span>
+                <span id="enhance-lv-preview" class="enhance-preview">Lv.そのまま</span>
+            </div>
+            <button class="menu-btn" style="background:#e67e22; margin:0;" onclick="executeBulkEnhance()">強化する</button>
+            <button class="menu-btn" style="background:#bdc3c7; border-color:#95a5a6; font-size:0.9em; padding:8px; margin-top:5px;" onclick="closeEnhanceMenu()">戻る</button>
+        </div>
+    </div>
+</div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
-<div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
-<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list"><h4>Ver 5.14.32 (Official)</h4><ul><li><b>Feature</b>: ボス画像を大きく表示するようスタイル修正</li></ul><h4>Ver 5.14.31</h4><ul><li>画像の読み込み処理を修正</li></ul></div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
+<div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
+
+<div id="titles-overlay" class="overlay hidden" style="z-index: 260;">
+    <div class="modal" style="max-width:500px;">
+        <h2 style="color:#f39c12; margin-top:0;">🏆 称号リスト</h2>
+        <div id="titles-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div>
+        <button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeTitles()">閉じる</button>
+    </div>
+</div>
+
+<div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list">
+    <h4 style="color:#e67e22; border-bottom:2px solid #e67e22;">Ver 6.0.0 (Major Update)</h4>
+    
+    <h5 style="margin:10px 0 5px; color:#d35400;">✨ 新機能・大型実装</h5>
+    <ul>
+        <li><b>🏆 称号システム</b>: 全30種の実績を追加。達成で大量XP獲得。</li>
+        <li><b>☁️ クラウドセーブ</b>: 端末間でのデータ引き継ぎに対応。</li>
+        <li><b>⚡ 強化刷新</b>: 素材の複数選択・一括強化が可能に。</li>
+    </ul>
+
+    <h5 style="margin:10px 0 5px; color:#2980b9;">⚖️ バランス・ロジック調整</h5>
+    <ul>
+        <li><b>Lv上限適正化</b>: レアリティごとの上限(N:5〜SSR:20)を適用。</li>
+        <li><b>統計記録</b>: 称号判定用に通算プレイデータの記録を開始。</li>
+    </ul>
+
+    <h5 style="margin:10px 0 5px; color:#27ae60;">🎨 UI/UX 改善・不具合修正</h5>
+    <ul>
+        <li><b>スクロール最適化</b>: 全画面でリストのみスクロールするよう構造を一新。</li>
+        <li><b>操作性向上</b>: 画面のガタつき防止、ガチャ連続プレイ対応。</li>
+        <li><b>レイアウト調整</b>: タイトル整理、Mission報酬の表示・挙動改善。</li>
+    </ul>
+
+    <hr style="margin:15px 0; border:1px dashed #ccc;">
+    <div style="color:#7f8c8d; font-size:0.9em;">
+        <div><b>Ver 5.14.32</b>: レイアウト修正</div>
+    </div>
+</div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycby54ewlale8B2ivoL-nUvEFPdNYRmYCo2GeS1noeBHZOAs6GIQ9_IxAVQV95e_o7w9M/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxYCP6M9KEL_eaT6gQAGOmvR3apycFrpqinUnp8u-YoUvQXbclJwuAzCVFlPcys0HC2/exec';
     
     // Settings
     const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20 };
@@ -269,6 +355,47 @@
     const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000 };
     const LOGIN_BONUS_EXP = 3000;
     const MAX_ITEM_LEVEL = 10;
+    
+    // ★追加: 称号データ (全30種)
+    const TITLES = [
+        { id:'t01', name:'三日坊主卒業', req:'loginDays>=3', val:3, reward:5000, desc:'通算3日プレイ' },
+        { id:'t02', name:'一週間の奇跡', req:'loginDays>=7', val:7, reward:10000, desc:'通算7日プレイ' },
+        { id:'t03', name:'習慣化の達人', req:'loginDays>=14', val:14, reward:20000, desc:'通算14日プレイ' },
+        { id:'t04', name:'月間MVP', req:'loginDays>=30', val:30, reward:50000, desc:'通算30日プレイ' },
+        { id:'t05', name:'季節を超えて', req:'loginDays>=100', val:100, reward:200000, desc:'通算100日プレイ' },
+        { id:'t06', name:'伝説の常連', req:'loginDays>=365', val:365, reward:1000000, desc:'通算365日プレイ' },
+        
+        { id:'t07', name:'ビギナー', req:'totalKill>=5', val:5, reward:5000, desc:'累計5体撃破' },
+        { id:'t08', name:'エース', req:'totalKill>=20', val:20, reward:15000, desc:'累計20体撃破' },
+        { id:'t09', name:'ベテラン', req:'totalKill>=50', val:50, reward:40000, desc:'累計50体撃破' },
+        { id:'t10', name:'ヒーロー', req:'totalKill>=100', val:100, reward:100000, desc:'累計100体撃破' },
+        { id:'t11', name:'破壊神', req:'totalKill>=500', val:500, reward:500000, desc:'累計500体撃破' },
+
+        { id:'t12', name:'知識の芽生え', req:'totalCorrect>=50', val:50, reward:5000, desc:'累計50問正解' },
+        { id:'t13', name:'知識の探求者', req:'totalCorrect>=200', val:200, reward:20000, desc:'累計200問正解' },
+        { id:'t14', name:'知の巨人', req:'totalCorrect>=500', val:500, reward:50000, desc:'累計500問正解' },
+        { id:'t15', name:'歩く百科事典', req:'totalCorrect>=1000', val:1000, reward:100000, desc:'累計1000問正解' },
+        { id:'t16', name:'全知全能', req:'totalCorrect>=5000', val:5000, reward:1000000, desc:'累計5000問正解' },
+
+        { id:'t17', name:'集中モード', req:'maxCombo>=20', val:20, reward:10000, desc:'1プレイ20コンボ' },
+        { id:'t18', name:'ゾーン突入', req:'maxCombo>=40', val:40, reward:30000, desc:'1プレイ40コンボ' },
+        { id:'t19', name:'神の領域', req:'maxCombo>=60', val:60, reward:100000, desc:'1プレイ60コンボ' },
+        { id:'t20', name:'完全無欠', req:'perfect', val:1, reward:20000, desc:'HP満タンでクリア' },
+        { id:'t21', name:'スピードスター', req:'speed', val:1, reward:5000, desc:'残り9秒以上で正解' },
+
+        { id:'t22', name:'コレクター', req:'collection>=5', val:5, reward:10000, desc:'図鑑5種収集' },
+        { id:'t23', name:'マニア', req:'collection>=15', val:15, reward:30000, desc:'図鑑15種収集' },
+        { id:'t24', name:'博物館館長', req:'collection>=30', val:30, reward:100000, desc:'図鑑30種収集' },
+        { id:'t25', name:'アイテム愛好家', req:'itemMax', val:1, reward:50000, desc:'アイテムLv.MAX' },
+        
+        { id:'t26', name:'小金持ち', req:'xp>=100000', val:100000, reward:10000, desc:'所持XP 10万達成' },
+        { id:'t27', name:'大富豪', req:'xp>=1000000', val:1000000, reward:100000, desc:'所持XP 100万達成' },
+        { id:'t28', name:'億万長者', req:'xp>=10000000', val:10000000, reward:1000000, desc:'所持XP 1000万達成' },
+        
+        { id:'t29', name:'奇跡の出会い', req:'ssr', val:1, reward:50000, desc:'SSR入手' },
+        { id:'t30', name:'限界突破', req:'lvMax', val:1, reward:50000, desc:'キャラLv.20到達' }
+    ];
+
     const MISSIONS = [
         { id: 'play', target: 1, reward: 500, title: "本日の挑戦", desc: "クエストを1回プレイ" },
         { id: 'kill', target: 1, reward: 1000, title: "ボス撃破！", desc: "ボスを1体倒す" },
@@ -280,43 +407,66 @@
 
     let rawData = {};
     let playData = { questions: [], qIndex: 0, currentBoss: null };
-    let gameState = { score: 0, combo: 0, lives: 3, enemyHP: 100, maxHP: 100, timer: null, timeLeft: 0, maxTime: 10, xp: 0, equipped: '1', itemLevels: {}, charaInventory: {} };
+    
+    // ★データ構造拡張: stats(累計), titles(獲得ID), unlockedTitles(報酬受取済)
+    let gameState = { 
+        score: 0, combo: 0, lives: 3, enemyHP: 100, maxHP: 100, timer: null, timeLeft: 0, maxTime: 10, 
+        xp: 0, equipped: '1', itemLevels: {}, charaInventory: {},
+        stats: { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 },
+        unlockedTitles: [] 
+    };
+    
     let dailyMissions = { date: "", progress: { play: 0, kill: 0, correct: 0, maxCombo: 0, enhance: 0 }, claimed: { play: false, kill: false, correct: false, maxCombo: false, enhance: false, allClear: false } };
+    let currentUserId = ""; 
     let viewingCharaId = null, isGameActive = false, isPaused = false;
 
     window.onload = async () => { 
+        initUserId(); 
         loadSaveData(); 
         await fetchData(); 
         initTitle(); 
         checkLoginBonus(); 
         checkMissionDate(); 
+        checkTitles(); // 初期チェック
     };
 
-    // ★ Data Migration
+    function initUserId() {
+        let id = localStorage.getItem('sq_user_id');
+        if (!id) {
+            id = Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('sq_user_id', id);
+        }
+        currentUserId = id;
+    }
+
     function loadSaveData() {
         try {
             gameState.xp = parseInt(localStorage.getItem('sq_xp') || '0');
             gameState.equipped = localStorage.getItem('sq_equip') || '1';
-            gameState.itemLevels = JSON.parse(localStorage.getItem('sq_items_v2') || '{}');
+            gameState.itemLevels = JSON.parse(localStorage.getItem('sq_items_v2') || '{}') || {};
+            gameState.charaInventory = JSON.parse(localStorage.getItem('sq_inventory') || '{}') || {};
+            
+            // ★新規: 統計データと称号データの読み込み（なければ初期化）
+            gameState.stats = JSON.parse(localStorage.getItem('sq_stats') || '{"totalPlay":0,"totalKill":0,"totalCorrect":0,"maxCombo":0,"loginDays":0}');
+            gameState.unlockedTitles = JSON.parse(localStorage.getItem('sq_titles') || '[]');
 
-            let inv = localStorage.getItem('sq_inventory');
-            if (!inv) {
+            if (Object.keys(gameState.charaInventory).length === 0) {
                 const oldCharas = localStorage.getItem('sq_charas');
                 if (oldCharas) {
                     const idList = JSON.parse(oldCharas);
-                    gameState.charaInventory = {};
                     idList.forEach(id => {
                         gameState.charaInventory[id] = { level: 1, count: 1, exp: 0 };
                     });
                 } else {
                     gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } };
                 }
-            } else {
-                gameState.charaInventory = JSON.parse(inv);
             }
         } catch(e) {
             console.error("Save Data Error:", e);
             gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } }; 
+            gameState.itemLevels = {};
+            gameState.stats = { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
+            gameState.unlockedTitles = [];
         }
     }
 
@@ -326,16 +476,243 @@
         localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
         localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
         localStorage.setItem('sq_missions', JSON.stringify(dailyMissions));
+        
+        // ★新規: 統計と称号の保存
+        localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
+        localStorage.setItem('sq_titles', JSON.stringify(gameState.unlockedTitles));
     }
 
-    // --- Fetch Data ---
+    // --- 称号システムロジック ---
+    // 条件を満たしているかチェック（まだ受け取っていないものだけ）
+    function checkTitles(tempCondition = null) {
+        let count = 0;
+        
+        // 図鑑数カウント
+        let collectionCount = 0;
+        let hasSSR = false;
+        let hasLvMax = false;
+        if(gameState.charaInventory) {
+            collectionCount = Object.keys(gameState.charaInventory).length;
+            Object.keys(gameState.charaInventory).forEach(id => {
+                const c = rawData.characters.find(x => x.id === id);
+                const inv = gameState.charaInventory[id];
+                if(c && c.rarity === 'SSR') hasSSR = true;
+                if(inv && inv.level >= 20) hasLvMax = true;
+            });
+        }
+        
+        // アイテムMaxカウント
+        let hasItemMax = false;
+        if(gameState.itemLevels) {
+            Object.values(gameState.itemLevels).forEach(lv => { if(lv >= MAX_ITEM_LEVEL) hasItemMax = true; });
+        }
+
+        TITLES.forEach(t => {
+            if (gameState.unlockedTitles.includes(t.id)) return; // 受取済
+
+            let cleared = false;
+            // 特殊条件チェック
+            if (t.req === 'perfect' && tempCondition === 'perfect') cleared = true;
+            else if (t.req === 'speed' && tempCondition === 'speed') cleared = true;
+            else if (t.req === 'ssr' && hasSSR) cleared = true;
+            else if (t.req === 'lvMax' && hasLvMax) cleared = true;
+            else if (t.req === 'itemMax' && hasItemMax) cleared = true;
+            else if (t.req.includes('collection')) {
+                if (collectionCount >= t.val) cleared = true;
+            }
+            else if (t.req.includes('xp')) {
+                if (gameState.xp >= t.val) cleared = true;
+            }
+            else {
+                // 通常統計チェック (例: loginDays>=3)
+                try {
+                    const key = t.req.split('>')[0];
+                    const val = gameState.stats[key] || 0;
+                    if (val >= t.val) cleared = true;
+                } catch(e){}
+            }
+
+            if (cleared) count++;
+        });
+
+        // バッジ更新
+        const badge = document.getElementById('title-badge');
+        if(count > 0) {
+            badge.classList.remove('hidden');
+            badge.innerText = count > 9 ? '!' : count;
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function openTitles() {
+        document.getElementById('titles-overlay').classList.remove('hidden');
+        renderTitles();
+    }
+    
+    function closeTitles() {
+        document.getElementById('titles-overlay').classList.add('hidden');
+    }
+
+    function renderTitles() {
+        const list = document.getElementById('titles-list');
+        list.innerHTML = '';
+        
+        // 収集数などの現状計算（表示用）
+        let collectionCount = 0;
+        if(gameState.charaInventory) collectionCount = Object.keys(gameState.charaInventory).length;
+
+        TITLES.forEach(t => {
+            const isClaimed = gameState.unlockedTitles.includes(t.id);
+            let isUnlocked = false;
+            
+            // 解除判定（報酬を受け取れる状態か）
+            if (isClaimed) isUnlocked = true;
+            else {
+                // 簡易チェック
+                if (t.req.includes('collection') && collectionCount >= t.val) isUnlocked = true;
+                else if (t.req.includes('xp') && gameState.xp >= t.val) isUnlocked = true;
+                else if (t.req === 'ssr' && Object.keys(gameState.charaInventory).some(id => rawData.characters.find(c=>c.id==id)?.rarity=='SSR')) isUnlocked = true;
+                else if (t.req === 'lvMax' && Object.values(gameState.charaInventory).some(inv => inv.level >= 20)) isUnlocked = true;
+                else if (t.req === 'itemMax' && Object.values(gameState.itemLevels).some(lv => lv >= MAX_ITEM_LEVEL)) isUnlocked = true;
+                else {
+                    const key = t.req.split('>')[0];
+                    if (gameState.stats[key] >= t.val) isUnlocked = true;
+                }
+            }
+
+            // 表示作成
+            let statusClass = isClaimed ? 'claimed' : (isUnlocked ? 'unlocked' : '');
+            let btnText = isClaimed ? '受取済' : (isUnlocked ? `受取: ${t.reward}XP` : '未達成');
+            let btnAction = (isUnlocked && !isClaimed) ? `onclick="claimTitle('${t.id}', ${t.reward})"` : '';
+            
+            list.innerHTML += `
+                <div class="title-item ${statusClass}">
+                    <div class="title-header">
+                        <span class="title-name">${t.name}</span>
+                        <button class="title-reward-btn" ${btnAction}>${btnText}</button>
+                    </div>
+                    <div class="title-req">${t.desc}</div>
+                </div>
+            `;
+        });
+    }
+
+    function claimTitle(id, reward) {
+        if(gameState.unlockedTitles.includes(id)) return;
+        gameState.unlockedTitles.push(id);
+        gameState.xp += reward;
+        saveGame();
+        renderTitles();
+        updateTitleInfo();
+        checkTitles();
+        alert(`称号を獲得しました！\n報酬: ${reward} XP`);
+    }
+
+    // --- 既存システム ---
+
+    function openSyncMenu() {
+        document.getElementById('sync-overlay').classList.remove('hidden');
+        document.getElementById('my-user-id').innerText = currentUserId;
+    }
+    function closeSyncMenu() {
+        document.getElementById('sync-overlay').classList.add('hidden');
+    }
+
+    async function uploadData() {
+        if(!confirm("現在のデータをクラウドに保存しますか？\n（同じIDの古いデータは上書きされます）")) return;
+        
+        const backupData = {
+            xp: gameState.xp,
+            equipped: gameState.equipped,
+            itemLevels: gameState.itemLevels,
+            charaInventory: gameState.charaInventory,
+            missions: dailyMissions,
+            // ★新規: 統計と称号も送る
+            stats: gameState.stats,
+            unlockedTitles: gameState.unlockedTitles
+        };
+
+        const btn = document.querySelector('#sync-overlay button'); 
+        const originalText = btn.innerText;
+        btn.innerText = "送信中..."; btn.disabled = true;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'save',
+                    userId: currentUserId,
+                    data: backupData
+                })
+            });
+            const json = await res.json();
+            if(json.status === 'success') {
+                alert("保存しました！\n別の端末でこのIDを入力すると続きから遊べます。");
+            } else {
+                alert("保存に失敗しました: " + json.message);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e);
+        } finally {
+            btn.innerText = originalText; btn.disabled = false;
+        }
+    }
+
+    async function downloadData() {
+        const inputId = document.getElementById('input-sync-id').value.trim();
+        if(!inputId) return alert("IDを入力してください");
+        
+        if(!confirm("警告！\nデータを読み込むと、現在の端末のデータは上書きされます。\nよろしいですか？")) return;
+
+        const btn = document.querySelectorAll('#sync-overlay button')[1];
+        const originalText = btn.innerText;
+        btn.innerText = "受信中..."; btn.disabled = true;
+
+        try {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'load',
+                    userId: inputId
+                })
+            });
+            const json = await res.json();
+            
+            if(json.status === 'success') {
+                const data = json.data;
+                gameState.xp = data.xp || 0;
+                gameState.equipped = data.equipped || '1';
+                gameState.itemLevels = data.itemLevels || {};
+                gameState.charaInventory = data.charaInventory || {};
+                dailyMissions = data.missions || {};
+                // ★新規: 読み込み
+                gameState.stats = data.stats || { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
+                gameState.unlockedTitles = data.unlockedTitles || [];
+                
+                currentUserId = inputId;
+                localStorage.setItem('sq_user_id', inputId);
+                
+                saveGame(); 
+                alert("データの復元に成功しました！");
+                location.reload(); 
+            } else {
+                alert("読み込み失敗: " + json.message);
+            }
+        } catch(e) {
+            alert("通信エラー: " + e);
+        } finally {
+            btn.innerText = originalText; btn.disabled = false;
+        }
+    }
+
     async function fetchData() {
         try {
-            const res = await fetch(API_URL);
+            const res = await fetch(API_URL + '?t=' + new Date().getTime());
+            
             if (!res.ok) throw new Error("Network response was not ok");
             const data = await res.json();
             
-            // Helper to preserve "0" as string
             const getVal = (obj, keys) => {
                 for (const k of keys) {
                     const v = obj[k];
@@ -344,17 +721,14 @@
                 return "";
             };
             
-            // Helper to match fuzzy keys (e.g. "ボス画像（絵文字等）")
             const getFuzzyVal = (obj, keyword, defaultVal) => {
                 const key = Object.keys(obj).find(k => k.includes(keyword));
                 const val = key ? obj[key] : "";
                 return (val !== undefined && val !== null && val !== "") ? String(val) : defaultVal;
             };
 
-            // Helper to convert Google Drive URL to viewable format
             const convertDriveUrl = (url) => {
                 if(!url || !url.startsWith('http')) return url;
-                // Check if it's a Drive share link
                 if(url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('id='))) {
                     let id = "";
                     const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -414,13 +788,16 @@
 
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('title-screen').classList.remove('hidden');
+            
+            // ロード後に称号チェック（アイテム系などの条件があるため）
+            checkTitles();
+            
         } catch(e) { 
             document.getElementById('error-message').innerText = e.message;
             document.getElementById('error-message').style.display = 'block';
         }
     }
 
-    // --- UI Logic ---
     function initTitle() {
         if(!rawData.questions) return;
         const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g=>g);
@@ -459,7 +836,6 @@
         else imgContainer.innerHTML = `<div style="text-align:center;line-height:40px;">✏️</div>`;
     }
 
-    // --- Game Engine ---
     function startGame() {
         const g = document.getElementById('grade-select').value, s = document.getElementById('subject-select').value, u = document.getElementById('unit-select').value;
         if(!g || !s || !u) return alert("全て選択してください");
@@ -471,27 +847,57 @@
         
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         const charaStats = getCharaStats();
-        // ★ FIX: Combo Reset Here too
+        
         gameState.score = 0; gameState.combo = 0; 
         gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||1000; gameState.maxHP = gameState.enemyHP; 
         gameState.maxTime = 10 * charaStats.time;
-        isGameActive = true; isPaused = false;
+        isGameActive = false; 
+        isPaused = false;
         
         document.getElementById('pause-overlay').classList.add('hidden');
         document.getElementById('title-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
-        document.getElementById('ui-enemy-name').innerText = boss.name;
-        const ic = document.getElementById('ui-enemy-icon');
         
-        // ★修正: 固定サイズ指定を削除 (CSSに任せる)
+        const enemyBox = document.querySelector('.enemy-visual-box');
+        const enemyIcon = document.getElementById('ui-enemy-icon');
+        enemyBox.classList.remove('anim-paused', 'fade-out');
+        enemyIcon.classList.remove('shake-anim');
+        
+        document.getElementById('ui-enemy-name').innerText = boss.name;
+        
         if(boss.icon.startsWith('http')) {
-            ic.innerHTML = `<img src="${boss.icon}">`; 
+            enemyIcon.innerHTML = `<img src="${boss.icon}">`; 
         } else {
-            ic.innerHTML = boss.icon;
+            enemyIcon.innerHTML = boss.icon;
         }
         
-        updateUI(); nextQuestion();
+        updateUI(); 
+        startCountdown();
     }
+    
+    function startCountdown() {
+        const qBox = document.getElementById('ui-question');
+        const cGrid = document.getElementById('ui-choices');
+        qBox.innerText = "READY...";
+        cGrid.innerHTML = ""; 
+        
+        let count = 3;
+        showCutIn(count);
+        
+        const cdTimer = setInterval(() => {
+            count--;
+            if(count > 0) {
+                showCutIn(count);
+            } else if(count === 0) {
+                showCutIn("GO!");
+            } else {
+                clearInterval(cdTimer);
+                isGameActive = true;
+                nextQuestion();
+            }
+        }, 1000);
+    }
+
     function getCharaStats() {
         let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
         if(rawData.characters) {
@@ -530,7 +936,6 @@
         const div = document.getElementById('ui-choices'); div.innerHTML = '';
         choices.forEach(c => {
             const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c;
-            // FIX: String comparison for "0"
             btn.onclick = () => judge(String(c) === String(q.a), btn); 
             div.appendChild(btn);
         });
@@ -545,7 +950,6 @@
         if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
         
         if(!isCorrect) {
-            // FIX: String comparison here too
             document.querySelectorAll('.choice-btn').forEach(b => { 
                 if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
             });
@@ -556,11 +960,32 @@
             const damage = Math.floor(50 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * 1.8) * (1 + (gameState.combo * 0.1)));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
             gameState.score += damage; gameState.combo++;
+            
             showCutIn("-" + damage);
+            
+            // ★新規: 統計更新(正解数、最大コンボ)
+            gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
+            gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
+            
+            // スピードスター判定
+            if (gameState.timeLeft >= 9.0) checkTitles('speed');
+
+            const enemyIcon = document.getElementById('ui-enemy-icon');
+            enemyIcon.classList.remove('shake-anim'); 
+            void enemyIcon.offsetWidth; 
+            enemyIcon.classList.add('shake-anim');
+            
             updateMissionProgress('correct', 1); updateMissionProgress('maxCombo', gameState.combo);
             updateUI();
-            if(gameState.enemyHP <= 0) setTimeout(() => isGameActive && finishGame(true), 1000);
-            else { playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); }
+            
+            if(gameState.enemyHP <= 0) {
+                const enemyBox = document.querySelector('.enemy-visual-box');
+                enemyBox.classList.add('anim-paused'); 
+                enemyBox.classList.add('fade-out');    
+                setTimeout(() => isGameActive && finishGame(true), 1200);
+            } else { 
+                playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); 
+            }
         } else {
             gameState.lives--; gameState.combo = 0;
             showCutIn("MISS..."); updateUI();
@@ -569,9 +994,59 @@
         }
     }
     
-    function showCutIn(t) { const d = document.createElement('div'); d.className='cutin'; d.innerText=t; if(t.includes('MISS')) { d.style.color='#bdc3c7'; d.style.webkitTextStroke='2px #2c3e50'; } document.body.appendChild(d); setTimeout(()=>d.remove(), 1500); }
+    function showCutIn(t) { 
+        const d = document.createElement('div'); 
+        d.className='cutin'; 
+        d.innerText=t; 
+        if(String(t).includes('MISS')) { 
+            d.style.color='#bdc3c7'; 
+            d.style.webkitTextStroke='2px #2c3e50'; 
+        } 
+        document.body.appendChild(d); 
+        setTimeout(()=>d.remove(), 1500); 
+    }
+
     function updateUI() { document.getElementById('ui-life').innerText = '❤️'.repeat(Math.max(0, gameState.lives)); document.getElementById('ui-score').innerText = gameState.score; document.getElementById('ui-combo').innerText = gameState.combo; document.getElementById('ui-hp').style.width = (gameState.enemyHP/gameState.maxHP*100)+'%'; document.getElementById('ui-hp-text').innerText = `${gameState.enemyHP}/${gameState.maxHP}`; }
-    function togglePause() { isPaused = !isPaused; document.getElementById('pause-overlay').classList.toggle('hidden', !isPaused); }
+    
+    function togglePause() { 
+        isPaused = !isPaused; 
+        document.getElementById('pause-overlay').classList.toggle('hidden', !isPaused);
+        
+        if(isPaused) {
+            const infoBox = document.getElementById('pause-chara-info');
+            const charaId = gameState.equipped;
+            const chara = rawData.characters ? rawData.characters.find(c => c.id == charaId) : null;
+            
+            if(chara) {
+                const inv = gameState.charaInventory[charaId] || { level: 1 };
+                let val = chara.value + (inv.level * LV_BONUS_RATE);
+                let visual = "";
+                
+                if(chara.imageUrl && chara.imageUrl.startsWith('http')) {
+                    visual = `<img src="${chara.imageUrl}" style="width:60px;height:60px;object-fit:contain;background:#fff;border-radius:5px;">`;
+                } else {
+                    visual = `<div style="font-size:40px;">✏️</div>`;
+                }
+
+                infoBox.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px; text-align:left;">
+                        ${visual}
+                        <div>
+                            <div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${chara.name}</div>
+                            <div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div>
+                            <div style="font-size:0.7em; color:#bdc3c7;">
+                                <span class="rarity-${chara.rarity}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${chara.rarity}</span>
+                                効果: x${val.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                infoBox.innerHTML = `<div style="color:#bdc3c7; font-size:0.8em;">装備なし</div>`;
+            }
+        }
+    }
+    
     function resumeGame() { isPaused = false; document.getElementById('pause-overlay').classList.add('hidden'); }
     function retryGame() { if(confirm("やり直しますか？")){ isGameActive=false; clearInterval(gameState.timer); resumeGame(); startGame(); } }
     function backToTitleFromPause() { if(confirm("戻りますか？")){ isGameActive=false; clearInterval(gameState.timer); backToTitle(); } }
@@ -581,6 +1056,15 @@
         const stats=getCharaStats(); 
         let earned = Math.floor((isClear ? gameState.score * 1.2 : gameState.score * 1.0) * stats.exp); 
         gameState.xp += earned; 
+        
+        // ★新規: 統計更新(プレイ回数、撃破数)
+        gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
+        if(isClear) {
+            gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
+            // 完全無欠判定
+            if(gameState.lives >= 3) checkTitles('perfect');
+        }
+
         saveGame(); 
         updateMissionProgress('play',1); 
         if(isClear) updateMissionProgress('kill',1); 
@@ -591,6 +1075,8 @@
         document.getElementById('res-xp').innerText="+"+earned; 
         document.getElementById('game-screen').classList.add('hidden'); 
         document.getElementById('result-overlay').classList.remove('hidden'); 
+        
+        checkTitles(); // リザルト時に称号チェック
     }
     
     function backToTitle() { 
@@ -600,10 +1086,24 @@
         document.getElementById('pause-overlay').classList.add('hidden'); 
         isGameActive = false; isPaused = false; clearInterval(gameState.timer);
         updateTitleInfo(); updateMissionBadge(); 
+        checkTitles();
     }
     
-    // --- System Functions ---
-    function checkLoginBonus() { const d=new Date().toLocaleDateString('ja-JP'); if(localStorage.getItem('sq_last_login')!==d){ gameState.xp+=LOGIN_BONUS_EXP; localStorage.setItem('sq_last_login',d); saveGame(); document.getElementById('login-bonus-overlay').classList.remove('hidden'); updateTitleInfo(); } }
+    function checkLoginBonus() { 
+        const d=new Date().toLocaleDateString('ja-JP'); 
+        if(localStorage.getItem('sq_last_login')!==d){ 
+            gameState.xp+=LOGIN_BONUS_EXP; 
+            localStorage.setItem('sq_last_login',d); 
+            
+            // ★新規: ログイン日数カウント
+            gameState.stats.loginDays = (gameState.stats.loginDays || 0) + 1;
+            
+            saveGame(); 
+            document.getElementById('login-bonus-overlay').classList.remove('hidden'); 
+            updateTitleInfo(); 
+            checkTitles();
+        } 
+    }
     function closeLoginBonus() { document.getElementById('login-bonus-overlay').classList.add('hidden'); }
     function checkMissionDate() { const d=new Date().toLocaleDateString('ja-JP'); dailyMissions=JSON.parse(localStorage.getItem('sq_missions')||'{"date":"","progress":{},"claimed":{}}'); if(dailyMissions.date!==d){ dailyMissions={date:d,progress:{play:0,kill:0,correct:0,maxCombo:0,enhance:0},claimed:{}}; saveGame(); } updateMissionBadge(); }
     function updateMissionProgress(t,v) { if(t==='maxCombo') dailyMissions.progress[t]=Math.max(dailyMissions.progress[t]||0,v); else dailyMissions.progress[t]=(dailyMissions.progress[t]||0)+v; saveGame(); updateMissionBadge(); }
@@ -611,8 +1111,43 @@
     
     function openMissions() { document.getElementById('mission-overlay').classList.remove('hidden'); renderMissions(); }
     function closeMissions() { document.getElementById('mission-overlay').classList.add('hidden'); }
-    function renderMissions() { const l=document.getElementById('mission-list'); l.innerHTML=''; let all=true; MISSIONS.forEach(m=>{ const p=dailyMissions.progress[m.id]||0; const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; if(!fin)all=false; l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; }); 
-        const ac=document.getElementById('mission-all-clear'); if(all){ ac.classList.remove('hidden'); document.getElementById('btn-all-clear').innerText=dailyMissions.claimed.allClear?"受取済":"3000 XP受取"; document.getElementById('btn-all-clear').onclick=()=>claimAllClear(); } else ac.classList.add('hidden'); }
+    function renderMissions() { 
+    const l = document.getElementById('mission-list'); 
+    l.innerHTML = ''; 
+    let all = true; 
+    
+    // 通常ミッションの表示
+    MISSIONS.forEach(m => { 
+        const p = dailyMissions.progress[m.id] || 0; 
+        const fin = p >= m.target; 
+        const clm = dailyMissions.claimed[m.id]; 
+        if (!fin) all = false; 
+        
+        l.innerHTML += `
+            <div class="mission-item">
+                <b>${m.title}</b> (${p}/${m.target})<br>
+                <small>${m.desc}</small>
+                <button class="mission-btn ${fin && !clm ? 'active' : 'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm ? '受取済' : '受取'}</button>
+            </div>`; 
+    }); 
+
+    // コンプリート報酬の表示（条件達成時のみリストの最後に追加）
+    if (all) { 
+        const isClaimed = dailyMissions.claimed.allClear;
+        
+        // 受取済みならグレー(disabled)、まだなら金色(Gold Style)
+        let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
+        let btnClass = isClaimed ? 'disabled' : ''; 
+        let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} XPを受け取る`;
+        let btnAction = isClaimed ? '' : 'onclick="claimAllClear()"';
+
+        l.innerHTML += `
+            <div style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;">
+                <div style="font-weight:bold; color:#e67e22;">コンプリート報酬</div>
+                <button class="mission-btn ${btnClass}" style="width:100%; margin-top:5px; ${btnStyle}" ${btnAction}>${btnText}</button>
+            </div>`; 
+    }
+}
     function claimMission(id,r) { if(dailyMissions.claimed[id])return; dailyMissions.claimed[id]=true; gameState.xp+=r; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(r+"XP獲得"); }
     function claimAllClear() { if(dailyMissions.claimed.allClear)return; dailyMissions.claimed.allClear=true; gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(MISSION_ALL_CLEAR+"XP獲得"); }
 
@@ -649,6 +1184,7 @@
         saveGame();
         renderZukan();
         updateTitleInfo();
+        checkTitles(); // ガチャ後にSSRチェック等
         showGachaResults(results);
     }
     
@@ -669,7 +1205,12 @@
         }
         document.getElementById('gacha-overlay').classList.add('hidden'); document.getElementById('gacha-result-overlay').classList.remove('hidden');
     }
-    function closeGachaResult() { document.getElementById('gacha-result-overlay').classList.add('hidden'); }
+    function closeGachaResult() { 
+        document.getElementById('gacha-result-overlay').classList.add('hidden'); 
+        document.getElementById('gacha-overlay').classList.remove('hidden');
+        document.getElementById('gacha-xp').innerText = gameState.xp;
+        renderZukan(); 
+    }
 
     function renderZukan() { 
         const g=document.getElementById('zukan-grid'); g.innerHTML=''; 
@@ -708,17 +1249,17 @@
         document.getElementById('cd-name').innerText=c.name; 
         document.getElementById('cd-rarity').innerText=c.rarity; 
         document.getElementById('cd-rarity').className = "rarity-" + c.rarity; 
-        document.getElementById('cd-lv').innerText='Lv.'+o.level; 
+        
+        const maxLv = RARITY_CAPS[c.rarity] || 10;
+        document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
         document.getElementById('cd-type').innerText=c.type; 
         
-        // ★ Value Update
         let val = c.value + (o.level * LV_BONUS_RATE);
         document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
         
         document.getElementById('cd-stock').innerText=o.count + "個"; 
         document.getElementById('cd-desc').innerText = c.desc || "";
         
-        // ★ EXP Bar Update (using Correct ID)
         document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ;
         document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
         
@@ -728,86 +1269,192 @@
     
     function closeCharaDetail() { 
         document.getElementById('chara-detail-overlay').classList.add('hidden'); 
-        renderZukan(); // Update Zukan view
+        renderZukan(); 
     }
     
     function equipCurrentChara() { gameState.equipped=viewingCharaId; saveGame(); alert("装備しました"); closeCharaDetail(); renderZukan(); updateTitleInfo(); }
     function sellCharaStock() { const o=gameState.charaInventory[viewingCharaId]; if(o.count>0 && confirm("売却しますか？")){ o.count--; gameState.xp+=200; saveGame(); openCharaDetail(viewingCharaId); } }
     
-    function openEnhanceMenu() { 
-        document.getElementById('material-select-overlay').classList.remove('hidden'); 
-        document.getElementById('chara-detail-overlay').classList.add('hidden'); 
-        const l=document.getElementById('material-list'); 
-        l.innerHTML=''; 
-        rawData.characters.forEach(c=>{ 
-            const o=gameState.charaInventory[c.id]; 
-            if(o && o.count > 0) { 
-                const gain = MAT_EXP[c.rarity] || 25;
-                let visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" style="width:40px;height:40px;">` : `<span>📦</span>`;
-                l.innerHTML+=`<div class="mat-card" onclick="executeEnhance('${c.id}', ${gain})">
-                    <div class="rarity-${c.rarity}">${c.rarity}</div>${visual}
-                    <div style="font-weight:bold;">${c.name}</div>
-                    <div>所持:${o.count}</div>
-                    <div class="mat-exp-val">+${gain} EXP</div>
-                </div>`; 
-            } 
-        }); 
+    // --- 強化システム改修版 (Ver 8.1) ---
+
+    let selectedMaterials = {}; // { 'charId': count }
+
+    function openEnhanceMenu() {
+        selectedMaterials = {}; // 選択リセット
+        document.getElementById('material-select-overlay').classList.remove('hidden');
+        document.getElementById('chara-detail-overlay').classList.add('hidden');
+        renderEnhanceList();
     }
-    
-    function closeEnhanceMenu() { document.getElementById('material-select-overlay').classList.add('hidden'); openCharaDetail(viewingCharaId); }
-    
-    // ★ FIX: Refresh Detail Immediately after Enhance
-    function executeEnhance(mid, gain) { 
-        if(!confirm("強化しますか？")) return;
-        const t = gameState.charaInventory[viewingCharaId];
-        const m = gameState.charaInventory[mid];
+
+    function closeEnhanceMenu() {
+        document.getElementById('material-select-overlay').classList.add('hidden');
+        openCharaDetail(viewingCharaId); // 詳細に戻る
+    }
+
+    // 素材リスト描画 & 選択状態反映
+    function renderEnhanceList() {
+        const list = document.getElementById('material-list');
+        list.innerHTML = '';
         
-        if(t.level >= 10) return alert("上限です");
+        let totalGain = 0;
+
+        rawData.characters.forEach(c => {
+            // 自分自身は素材にできない & 所持していないとダメ
+            if (c.id === viewingCharaId) return;
+            const inv = gameState.charaInventory[c.id];
+            if (!inv || inv.count <= 0) return;
+
+            const selectCount = selectedMaterials[c.id] || 0;
+            const expVal = MAT_EXP[c.rarity] || 25;
+            
+            if(selectCount > 0) totalGain += (expVal * selectCount);
+
+            // 表示用
+            let visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" style="width:40px;height:40px;">` : `<span>📦</span>`;
+            let activeClass = selectCount > 0 ? 'selected' : '';
+            let badge = selectCount > 0 ? `<div class="mat-select-badge">${selectCount}</div>` : '';
+
+            // クリックでトグル選択
+            list.innerHTML += `
+                <div class="mat-card ${activeClass}" onclick="toggleMaterial('${c.id}', ${inv.count})">
+                    ${badge}
+                    <div class="rarity-${c.rarity}">${c.rarity}</div>
+                    ${visual}
+                    <div style="font-weight:bold; font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name}</div>
+                    <div style="font-size:0.7em;">所持: ${inv.count}</div>
+                    <div class="mat-exp-val">+${expVal}</div>
+                </div>
+            `;
+        });
+
+        // プレビュー表示更新
+        updateEnhancePreview(totalGain);
+    }
+
+    // 選択トグル処理 (0 -> 1 -> ... -> MAX -> 0)
+    function toggleMaterial(id, maxCount) {
+        if (!selectedMaterials[id]) selectedMaterials[id] = 0;
         
-        m.count--;
-        t.exp = (Number(t.exp) || 0) + Number(gain);
+        selectedMaterials[id]++;
         
-        let lvUp = 0;
-        while(t.exp >= EXP_REQ) {
-            if(t.level >= 10) { t.exp = 0; break; }
-            t.exp -= EXP_REQ;
-            t.level++;
-            lvUp++;
+        // 所持数を超えたら0に戻す（選択解除）
+        if (selectedMaterials[id] > maxCount) {
+            selectedMaterials[id] = 0;
         }
         
-        updateMissionProgress('enhance', 1);
-        saveGame();
+        renderEnhanceList(); // 再描画
+    }
+
+    // 強化結果の予測計算
+    function updateEnhancePreview(gainExp) {
+        document.getElementById('enhance-total-exp').innerText = gainExp;
         
-        document.getElementById('material-select-overlay').classList.add('hidden');
-        
-        // ★ Force update DOM immediately
+        const t = gameState.charaInventory[viewingCharaId];
         const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        if (!t || !chara) return;
+
+        const maxLv = RARITY_CAPS[chara.rarity] || 10;
+        
+        // 現在の状態をコピーしてシミュレーション
+        let simExp = t.exp + gainExp;
+        let simLv = t.level;
+        
+        while (simExp >= EXP_REQ) {
+            if (simLv >= maxLv) {
+                simExp = 0; // カンスト
+                break;
+            }
+            simExp -= EXP_REQ;
+            simLv++;
+        }
+        
+        const preview = document.getElementById('enhance-lv-preview');
+        if (simLv > t.level) {
+            preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`;
+            preview.style.color = '#e67e22'; // Orange
+        } else {
+            preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`;
+            preview.style.color = '#7f8c8d'; // Gray
+        }
+    }
+
+    // 一括強化実行
+    function executeBulkEnhance() {
+        const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0);
+        if (totalSelected === 0) return alert("素材を選択してください");
+
+        // 合計経験値計算
+        let totalGain = 0;
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (count > 0) {
+                const matChar = rawData.characters.find(c => c.id === id);
+                const expVal = MAT_EXP[matChar.rarity] || 25;
+                totalGain += (expVal * count);
+            }
+        });
+
+        if (!confirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`)) return;
+
+        // 消費処理
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (gameState.charaInventory[id]) {
+                gameState.charaInventory[id].count -= count;
+                if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0;
+            }
+        });
+
+        // 経験値付与
+        const t = gameState.charaInventory[viewingCharaId];
+        const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        const maxLv = RARITY_CAPS[chara.rarity] || 10;
+
+        t.exp = (Number(t.exp) || 0) + totalGain;
+        let lvUpCount = 0;
+
+        while (t.exp >= EXP_REQ) {
+            if (t.level >= maxLv) {
+                t.exp = 0; // カンスト時は端数切り捨て
+                break;
+            }
+            t.exp -= EXP_REQ;
+            t.level++;
+            lvUpCount++;
+        }
+
+        // 称号チェック & 保存
+        updateMissionProgress('enhance', 1);
+        checkTitles(); // 強化回数やLvMAX称号のチェック
+        saveGame();
+
+        // 完了処理
+        alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
+        
+        selectedMaterials = {}; // 選択クリア
+        renderEnhanceList(); // リスト更新（所持数が減っているため）
+        
+        // プレビューをリセット
+        updateEnhancePreview(0);
+        
+        // ★追加: 詳細画面の表示もここで更新しておく
         if(chara) {
-            document.getElementById('cd-lv').innerText = 'Lv.' + t.level;
+            document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv;
             document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ;
             document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
             document.getElementById('cd-val').innerText='x'+(chara.value+(t.level*LV_BONUS_RATE)).toFixed(2);
         }
-        
-        // ★ Also call openCharaDetail to be sure
-        openCharaDetail(viewingCharaId);
-        
-        // ★ Delay alert slightly so user sees the change first
-        setTimeout(() => {
-            if(lvUp > 0) alert(`レベルアップ！ Lv.${t.level}`);
-            else alert(`強化成功！ EXP +${gain}\n現在: ${t.exp}/${EXP_REQ}`);
-        }, 100);
     }
     
     function openShop() { 
         document.getElementById('shop-overlay').classList.remove('hidden'); 
-        // ★修正: ショップを開いた時にXPを更新
         document.getElementById('shop-xp').innerText = gameState.xp;
         
         const l=document.getElementById('shop-list'); 
         l.innerHTML=''; 
+        
         if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
-            const lv=gameState.itemLevels[i.id]||0; 
+            const lv = (gameState.itemLevels && gameState.itemLevels[i.id]) ? gameState.itemLevels[i.id] : 0; 
             const p=i.price*(lv+1); 
             l.innerHTML+=`<div class="shop-item">
                 <div class="shop-icon">${i.icon}</div>
@@ -826,13 +1473,16 @@
     function closeShop() { document.getElementById('shop-overlay').classList.add('hidden'); }
     
     function buyItem(id,p) { 
+        if (!gameState.itemLevels) gameState.itemLevels = {};
+        
         if((gameState.itemLevels[id]||0)>=10)return; 
         if(gameState.xp<p)return alert("XP不足"); 
         gameState.xp-=p; 
         gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; 
         saveGame(); 
-        openShop(); // リロードして更新
+        openShop(); 
         updateTitleInfo(); 
+        checkTitles(); // アイテムLvMAXチェック
     }
 
     function openVersionHistory() { document.getElementById('version-overlay').classList.remove('hidden'); }
