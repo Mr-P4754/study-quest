@@ -117,6 +117,12 @@
         .title-item.claimed .title-reward-btn { background: #27ae60; border: none; cursor: default; transform: none; animation: none; }
 
         .rarity-SSR { color: #f1c40f; text-shadow: 0 0 1px #000; font-weight: 900; } .rarity-SR { color: #e74c3c; font-weight: bold; } .rarity-R { color: #3498db; font-weight: bold; } .rarity-N { color: #7f8c8d; }
+        
+        /* ★追加: URと限界突破(虹枠)スタイル */
+        .rarity-UR { color: #e056fd; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 10px #e056fd; animation: pulseRed 1s infinite alternate; }
+        .char-card.mastered { border: 3px solid transparent; background-image: linear-gradient(#fff, #fff), linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff); background-origin: border-box; background-clip: content-box, border-box; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); transform: scale(1.02); }
+        .char-card.mastered .char-stock-badge { background: linear-gradient(45deg, #f1c40f, #e67e22); border: 1px solid #fff; box-shadow: 0 0 5px #f1c40f; }
+        
         .gacha-result-card { background: #fff; padding: 20px; border-radius: 15px; border: 4px solid #ccc; text-align: center; margin-bottom: 20px; position: relative; }
         .gr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 400px; overflow-y: auto; padding: 5px; }
         .gr-mini-card { background: #fff; border: 2px solid #ccc; border-radius: 8px; padding: 5px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; }
@@ -348,13 +354,14 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbxYCP6M9KEL_eaT6gQAGOmvR3apycFrpqinUnp8u-YoUvQXbclJwuAzCVFlPcys0HC2/exec';
     
     // Settings
-    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20 };
+    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 }; // UR追加
     const LV_BONUS_RATE = 0.01;
     const EXP_REQ = 100;
-    const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200 };
-    const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000 };
+    const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200, 'UR': 500 };
+    const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000, 'UR': 5000 };
     const LOGIN_BONUS_EXP = 3000;
     const MAX_ITEM_LEVEL = 10;
+    const MASTER_COUNT = 10; // ★追加: 虹枠ライン
     
     // ★追加: 称号データ (全30種)
     const TITLES = [
@@ -784,6 +791,21 @@
                 } catch(e) { console.warn("Skip row"); }
             }
 
+            // ★追加: ボスをURキャラとして統合
+            if (rawData.bosses && rawData.characters) {
+                rawData.bosses.forEach(b => {
+                    const bossCharId = "boss_" + b.name;
+                    if (!rawData.characters.find(c => c.id === bossCharId)) {
+                        rawData.characters.push({
+                            id: bossCharId, name: "【魔人】" + b.name,
+                            rarity: "UR", type: "ALL", value: 1.3,
+                            desc: "かつて立ちはだかった強敵。今は頼もしい味方だ。",
+                            imageUrl: b.icon
+                        });
+                    }
+                });
+            }
+
             if (!rawData.questions || rawData.questions.length === 0) throw new Error("Questions not found.");
 
             document.getElementById('loading-screen').classList.add('hidden');
@@ -907,9 +929,18 @@
                 let level = userChara ? userChara.level : 0;
                 let val = Number(charaData.value);
                 let finalVal = val + (level * LV_BONUS_RATE);
-                if(charaData.type === 'ATK') stats.atk = finalVal;
-                if(charaData.type === 'TIME') stats.time = finalVal;
-                if(charaData.type === 'EXP') stats.exp = finalVal;
+                
+                // ★修正: ALLの場合は全ステータスに適用
+                if(charaData.type === 'ALL') {
+                    stats.atk = finalVal;
+                    stats.time = finalVal;
+                    stats.exp = finalVal;
+                } else {
+                    // 既存の単一タイプ処理
+                    if(charaData.type === 'ATK') stats.atk = finalVal;
+                    if(charaData.type === 'TIME') stats.time = finalVal;
+                    if(charaData.type === 'EXP') stats.exp = finalVal;
+                }
             }
         }
         if(gameState.itemLevels && rawData.shopItems) {
@@ -1111,43 +1142,22 @@
     
     function openMissions() { document.getElementById('mission-overlay').classList.remove('hidden'); renderMissions(); }
     function closeMissions() { document.getElementById('mission-overlay').classList.add('hidden'); }
-    function renderMissions() { 
-    const l = document.getElementById('mission-list'); 
-    l.innerHTML = ''; 
-    let all = true; 
-    
-    // 通常ミッションの表示
-    MISSIONS.forEach(m => { 
-        const p = dailyMissions.progress[m.id] || 0; 
-        const fin = p >= m.target; 
-        const clm = dailyMissions.claimed[m.id]; 
-        if (!fin) all = false; 
-        
-        l.innerHTML += `
-            <div class="mission-item">
-                <b>${m.title}</b> (${p}/${m.target})<br>
-                <small>${m.desc}</small>
-                <button class="mission-btn ${fin && !clm ? 'active' : 'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm ? '受取済' : '受取'}</button>
-            </div>`; 
-    }); 
+    function renderMissions() { const l=document.getElementById('mission-list'); l.innerHTML=''; let all=true; MISSIONS.forEach(m=>{ const p=dailyMissions.progress[m.id]||0; const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; if(!fin)all=false; l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; }); 
+        const ac=document.getElementById('mission-all-clear'); if(all){ 
+            const isClaimed = dailyMissions.claimed.allClear;
+            // 受取済みならグレー(disabled)、まだなら金色(Gold Style)
+            let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
+            let btnClass = isClaimed ? 'disabled' : ''; 
+            let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} XPを受け取る`;
+            let btnAction = isClaimed ? '' : 'onclick="claimAllClear()"';
 
-    // コンプリート報酬の表示（条件達成時のみリストの最後に追加）
-    if (all) { 
-        const isClaimed = dailyMissions.claimed.allClear;
-        
-        // 受取済みならグレー(disabled)、まだなら金色(Gold Style)
-        let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
-        let btnClass = isClaimed ? 'disabled' : ''; 
-        let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} XPを受け取る`;
-        let btnAction = isClaimed ? '' : 'onclick="claimAllClear()"';
-
-        l.innerHTML += `
-            <div style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;">
-                <div style="font-weight:bold; color:#e67e22;">コンプリート報酬</div>
-                <button class="mission-btn ${btnClass}" style="width:100%; margin-top:5px; ${btnStyle}" ${btnAction}>${btnText}</button>
-            </div>`; 
+            l.innerHTML += `
+                <div style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;">
+                    <div style="font-weight:bold; color:#e67e22;">コンプリート報酬</div>
+                    <button class="mission-btn ${btnClass}" style="width:100%; margin-top:5px; ${btnStyle}" ${btnAction}>${btnText}</button>
+                </div>`; 
+        } 
     }
-}
     function claimMission(id,r) { if(dailyMissions.claimed[id])return; dailyMissions.claimed[id]=true; gameState.xp+=r; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(r+"XP獲得"); }
     function claimAllClear() { if(dailyMissions.claimed.allClear)return; dailyMissions.claimed.allClear=true; gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(MISSION_ALL_CLEAR+"XP獲得"); }
 
@@ -1163,9 +1173,11 @@
         
         for (let i = 0; i < count; i++) {
             let rand = Math.random(), rarity = 'N';
-            if (rand < 0.02) rarity = 'SSR';
-            else if (rand < 0.10) rarity = 'SR';
-            else if (rand < 0.40) rarity = 'R';
+            // ★修正: UR 1% を追加
+            if (rand < 0.01) rarity = 'UR';
+            else if (rand < 0.04) rarity = 'SSR';
+            else if (rand < 0.15) rarity = 'SR';
+            else if (rand < 0.45) rarity = 'R';
             
             let targets = rawData.characters.filter(c => c.rarity === rarity);
             if (targets.length === 0) targets = rawData.characters;
@@ -1219,7 +1231,12 @@
                 const data = gameState.charaInventory[c.id]; 
                 const isOwned = !!data;
                 const div = document.createElement('div');
-                div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''}`;
+                
+                // ★修正: 虹枠判定
+                let masterClass = '';
+                if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+
+                div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
                 
                 let visual, nameText, lvlBadge = '', stockBadge = '';
                 
