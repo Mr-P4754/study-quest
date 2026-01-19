@@ -34,18 +34,25 @@
         .header-pause-btn:active { transform: translateY(2px); box-shadow: none; }
 
         /* Title Area */
+        /* Title Area */
         .title-screen-bg { background: linear-gradient(135deg, #2c3e50, #1a252f); }
-        .title-logo { font-size: 2.8em; font-weight: 900; margin-top: 20px; color: #f1c40f; text-shadow: 4px 4px 0 #e67e22, 0 0 20px rgba(241, 196, 15, 0.5); line-height: 1.1; letter-spacing: 0.05em; }
-        .version-text { color:#bdc3c7; margin-bottom: 20px; cursor: pointer; text-decoration: underline; font-size: 0.9em; transition: color 0.2s; }
+        /* ★修正: margin-topを20px→5pxに、文字サイズを少し小さく */
+        .title-logo { font-size: 2.5em; font-weight: 900; margin-top: 5px; color: #f1c40f; text-shadow: 4px 4px 0 #e67e22, 0 0 20px rgba(241, 196, 15, 0.5); line-height: 1.1; letter-spacing: 0.05em; }
+        /* ★修正: margin-bottomを20px→5pxに */
+        .version-text { color:#bdc3c7; margin-bottom: 5px; cursor: pointer; text-decoration: underline; font-size: 0.8em; transition: color 0.2s; }
         .version-text:hover { color: #fff; }
         
-        .menu-btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; width: 90%; max-width: 400px; margin-left: auto; margin-right: auto; }
-        .menu-btn { width: 100%; height: 65px; margin: 0; padding: 5px 10px; background: #e67e22; color: white; border: none; border-radius: 15px; font-weight: bold; border-bottom: 6px solid #d35400; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.1s; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: row; gap: 5px; font-family: 'BIZ UDPGothic', sans-serif; font-size: 1.0em; white-space: nowrap; box-sizing: border-box; }
+        /* ★修正: gapを10px→5pxに、margin-topを10px→5pxに */
+        .menu-btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; width: 90%; max-width: 400px; margin-left: auto; margin-right: auto; }
+        /* ★修正: heightを65px→50pxに、font-sizeを少し小さく */
+        .menu-btn { width: 100%; height: 50px; margin: 0; padding: 5px; background: #e67e22; color: white; border: none; border-radius: 12px; font-weight: bold; border-bottom: 5px solid #d35400; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.1s; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: row; gap: 5px; font-family: 'BIZ UDPGothic', sans-serif; font-size: 0.95em; white-space: nowrap; box-sizing: border-box; }
         .menu-btn:active { transform: translateY(4px); box-shadow: none; }
-        .menu-btn.multi-line { flex-direction: column; line-height: 1.3; font-size: 0.9em; height: 65px; white-space: normal; }
+        /* ★修正: heightを65px→50pxに */
+        .menu-btn.multi-line { flex-direction: column; line-height: 1.1; font-size: 0.85em; height: 50px; white-space: normal; }
         .menu-btn.full-width { grid-column: span 2; }
 
-        .select-box { margin: 5px; padding: 12px; font-size: 1.0em; width: 90%; max-width: 320px; border-radius: 8px; border: 2px solid #95a5a6; background: #ecf0f1; font-family: inherit; font-weight: bold;}
+        /* ★修正: marginを5px→2pxに、paddingを12px→8pxに */
+        .select-box { margin: 2px; padding: 8px; font-size: 0.95em; width: 90%; max-width: 320px; border-radius: 8px; border: 2px solid #95a5a6; background: #ecf0f1; font-family: inherit; font-weight: bold;}
         .badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 0.9em; display: flex; justify-content: center; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid white; z-index: 10; }
 
         /* Game & Modals */
@@ -255,6 +262,9 @@
         <div class="pause-menu-box">
             <h2 style="color:#f1c40f; margin:0;">PAUSE</h2>
             <div id="pause-chara-info">装備情報を読み込み中...</div>
+            
+            <button id="btn-mute" class="menu-btn" style="background:#95a5a6; border-color:#7f8c8d;" onclick="toggleMute()">🔇 音量: OFF</button>
+            
             <button class="menu-btn" style="background:#27ae60;" onclick="resumeGame()">つづきから</button>
             <button class="menu-btn" style="background:#e67e22;" onclick="retryGame()">最初から</button>
             <button class="menu-btn" style="background:#c0392b;" onclick="backToTitleFromPause()">タイトルへ</button>
@@ -905,17 +915,23 @@
         
         let count = 3;
         showCutIn(count);
+        playSE('count'); // ★追加: 最初の「3」の音
         
         const cdTimer = setInterval(() => {
             count--;
             if(count > 0) {
                 showCutIn(count);
+                playSE('count'); // ★追加: 「2」「1」の音
             } else if(count === 0) {
                 showCutIn("GO!");
+                playSE('start'); 
             } else {
                 clearInterval(cdTimer);
                 isGameActive = true;
                 nextQuestion();
+                
+                // ★追加: BGMスタート
+                playBGM();
             }
         }, 1000);
     }
@@ -981,6 +997,19 @@
         if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
         
         if(!isCorrect) {
+            // ★追加: ミス音
+            playSE('miss');
+            
+            document.querySelectorAll('.choice-btn').forEach(b => { 
+                if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
+            });
+        }
+
+        if(isCorrect) {
+            // ★追加: ヒット音
+            playSE('hit');
+
+            const stats = getCharaStats();
             document.querySelectorAll('.choice-btn').forEach(b => { 
                 if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
             });
@@ -1084,6 +1113,13 @@
     
     function finishGame(isClear) { 
         isGameActive=false; clearInterval(gameState.timer); 
+        
+        // ★追加: BGMストップ
+        stopBGM();
+
+        if(isClear) playSE('win');
+        else playSE('lose');
+
         const stats=getCharaStats(); 
         let earned = Math.floor((isClear ? gameState.score * 1.2 : gameState.score * 1.0) * stats.exp); 
         gameState.xp += earned; 
@@ -1116,6 +1152,10 @@
         document.getElementById('title-screen').classList.remove('hidden'); 
         document.getElementById('pause-overlay').classList.add('hidden'); 
         isGameActive = false; isPaused = false; clearInterval(gameState.timer);
+        
+        // ★追加: BGMストップ
+        stopBGM();
+
         updateTitleInfo(); updateMissionBadge(); 
         checkTitles();
     }
@@ -1504,6 +1544,208 @@
 
     function openVersionHistory() { document.getElementById('version-overlay').classList.remove('hidden'); }
     function closeVersionHistory() { document.getElementById('version-overlay').classList.add('hidden'); }
+
+    // --- ★追加: サウンドシステム (Web Audio API) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let isMuted = true;
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('btn-mute');
+        if(isMuted) {
+            btn.innerText = "🔇 音量: OFF";
+            btn.style.background = "#95a5a6";
+            btn.style.borderColor = "#7f8c8d";
+            // ★追加: BGMも止める
+            stopBGM();
+        } else {
+            btn.innerText = "🔊 音量: ON";
+            btn.style.background = "#34495e";
+            btn.style.borderColor = "#2c3e50";
+            playSE('hit'); 
+            // ★追加: ゲーム中ならBGM再開
+            if(isGameActive) playBGM();
+        }
+    }
+
+    function playSE(type) {
+        if(isMuted) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume(); // ブラウザの制限解除
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'hit') {
+            // 攻撃ヒット（ピコッ！）
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } 
+        else if (type === 'miss') {
+            // 不正解（ブブー）
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        }
+        else if (type === 'win') {
+            // クリア（タラララン♪）
+            osc.type = 'square'; gainNode.gain.value = 0.1;
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { // C, E, G, C
+                const t = now + i * 0.1;
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.type = 'square'; o.frequency.value = freq;
+                o.connect(g); g.connect(audioCtx.destination);
+                g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                o.start(t); o.stop(t + 0.1);
+            });
+        }
+        else if (type === 'lose') {
+            // ゲームオーバー（デデーン…）
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 1.0);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 1.0);
+            osc.start(now); osc.stop(now + 1.0);
+        }
+        // ★追加: カウントダウン音
+        else if (type === 'count') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, now); // ラの音
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        }
+        // ★追加: スタート音
+        else if (type === 'start') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, now); // 高いラ
+            osc.frequency.exponentialRampToValueAtTime(1760, now + 0.3); // さらに高く
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        }
+    }
+
+    // ▼▼▼ 追加: BGMシステム & 楽譜データ ▼▼▼
+    
+    // 🎵 勇ましいバトルBGM (MML形式)
+    // T=テンポ, L=基本音長, O=オクターブ, >=1つ上げる, <=1つ下げる, R=休符
+    const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
+    
+    let bgmOscillators = []; // 停止用に音源ノードを保持
+    let bgmTimeout = null;   // ループ制御用
+
+    function playBGM() {
+        if (isMuted) return; // ミュートなら再生しない
+        stopBGM(); // 重複防止
+
+        // ブラウザの自動再生ポリシー対策
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const mml = BGM_MML.replace(/\s+/g, '').toUpperCase();
+        let index = 0;
+        let nextTime = audioCtx.currentTime + 0.1; // 少し先から開始
+        let octave = 4;
+        let defaultLen = 4;
+        let tempo = 120;
+
+        // 1音ずつ解析して予約する関数
+        const scheduleNote = () => {
+            if (!isGameActive) return; // ゲーム中でなければ停止
+
+            // 2秒先まで予約（バッファリング）
+            while (nextTime < audioCtx.currentTime + 2.0 && index < mml.length) {
+                let char = mml[index++];
+                
+                // コマンド解析
+                if (char === 'T') { // テンポ
+                    let num = parseInt(mml.slice(index));
+                    if (!isNaN(num)) { tempo = num; index += String(num).length; }
+                } else if (char === 'L') { // 音長
+                    let num = parseInt(mml.slice(index));
+                    if (!isNaN(num)) { defaultLen = num; index += String(num).length; }
+                } else if (char === 'O') { // オクターブ
+                    let num = parseInt(mml.slice(index));
+                    if (!isNaN(num)) { octave = num; index += String(num).length; }
+                } else if (char === '>') octave++;
+                else if (char === '<') octave--;
+                else if (char === 'R') { // 休符
+                    let len = defaultLen;
+                    let num = parseInt(mml.slice(index));
+                    if (!isNaN(num)) { len = num; index += String(num).length; }
+                    nextTime += (60 / tempo) * (4 / len);
+                } else if ("CDEFGAB".includes(char)) { // 音符
+                    let note = char;
+                    if (mml[index] === '#' || mml[index] === '+') { note += '#'; index++; }
+                    else if (mml[index] === '-') { note += '-'; index++; }
+                    
+                    let len = defaultLen;
+                    let num = parseInt(mml.slice(index));
+                    if (!isNaN(num)) { len = num; index += String(num).length; }
+
+                    // 周波数計算
+                    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+                    let keyIndex = notes.indexOf(note.replace('-', ''));
+                    if (keyIndex === -1) keyIndex = 0;
+                    const freq = 440 * Math.pow(2, (octave - 4) + (keyIndex - 9) / 12);
+
+                    // 発音 (矩形波でファミコン風に)
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square'; 
+                    osc.frequency.value = freq;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    const duration = (60 / tempo) * (4 / len);
+                    osc.start(nextTime);
+                    osc.stop(nextTime + duration - 0.05); // 歯切れよく切る
+                    
+                    // 音量エンベロープ（減衰させてピコピコ感を出す）
+                    gain.gain.setValueAtTime(0.05, nextTime);
+                    gain.gain.linearRampToValueAtTime(0.02, nextTime + duration - 0.05);
+                    gain.gain.setValueAtTime(0, nextTime + duration);
+
+                    bgmOscillators.push(osc);
+                    
+                    // 時間を進める
+                    nextTime += duration;
+                }
+            }
+
+            // ループ処理
+            if (index >= mml.length) {
+                index = 0; // 最初に戻る
+            }
+            
+            // ゲーム中かつミュートでなければ次を予約
+            if (isGameActive && !isMuted) {
+                bgmTimeout = setTimeout(scheduleNote, 500); 
+            }
+        };
+
+        scheduleNote();
+    }
+
+    function stopBGM() {
+        if (bgmTimeout) clearTimeout(bgmTimeout);
+        bgmOscillators.forEach(osc => {
+            try { osc.stop(); } catch(e){}
+        });
+        bgmOscillators = [];
+    }
+    // ▲▲▲ 追加終わり ▲▲▲
 </script>
 </body>
 </html>
