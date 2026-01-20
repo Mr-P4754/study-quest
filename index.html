@@ -961,6 +961,7 @@
         const subjects = [...new Set(targetList.map(q => q.subject))].filter(s=>s);
         subjects.forEach(s => sSelect.innerHTML += `<option value="${s}">${s}</option>`);
     }
+
     function filterUnits() {
         const gVal = document.getElementById('grade-select').value;
         const sVal = document.getElementById('subject-select').value;
@@ -971,21 +972,27 @@
         let targetList = rawData.questions.filter(q => q.grade == gVal && q.subject == sVal);
         const units = [...new Set(targetList.map(q => q.unit))].filter(u=>u);
 
-        const activeConfig = rawData.config ? rawData.config.find(c => c.message && c.message !== "") : null;
+        // ▼▼▼ 修正: 複数の設定を取得する (filter) ▼▼▼
+        const activeConfigs = rawData.config ? rawData.config.filter(c => c.message && c.message !== "") : [];
 
         units.forEach(u => {
             let label = u;
             
-            if (activeConfig && 
-                String(activeConfig.grade) === String(gVal) && 
-                String(activeConfig.subject) === String(sVal) && 
-                String(activeConfig.unit) === String(u)) {
+            // いずれかの設定に一致すれば★をつける
+            const isTarget = activeConfigs.some(c => 
+                String(c.grade) === String(gVal) && 
+                String(c.subject) === String(sVal) && 
+                String(c.unit) === String(u)
+            );
+
+            if (isTarget) {
                 label = "★ " + u;
             }
             
             uSelect.innerHTML += `<option value="${u}">${label}</option>`;
         });
     }
+
     function updateTitleInfo() {
         const chara = rawData.characters ? rawData.characters.find(c => c.id == gameState.equipped) : null;
         let lv = (gameState.charaInventory[gameState.equipped] || {}).level || 0;
@@ -995,9 +1002,8 @@
         if(chara?.imageUrl && chara.imageUrl.startsWith('http')) imgContainer.innerHTML = `<img src="${chara.imageUrl}" style="width:100%;height:100%;object-fit:cover;">`;
         else imgContainer.innerHTML = `<div style="text-align:center;line-height:40px;">✏️</div>`;
 
-        // ★追加: リベンジボタンの更新
+        // リベンジボタン更新
         const rBtn = document.getElementById('btn-revenge');
-        const rBadge = document.getElementById('revenge-badge');
         const rCount = (gameState.revengeList || []).length;
         
         if (rCount > 0) {
@@ -1011,15 +1017,21 @@
         const banner = document.getElementById('campaign-banner');
         const bannerText = document.getElementById('campaign-text');
         
-        let activeConfig = null;
+        // ▼▼▼ 修正: 複数のメッセージを結合して表示 ▼▼▼
+        let activeConfigs = [];
         if (rawData.config) {
-            activeConfig = rawData.config.find(c => c.message && c.message !== "");
+            activeConfigs = rawData.config.filter(c => c.message && c.message !== "");
         }
 
-        if (activeConfig) {
+        if (activeConfigs.length > 0) {
             banner.classList.remove('hidden');
             banner.style.display = 'block';
-            bannerText.innerText = `📢 ${activeConfig.message} （強化対象: ${activeConfig.grade} ${activeConfig.subject} ${activeConfig.unit}）`;
+            
+            const combinedText = activeConfigs.map(c => 
+                `📢 ${c.message} （強化対象: ${c.grade} ${c.subject} ${c.unit}）`
+            ).join("　　　"); 
+
+            bannerText.innerText = combinedText;
         } else {
             banner.style.display = 'none';
         }
@@ -1063,73 +1075,80 @@
             enemyIcon.innerHTML = boss.icon;
         }
         
-    updateUI(); 
-    startCountdown();
-}
-
-function startRevengeMode() {
-    if (!gameState.revengeList || gameState.revengeList.length === 0) return;
-
-    // リスト内のIDに一致する問題を抽出
-    const targetQuestions = rawData.questions.filter(q => gameState.revengeList.includes(q.id));
-    
-    if (targetQuestions.length === 0) {
-        alert("該当する問題データが見つかりませんでした。\n(ID不一致の可能性があります)");
-        gameState.revengeList = []; // データ不整合ならクリア
-        saveGame();
-        updateTitleInfo();
-        return;
+        updateUI(); 
+        startCountdown();
     }
 
-    // 専用ボス生成
-    const boss = { name: "忘却の亡霊", hp: targetQuestions.length * 100, icon: "👻" };
+    function startRevengeMode() {
+        if (!gameState.revengeList || gameState.revengeList.length === 0) return;
 
-    playData.questions = targetQuestions.sort(() => Math.random() - 0.5);
-    playData.qIndex = 0;
-    playData.currentBoss = boss;
-        playData.isRevenge = false; 
+        // リスト内のIDに一致する問題を抽出
+        const targetQuestions = rawData.questions.filter(q => gameState.revengeList.includes(q.id));
+        
+        if (targetQuestions.length === 0) {
+            alert("該当する問題データが見つかりませんでした。\n(ID不一致の可能性があります)");
+            gameState.revengeList = []; // データ不整合ならクリア
+            saveGame();
+            updateTitleInfo();
+            return;
+        }
+
+        // 専用ボス生成
+        const boss = { name: "忘却の亡霊", hp: targetQuestions.length * 100, icon: "👻" };
+
+        playData.questions = targetQuestions.sort(() => Math.random() - 0.5);
+        playData.qIndex = 0;
+        playData.currentBoss = boss;
+        
+        // ★修正: リベンジフラグON
+        playData.isRevenge = true; 
+        
         playData.activeOaths = [];
-        playData.isRandom = false; // ★追加
-        // ...
+        playData.isRandom = false; 
 
-    const charaStats = getCharaStats();
-    gameState.score = 0; gameState.combo = 0; 
-    gameState.lives = 3; 
-    gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; 
-    gameState.maxTime = 10 * charaStats.time;
-    isGameActive = false; isPaused = false;
-    
-    document.getElementById('pause-overlay').classList.add('hidden');
-    document.getElementById('title-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
-    
-    const enemyBox = document.querySelector('.enemy-visual-box');
-    const enemyIcon = document.getElementById('ui-enemy-icon');
-    enemyBox.classList.remove('anim-paused', 'fade-out');
-    enemyIcon.classList.remove('shake-anim');
-    
-    document.getElementById('ui-enemy-name').innerText = boss.name;
-    enemyIcon.innerHTML = boss.icon; // ボスは固定アイコン
-    
-    updateUI(); 
-    startCountdown();
-}
+        const charaStats = getCharaStats();
+        
+        gameState.score = 0; 
+        gameState.combo = 0; 
+        gameState.lives = 3; 
+        gameState.enemyHP = boss.hp; 
+        gameState.maxHP = boss.hp; 
+        gameState.maxTime = 10 * charaStats.time;
+        
+        isGameActive = false; 
+        isPaused = false;
+        
+        document.getElementById('pause-overlay').classList.add('hidden');
+        document.getElementById('title-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        const enemyBox = document.querySelector('.enemy-visual-box');
+        const enemyIcon = document.getElementById('ui-enemy-icon');
+        enemyBox.classList.remove('anim-paused', 'fade-out');
+        enemyIcon.classList.remove('shake-anim');
+        
+        document.getElementById('ui-enemy-name').innerText = boss.name;
+        enemyIcon.innerHTML = boss.icon; 
+        
+        updateUI(); 
+        startCountdown();
+    }
 
-function startCountdown() {
-    const qBox = document.getElementById('ui-question');    
-    const cGrid = document.getElementById('ui-choices');
+    function startCountdown() {
+        const qBox = document.getElementById('ui-question');    
+        const cGrid = document.getElementById('ui-choices');
         qBox.innerText = "READY...";
         cGrid.innerHTML = ""; 
         
         let count = 3;
         showCutIn(count);
-        playSE('count'); // ★追加: 最初の「3」の音
+        playSE('count'); 
         
         const cdTimer = setInterval(() => {
             count--;
             if(count > 0) {
                 showCutIn(count);
-                playSE('count'); // ★追加: 「2」「1」の音
+                playSE('count'); 
             } else if(count === 0) {
                 showCutIn("GO!");
                 playSE('start'); 
@@ -1138,7 +1157,6 @@ function startCountdown() {
                 isGameActive = true;
                 nextQuestion();
                 
-                // ★追加: BGMスタート
                 playBGM();
             }
         }, 1000);
@@ -1154,13 +1172,11 @@ function startCountdown() {
                 let val = Number(charaData.value);
                 let finalVal = val + (level * LV_BONUS_RATE);
                 
-                // ★修正: ALLの場合は全ステータスに適用
                 if(charaData.type === 'ALL') {
                     stats.atk = finalVal;
                     stats.time = finalVal;
                     stats.exp = finalVal;
                 } else {
-                    // 既存の単一タイプ処理
                     if(charaData.type === 'ATK') stats.atk = finalVal;
                     if(charaData.type === 'TIME') stats.time = finalVal;
                     if(charaData.type === 'EXP') stats.exp = finalVal;
@@ -1179,11 +1195,10 @@ function startCountdown() {
             });
         }
         
-        // ▼▼▼ 追加: 非力の誓約（攻撃力半減） ▼▼▼
+        // 誓約: 非力
         if (playData.activeOaths && playData.activeOaths.includes('weak')) {
             stats.atk *= 0.5;
         }
-        // ▲▲▲ 追加ここまで ▲▲▲
 
         return stats;
     }
@@ -1203,6 +1218,7 @@ function startCountdown() {
         });
         startTimer();
     }
+
     function startTimer() { if(gameState.timer) clearInterval(gameState.timer); if(!isGameActive) return; gameState.timeLeft = gameState.maxTime; const bar = document.getElementById('ui-timer'); gameState.timer = setInterval(() => { if(isPaused || !isGameActive) return; gameState.timeLeft -= 0.1; bar.style.width = (gameState.timeLeft / gameState.maxTime * 100) + '%'; document.getElementById('ui-timer-text').innerText = Math.max(0, gameState.timeLeft).toFixed(1); if(gameState.timeLeft <= 0) { clearInterval(gameState.timer); judge(false, null); } }, 100); }
     
     function judge(isCorrect, btn) {
@@ -1214,6 +1230,7 @@ function startCountdown() {
         if(!isCorrect) {
             playSE('miss');
             
+            // 間違えた問題をリベンジリストに追加
             if (playData.currentQ && playData.currentQ.id) {
                 if (!gameState.revengeList) gameState.revengeList = [];
                 if (!gameState.revengeList.includes(playData.currentQ.id)) {
@@ -1226,6 +1243,8 @@ function startCountdown() {
                 if(String(b.innerText) === String(playData.currentQ.a)) b.classList.add('btn-miss-answer'); 
             });
         }
+
+        // 成績データの更新
         if (playData.currentQ && playData.currentQ.subject) {
             const subj = playData.currentQ.subject;
             if (!gameState.subjectStats[subj]) gameState.subjectStats[subj] = { correct: 0, total: 0 };
@@ -1237,8 +1256,9 @@ function startCountdown() {
         if(isCorrect) {
             playSE('hit');
 
+            // ★修正: リベンジモードなら即削除 (文字列変換で確実に比較)
             if (playData.isRevenge && playData.currentQ && playData.currentQ.id) {
-                gameState.revengeList = gameState.revengeList.filter(id => id !== playData.currentQ.id);
+                gameState.revengeList = gameState.revengeList.filter(id => String(id) !== String(playData.currentQ.id));
                 saveGame(); 
             }
 
@@ -1249,18 +1269,24 @@ function startCountdown() {
         }
 
         if(isCorrect) {
-            const stats = getCharaStats();
-            const damage = Math.floor(50 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * 1.8) * (1 + (gameState.combo * 0.1)));
+            // ★修正: リベンジモードは固定ダメージ、それ以外は通常計算
+            let damage = 0;
+            if (playData.isRevenge) {
+                damage = Math.ceil(gameState.maxHP / playData.questions.length);
+            } else {
+                const stats = getCharaStats();
+                damage = Math.floor(50 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * 1.8) * (1 + (gameState.combo * 0.1)));
+            }
+
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
             gameState.score += damage; gameState.combo++;
             
             showCutIn("-" + damage);
             
-            // ★新規: 統計更新(正解数、最大コンボ)
+            // 統計更新
             gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
             gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
             
-            // スピードスター判定
             if (gameState.timeLeft >= 9.0) checkTitles('speed');
 
             const enemyIcon = document.getElementById('ui-enemy-icon');
@@ -1274,7 +1300,7 @@ function startCountdown() {
             if(gameState.enemyHP <= 0) {
                 const enemyBox = document.querySelector('.enemy-visual-box');
                 enemyBox.classList.add('anim-paused'); 
-                enemyBox.classList.add('fade-out');    
+                enemyBox.classList.add('fade-out');     
                 setTimeout(() => isGameActive && finishGame(true), 1200);
             } else { 
                 playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); 
@@ -1347,7 +1373,6 @@ function startCountdown() {
     function finishGame(isClear) { 
         isGameActive=false; clearInterval(gameState.timer); 
         
-        // ★追加: BGMストップ
         stopBGM();
 
         if(isClear) playSE('win');
@@ -1355,25 +1380,27 @@ function startCountdown() {
 
         const stats=getCharaStats(); 
         
-        // ★修正: 倍率計算
         let baseRate = isClear ? 1.2 : 1.0;
-        if (playData.isRevenge) baseRate = 1.5; 
         
-        // ▼▼▼ 追加: 誓約またはランダムモードなら報酬1.5倍 ▼▼▼
-        if ((playData.activeOaths && playData.activeOaths.length > 0) || playData.isRandom) {
-            baseRate = 1.5;
+        // ★修正: リベンジor誓約orランダムは報酬1.5倍
+        if (playData.isRevenge || (playData.activeOaths && playData.activeOaths.length > 0) || playData.isRandom) {
+            baseRate = 1.5; 
         }
-        // ▲▲▲ 追加ここまで ▲▲▲
 
         let earned = Math.floor(gameState.score * baseRate * stats.exp);
         gameState.xp += earned; 
         
-        // ★新規: 統計更新(プレイ回数、撃破数)
+        // 統計更新
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
         if(isClear) {
             gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
             // 完全無欠判定
             if(gameState.lives >= 3) checkTitles('perfect');
+
+            // ★修正: リベンジモードクリアなら、リストを完全に空にする
+            if (playData.isRevenge) {
+                gameState.revengeList = [];
+            }
         }
 
         saveGame(); 
@@ -1395,9 +1422,8 @@ function startCountdown() {
         document.getElementById('game-screen').classList.add('hidden'); 
         document.getElementById('title-screen').classList.remove('hidden'); 
         document.getElementById('pause-overlay').classList.add('hidden'); 
-        isGameActive = false; isPaused = false; clearInterval(gameState.timer);
+        isGameActive = false; isPaused = false; clearInterval(gameState.timer); 
         
-        // ★追加: BGMストップ
         stopBGM();
 
         updateTitleInfo(); updateMissionBadge(); 
@@ -1429,7 +1455,6 @@ function startCountdown() {
     function renderMissions() { const l=document.getElementById('mission-list'); l.innerHTML=''; let all=true; MISSIONS.forEach(m=>{ const p=dailyMissions.progress[m.id]||0; const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; if(!fin)all=false; l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; }); 
         const ac=document.getElementById('mission-all-clear'); if(all){ 
             const isClaimed = dailyMissions.claimed.allClear;
-            // 受取済みならグレー(disabled)、まだなら金色(Gold Style)
             let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
             let btnClass = isClaimed ? 'disabled' : ''; 
             let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} XPを受け取る`;
