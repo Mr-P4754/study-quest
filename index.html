@@ -321,7 +321,32 @@
 <div id="result-overlay" class="overlay hidden"><div class="modal"><h2 id="res-title">QUEST CLEAR!</h2><div id="res-icon" style="font-size: 4em;"></div><p>獲得スコア: <span id="res-score">0</span></p><div style="background:#eee; padding:15px; border-radius:10px; margin:10px 0;">獲得XP<br><span id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em;">+0</span></div><button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button></div></div>
 <div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+3000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
 <div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
-<div id="gacha-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2><div style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; border: 2px solid #ccc;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"><span>所持XP: <span id="gacha-xp" style="color:#f39c12; font-weight:bold;">0</span></span></div><button onclick="rollGacha(1)" style="background:linear-gradient(to bottom, #3498db, #2980b9); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #1f618d; width:100%; font-size:1em; margin-bottom:10px;">💎 3,000 XP (1回)</button><button onclick="rollGacha(10)" style="background:linear-gradient(to bottom, #f1c40f, #f39c12); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #d35400; width:100%; font-size:1.1em; border: 2px solid white;">💎 30,000 XP (10連!)</button></div><div id="zukan-grid" style="flex: 1; overflow-y: auto; text-align: left; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeGacha()">閉じる</button></div></div>
+<div id="gacha-overlay" class="overlay hidden">
+    <div class="modal" style="max-width:500px;">
+        <h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2>
+        
+        <div style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; border: 2px solid #ccc;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span>所持XP: <span id="gacha-xp" style="color:#f39c12; font-weight:bold;">0</span></span>
+            </div>
+            <button onclick="rollGacha(1)" style="background:linear-gradient(to bottom, #3498db, #2980b9); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #1f618d; width:100%; font-size:1em; margin-bottom:10px;">💎 3,000 XP (1回)</button>
+            <button onclick="rollGacha(10)" style="background:linear-gradient(to bottom, #f1c40f, #f39c12); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; color:#fff; cursor:pointer; box-shadow: 0 4px 0 #d35400; width:100%; font-size:1.1em; border: 2px solid white;">💎 30,000 XP (10連!)</button>
+        </div>
+
+        <div style="text-align: right; margin-bottom: 5px;">
+            <select id="zukan-sort-select" class="select-box" style="width: auto; padding: 5px; font-size: 0.9em;" onchange="changeZukanSort()">
+                <option value="default">標準 (ID順)</option>
+                <option value="rarity_desc">レア度 (高い順)</option>
+                <option value="rarity_asc">レア度 (低い順)</option>
+                <option value="type">スキル属性順</option>
+                <option value="level">レベル順</option>
+                <option value="stock">在庫数順</option>
+            </select>
+        </div>
+        <div id="zukan-grid" style="flex: 1; overflow-y: auto; text-align: left; min-height: 0;"></div>
+        <button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeGacha()">閉じる</button>
+    </div>
+</div>
 <div id="chara-detail-overlay" class="overlay hidden" style="z-index: 150;">
     <div class="modal" style="max-width:350px;">
         <div style="flex: 1; overflow-y: auto; width: 100%; padding: 5px;">
@@ -590,7 +615,10 @@
             // ▲▲▲ 追加ここまで ▲▲▲
             gameState.unlockedTitles = JSON.parse(localStorage.getItem('sq_titles') || '[]');
             gameState.revengeList = JSON.parse(localStorage.getItem('sq_revenge') || '[]');
-
+            
+            // ▼▼▼ 追加: 進捗データの読み込み ▼▼▼
+            gameState.unitProgress = JSON.parse(localStorage.getItem('sq_unit_progress') || '{}');
+            
             if (Object.keys(gameState.charaInventory).length === 0) {
                 const oldCharas = localStorage.getItem('sq_charas');
                 if (oldCharas) {
@@ -621,10 +649,11 @@
         // ★新規: 統計と称号の保存
         localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
         // ▼▼▼ 追加: 教科別成績の保存 ▼▼▼
-        localStorage.setItem('sq_subject_stats', JSON.stringify(gameState.subjectStats));
-        // ▲▲▲ 追加ここまで ▲▲▲
         localStorage.setItem('sq_titles', JSON.stringify(gameState.unlockedTitles));
         localStorage.setItem('sq_revenge', JSON.stringify(gameState.revengeList || []));
+        
+        // ▼▼▼ 追加: 進捗データの保存 ▼▼▼
+        localStorage.setItem('sq_unit_progress', JSON.stringify(gameState.unitProgress || {}));
     }
 
     // --- 称号システムロジック ---
@@ -653,12 +682,11 @@
         }
 
         TITLES.forEach(t => {
-            if (gameState.unlockedTitles.includes(t.id)) return; // 受取済
+            if (gameState.unlockedTitles.includes(t.id)) return;
 
             let cleared = false;
-            // 特殊条件チェック
-            if (t.req === 'perfect' && tempCondition === 'perfect') cleared = true;
-            else if (t.req === 'speed' && tempCondition === 'speed') cleared = true;
+            if (t.req === 'perfect' && gameState.stats.achieved_perfect) cleared = true;
+            else if (t.req === 'speed' && gameState.stats.achieved_speed) cleared = true;
             else if (t.req === 'ssr' && hasSSR) cleared = true;
             else if (t.req === 'lvMax' && hasLvMax) cleared = true;
             else if (t.req === 'itemMax' && hasItemMax) cleared = true;
@@ -720,6 +748,10 @@
                 else if (t.req === 'ssr' && Object.keys(gameState.charaInventory).some(id => rawData.characters.find(c=>c.id==id)?.rarity=='SSR')) isUnlocked = true;
                 else if (t.req === 'lvMax' && Object.values(gameState.charaInventory).some(inv => inv.level >= 20)) isUnlocked = true;
                 else if (t.req === 'itemMax' && Object.values(gameState.itemLevels).some(lv => lv >= MAX_ITEM_LEVEL)) isUnlocked = true;
+                
+                else if (t.req === 'perfect' && gameState.stats.achieved_perfect) isUnlocked = true;
+                else if (t.req === 'speed' && gameState.stats.achieved_speed) isUnlocked = true;
+
                 else {
                     const key = t.req.split('>')[0];
                     if (gameState.stats[key] >= t.val) isUnlocked = true;
@@ -775,8 +807,8 @@
             missions: dailyMissions,
             stats: gameState.stats,
             unlockedTitles: gameState.unlockedTitles,
-            // ★追加: リベンジリストもバックアップに含める
-            revengeList: gameState.revengeList
+            revengeList: gameState.revengeList,
+            unitProgress: gameState.unitProgress
         };
 
         const btn = document.querySelector('#sync-overlay button'); 
@@ -793,21 +825,69 @@
                 })
             });
             const json = await res.json();
+            
+            if(json.status === 'success') {
+                alert("クラウドへの保存が完了しました！");
+            } else {
+                alert("保存失敗: " + json.message);
+            }
+            
+        } catch(e) {
+            alert("通信エラー: " + e);
+        } finally {
+            btn.innerText = originalText; btn.disabled = false;
+        }
+    }
+
+    // ▼▼▼ 追加: データを読み込む関数 ▼▼▼
+    async function downloadData() {
+        const inputId = document.getElementById('input-sync-id').value;
+        if(!inputId) return alert("IDを入力してください");
+        
+        if(!confirm("データを読み込みますか？\n現在のデータは上書きされます。")) return;
+
+        // 2つ目のボタン（ダウンロードボタン）を取得して無効化
+        const btns = document.querySelectorAll('#sync-overlay button');
+        let btn = null;
+        // ボタンを探す
+        for(let i=0; i<btns.length; i++) {
+             if(btns[i].innerText.includes('ダウンロード')) btn = btns[i];
+        }
+        if(!btn) btn = btns[btns.length - 2]; 
+
+        const originalText = btn.innerText;
+        btn.innerText = "受信中..."; btn.disabled = true;
+
+        try {
+            // GETリクエストでデータ取得
+            const res = await fetch(API_URL + `?action=load&userId=${inputId}`);
+            const json = await res.json();
+
             if(json.status === 'success') {
                 const data = json.data;
+                if(!data) {
+                    alert("データが見つかりませんでした。");
+                    return;
+                }
+                
+                // データの反映
                 gameState.xp = data.xp || 0;
-                // ... (中略) ...
+                gameState.equipped = data.equipped || '1';
+                gameState.itemLevels = data.itemLevels || {};
+                gameState.charaInventory = data.charaInventory || {};
+                dailyMissions = data.missions || dailyMissions;
                 gameState.stats = data.stats || { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
                 gameState.unlockedTitles = data.unlockedTitles || [];
-                // ★追加: リベンジリストの復元
                 gameState.revengeList = data.revengeList || [];
-                
+                gameState.unitProgress = data.unitProgress || {};
+
+                // IDの更新と保存
                 currentUserId = inputId;
                 localStorage.setItem('sq_user_id', inputId);
                 
-                saveGame(); 
-                alert("データの復元に成功しました！");
-                location.reload(); 
+                saveGame();
+                alert("データの読み込みに成功しました！\nリロードします。");
+                location.reload();
             } else {
                 alert("読み込み失敗: " + json.message);
             }
@@ -989,6 +1069,21 @@
                 label = "★ " + u;
             }
             
+            // ▼▼▼ 追加: プレイ履歴・クリア履歴の表示 (◎ > ◯) ▼▼▼
+            if (gameState.unitProgress) {
+                const key = `${gVal}_${sVal}_${u}`;
+                const prog = gameState.unitProgress[key];
+                
+                if (prog) {
+                    if (prog.cleared) {
+                        label += " ◎"; // クリア済み
+                    } else if (prog.played) {
+                        label += " ◯"; // プレイ済み(未クリア)
+                    }
+                }
+            }
+            // ▲▲▲ 追加ここまで ▲▲▲
+            
             uSelect.innerHTML += `<option value="${u}">${label}</option>`;
         });
     }
@@ -1050,6 +1145,10 @@
         playData.isRevenge = false; 
         playData.activeOaths = [];
         playData.isRandom = false;
+        
+        // ▼▼▼ 追加: 今プレイしている単元情報を記録 ▼▼▼
+        playData.context = { grade: g, subject: s, unit: u };
+        
         const charaStats = getCharaStats();
         
         gameState.score = 0; gameState.combo = 0; 
@@ -1287,7 +1386,10 @@
             gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
             gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
             
-            if (gameState.timeLeft >= 9.0) checkTitles('speed');
+            if ((gameState.maxTime - gameState.timeLeft) <= 1.0) {
+                gameState.stats.achieved_speed = true;
+                saveGame();
+            }
 
             const enemyIcon = document.getElementById('ui-enemy-icon');
             enemyIcon.classList.remove('shake-anim'); 
@@ -1390,14 +1492,39 @@
         let earned = Math.floor(gameState.score * baseRate * stats.exp);
         gameState.xp += earned; 
         
+        // ▼▼▼ 追加: 単元ごとの進捗記録 ▼▼▼
+        if (playData.context && !playData.isRevenge && !playData.isRandom) {
+            // キーを作成 (例: "小学2年_国語_スイミー")
+            const key = `${playData.context.grade}_${playData.context.subject}_${playData.context.unit}`;
+            
+            if (!gameState.unitProgress) gameState.unitProgress = {};
+            if (!gameState.unitProgress[key]) gameState.unitProgress[key] = { played: false, cleared: false };
+            
+            // プレイ済みフラグON
+            gameState.unitProgress[key].played = true;
+            
+            // クリアならクリア済みフラグON
+            if (isClear) {
+                gameState.unitProgress[key].cleared = true;
+            }
+        }
+        // ▲▲▲ 追加ここまで ▲▲▲
+        
         // 統計更新
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
         if(isClear) {
             gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
-            // 完全無欠判定
-            if(gameState.lives >= 3) checkTitles('perfect');
+            
+            // ▼▼▼ 修正: 完全無欠判定 (誓約「背水」時はライフ1でもOKとする) ▼▼▼
+            let requiredLives = 3;
+            if (playData.activeOaths && playData.activeOaths.includes('backwater')) {
+                requiredLives = 1;
+            }
 
-            // ★修正: リベンジモードクリアなら、リストを完全に空にする
+            if(gameState.lives >= requiredLives) {
+                gameState.stats.achieved_perfect = true;
+                saveGame();
+            }
             if (playData.isRevenge) {
                 gameState.revengeList = [];
             }
@@ -1533,37 +1660,80 @@
         renderZukan(); 
     }
 
+    // ▼▼▼ 追加: 図鑑ソート用変数と関数 ▼▼▼
+    let zukanSortMode = 'default';
+
+    function changeZukanSort() {
+        const sel = document.getElementById('zukan-sort-select');
+        if(sel) zukanSortMode = sel.value;
+        renderZukan();
+    }
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     function renderZukan() { 
         const g=document.getElementById('zukan-grid'); g.innerHTML=''; 
-        if(rawData.characters) {
-            rawData.characters.forEach(c=>{ 
-                const data = gameState.charaInventory[c.id]; 
-                const isOwned = !!data;
-                const div = document.createElement('div');
-                
-                // ★修正: 虹枠判定
-                let masterClass = '';
-                if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+        if(!rawData.characters) return;
 
-                div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
-                
-                let visual, nameText, lvlBadge = '', stockBadge = '';
-                
-                if(isOwned) {
-                    visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
-                    nameText = `${c.rarity} / ${c.type}`;
-                    lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
-                    if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
-                    div.onclick = () => openCharaDetail(c.id);
-                } else {
-                    visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
-                    nameText = "???";
-                }
-                
-                div.innerHTML = `${lvlBadge}${stockBadge}${visual}<div style="font-weight:bold;font-size:0.8em;">${nameText}</div>`;
-                g.appendChild(div);
-            });
-        }
+        // ▼▼▼ 修正: ソート処理の追加 ▼▼▼
+        let list = [...rawData.characters]; // 元データをコピーして並べ替え
+        
+        list.sort((a, b) => {
+            const invA = gameState.charaInventory[a.id];
+            const invB = gameState.charaInventory[b.id];
+            
+            // レア度順 (高い順/低い順)
+            if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') {
+                const rOrder = { 'UR':5, 'SSR':4, 'SR':3, 'R':2, 'N':1 };
+                const valA = rOrder[a.rarity] || 0;
+                const valB = rOrder[b.rarity] || 0;
+                return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB;
+            }
+            // タイプ順 (文字コード順)
+            if (zukanSortMode === 'type') {
+                return a.type.localeCompare(b.type);
+            }
+            // レベル順 (未所持は一番下)
+            if (zukanSortMode === 'level') {
+                const lvA = invA ? invA.level : -1;
+                const lvB = invB ? invB.level : -1;
+                if (lvA !== lvB) return lvB - lvA; // 高い順
+            }
+            // 在庫数順 (未所持は一番下)
+            if (zukanSortMode === 'stock') {
+                const cntA = invA ? invA.count : -1;
+                const cntB = invB ? invB.count : -1;
+                if (cntA !== cntB) return cntB - cntA; // 多い順
+            }
+            return 0; // default (ID順)
+        });
+        // ▲▲▲ 修正ここまで ▲▲▲
+
+        list.forEach(c=>{ 
+            const data = gameState.charaInventory[c.id]; 
+            const isOwned = !!data;
+            const div = document.createElement('div');
+            
+            let masterClass = '';
+            if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+
+            div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
+            
+            let visual, nameText, lvlBadge = '', stockBadge = '';
+            
+            if(isOwned) {
+                visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
+                nameText = `${c.rarity} / ${c.type}`;
+                lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
+                if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
+                div.onclick = () => openCharaDetail(c.id);
+            } else {
+                visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
+                nameText = "???";
+            }
+            
+            div.innerHTML = `${lvlBadge}${stockBadge}${visual}<div style="font-weight:bold;font-size:0.8em;">${nameText}</div>`;
+            g.appendChild(div);
+        });
     }
 
     function openCharaDetail(id) { 
@@ -2199,6 +2369,10 @@
         playData.isRevenge = false;
         playData.activeOaths = [...tempOaths];
         playData.isRandom = false; 
+        
+        // ▼▼▼ 追加: 今プレイしている単元情報を記録 ▼▼▼
+        playData.context = { grade: g, subject: s, unit: u };
+
         const charaStats = getCharaStats();
 
         // パラメータ初期化
