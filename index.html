@@ -2635,16 +2635,98 @@
 
     function handleTypingInput(e) {
         if(!isGameActive || isPaused || !playData.isTyping) return;
-        
-        if(e.key.length > 1) return;
+        if(e.key.length > 1) return; // 修飾キーなどを無視
 
-        const targetChar = playData.typingTarget.romaji[playData.typingIndex];
+        const inputKey = e.key.toLowerCase();
+        let targetStr = playData.typingTarget.romaji;
+        let idx = playData.typingIndex;
+
+        // ▼▼▼ 柔軟判定ロジック開始 ▼▼▼
         
-        if(e.key.toLowerCase() === targetChar) {
+        // 1. 単純一致チェック
+        let isMatch = (inputKey === targetStr[idx]);
+
+        // 2. 一致していない場合、別解の可能性をチェック
+        if (!isMatch) {
+            const remainder = targetStr.substring(idx);
+
+            // A. 「先頭置換」パターン (chi -> ti, tsu -> tu, ka -> ca など)
+            const startPatterns = [
+                {t:'chi', r:'ti'}, {t:'tsu', r:'tu'}, {t:'fu', r:'hu'}, {t:'ji', r:'zi'},
+                {t:'ka', r:'ca'}, {t:'ku', r:'cu'}, {t:'ko', r:'co'}, {t:'se', r:'ce'},
+                {t:'ja', r:'zya'}, {t:'ju', r:'zyu'}, {t:'jo', r:'zyo'}, // ja -> zya
+                {t:'cha', r:'tya'}, {t:'chu', r:'tyu'}, {t:'cho', r:'tyo'} // cha -> tya
+            ];
+
+            for (let p of startPatterns) {
+                if (remainder.startsWith(p.t) && p.r.startsWith(inputKey)) {
+                    const newStr = targetStr.substring(0, idx) + p.r + targetStr.substring(idx + p.t.length);
+                    playData.typingTarget.romaji = newStr;
+                    targetStr = newStr;
+                    renderTypingUI();
+                    isMatch = true;
+                    break;
+                }
+            }
+
+            // B. 「中間変形」パターン (sを打った後の h/y 分岐など)
+            if (!isMatch && idx > 0) {
+                // 直前の文字を含めたコンテキストを取得
+                const context = targetStr.substring(idx - 1); 
+                const skipPatterns = [
+                    // ヘボン式(sh/ch) <-> 訓令式など(si/sy/ty) の相互変換
+                    {t:'shi', r:'si'}, {t:'tsu', r:'tu'}, {t:'chi', r:'ti'},
+                    
+                    // ★追加: しゃ/しゅ/しょ (sha <-> sya)
+                    {t:'sha', r:'sya'}, {t:'shu', r:'syu'}, {t:'sho', r:'syo'},
+                    {t:'sya', r:'sha'}, {t:'syu', r:'shu'}, {t:'syo', r:'sho'},
+                    
+                    // ★追加: ちゃ/ちゅ/ちょ (cha <-> cya)
+                    {t:'cha', r:'cya'}, {t:'chu', r:'cyu'}, {t:'cho', r:'cyo'},
+                    {t:'cya', r:'cha'}, {t:'cyu', r:'chu'}, {t:'cyo', r:'cho'},
+                    
+                    // ★追加: じゃ/じゅ/じょ (ja <-> jya)
+                    {t:'ja', r:'jya'}, {t:'ju', r:'jyu'}, {t:'jo', r:'jyo'},
+                    {t:'jya', r:'ja'}, {t:'jyu', r:'ju'}, {t:'jyo', r:'jo'}
+                ];
+
+                for (let s of skipPatterns) {
+                    // コンテキストが一致し、かつ変換後の2文字目が入力キーと一致する場合
+                    if (context.startsWith(s.t) && s.r[1] === inputKey) {
+                        const pre = targetStr.substring(0, idx - 1);
+                        const post = targetStr.substring(idx - 1 + s.t.length);
+                        const newStr = pre + s.r + post;
+                        
+                        playData.typingTarget.romaji = newStr;
+                        targetStr = newStr;
+                        renderTypingUI();
+                        isMatch = true;
+                        break;
+                    }
+                }
+            }
+
+            // C. 「ん」のnn入力許容
+            if (!isMatch && inputKey === 'n' && idx > 0) {
+                if (targetStr[idx-1] === 'n') {
+                    const pre = targetStr.substring(0, idx);
+                    const post = targetStr.substring(idx);
+                    const newStr = pre + 'n' + post;
+                    playData.typingTarget.romaji = newStr;
+                    targetStr = newStr;
+                    renderTypingUI();
+                    isMatch = true;
+                }
+            }
+        }
+        // ▲▲▲ 柔軟判定ロジック終了 ▲▲▲
+
+        if(isMatch) {
             playData.typingIndex++;
             playSE('hit');
             renderTypingUI();
 
+            // 全文字入力完了チェック
             if(playData.typingIndex >= playData.typingTarget.romaji.length) {
                 clearInterval(gameState.timer);
                 
