@@ -266,6 +266,15 @@
         <button class="menu-btn" style="background:#3498db; border-color:#2980b9;" onclick="openSyncMenu()">
             ☁️ クラウドセーブ
         </button>
+
+        <button class="menu-btn" style="background:#1abc9c; border-color:#16a085;" onclick="openHowToPlay()">
+            📖 プレイガイド
+        </button>
+
+        <button id="btn-gift" class="menu-btn" style="background:#ff6b81; border-color:#d63031;" onclick="openGiftMenu()" disabled>
+            🎁 ギフト
+            <div id="gift-badge" class="badge hidden">0</div>
+        </button>
     </div>
     
     <div style="margin-top: 15px; padding-bottom: 20px; width: 100%; color: #95a5a6; font-size: 0.9em; display: flex; justify-content: center; align-items: center; gap: 10px;">
@@ -582,6 +591,71 @@
     </div>
 </div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
+    <div id="howto-overlay" class="overlay hidden" style="z-index: 500;">
+    <div class="modal" style="max-width:550px; text-align:left;">
+        <h2 style="color:#1abc9c; margin-top:0; text-align:center; border-bottom:2px solid #1abc9c; padding-bottom:5px;">📖 プレイガイド</h2>
+        
+        <div style="flex: 1; overflow-y: auto; padding: 5px; font-size: 0.9em; line-height: 1.6;">
+            
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2c3e50; margin:10px 0 5px;">⚔️ 基本ルール</h4>
+            <ul style="padding-left:20px; margin:5px 0;">
+                <li>制限時間内に正解を選んでボスを攻撃！</li>
+                <li><b>コンボ</b>を繋ぐとダメージアップ！</li>
+                <li>早く解答するほど「スピード正解」ボーナス。ダメージアップ！</li>
+                <li>ライフが0になるとゲームオーバー。</li>
+            </ul>
+
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e67e22; margin:15px 0 5px;">🎮 モード解説</h4>
+            
+            <div style="margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:5px;">
+                <b style="color:#e67e22;">▶ クエスト (通常出撃)</b><br>
+                学年・教科・単元を選んで学習する基本モード。<br>
+                <div style="background:#fff3cd; padding:5px; border-radius:5px; margin-top:3px; border:1px solid #f1c40f;">
+                    <span style="color:#e74c3c; font-weight:bold;">★ 強化クエスト (キャンペーン)</span><br>
+                    タイトル画面で告知されている単元（★付き）は<br>
+                    獲得経験値が <span style="font-size:1.2em; font-weight:900; color:#c0392b;">3倍</span> になります！
+                </div>
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <b style="color:#8e44ad;">😈 誓約 (ハンデ戦)</b><br>
+                「制限時間半分」「ライフ1」などの制約をつけて出撃。<br>
+                クリアすると経験値が<b>1.5倍〜2.0倍</b>になります。<br>
+                <small>※強化クエストと重複した場合、高い方の<b>3倍</b>が優先されます。</small>
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <b style="color:#c0392b;">💀 リベンジ・ダンジョン</b><br>
+                <b>「間違えた問題」</b>だけが再出題される復習専用モード。<br>
+                通常プレイで間違えるとボタンが有効になります。<br>
+                クリアするとリストから消去されます。
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <b style="color:#34495e;">🎲 ランダム (未知の迷宮)</b><br>
+                学年だけ指定し、全教科からランダムに出題されます。<br>
+                実力試しに最適。<b>報酬XP 1.5倍</b>。
+            </div>
+
+            <div style="margin-bottom:8px;">
+                <b style="color:#8e44ad;">⌨️ タイピング</b><br>
+                キーボード専用モード。<br>
+                ローマ字入力で敵を倒します。フリック入力不可。
+            </div>
+
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #f1c40f; margin:15px 0 5px;">💡 攻略のヒント</h4>
+            <ul style="padding-left:20px; margin:5px 0;">
+                <li><b>キャラを装備しよう</b>: ガチャで引いたキャラを装備すると、攻撃力や制限時間が伸びます。</li>
+                <li><b>強化合成</b>: 使わないキャラ（Nなど）を素材にして、SSRキャラのレベルを上げましょう。</li>
+                <li><b>ショップ活用</b>: 貯まったXPで「集中ハチマキ」などを買うと永続的に強くなります。</li>
+                <li><b>称号ボーナス</b>: 条件（ログイン日数や撃破数）を満たすと、称号画面から大量のXPがもらえます。</li>
+            </ul>
+
+        </div>
+        <button class="menu-btn" style="margin-top:15px; background:#95a5a6;" onclick="closeHowToPlay()">閉じる</button>
+    </div>
+</div>
+    
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxaurrNU8OAXTNx6Fo4p8e2rTjWjylbqveVNFSE1rVWnPIc5vcvJC0ZwMwO-y1wbWlS/exec';
     
@@ -1591,14 +1665,29 @@
         
         let baseRate = isClear ? 1.2 : 1.0;
         
+        let isCampaign = false;
+        if (playData.context && rawData.config && !playData.isRevenge && !playData.isRandom && !playData.isTyping) {
+            isCampaign = rawData.config.some(c => 
+                c.message && c.message !== "" &&
+                String(c.grade) === String(playData.context.grade) && 
+                String(c.subject) === String(playData.context.subject) && 
+                String(c.unit) === String(playData.context.unit)
+            );
+        }
+
         if (playData.activeOaths && playData.activeOaths.length > 0) {
             const count = playData.activeOaths.length;
             if (count >= 3) baseRate = 2.0;
             else if (count === 2) baseRate = 1.75;
             else baseRate = 1.5;
+            
+            if (isCampaign) baseRate = 3.0; 
         }
         else if (playData.isRevenge || playData.isRandom) {
             baseRate = 1.5; 
+        }
+        else if (isCampaign) {
+            baseRate = 3.0; 
         }
 
         let earned = Math.floor(gameState.score * baseRate * stats.exp);
@@ -1638,11 +1727,18 @@
         saveGame(); 
         updateMissionProgress('play',1); 
         if(isClear) updateMissionProgress('kill',1); 
+        
         document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; 
         document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; 
         document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; 
         document.getElementById('res-score').innerText=gameState.score; 
-        document.getElementById('res-xp').innerText="+"+earned; 
+        
+        if (isCampaign && isClear) {
+            document.getElementById('res-xp').innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
+        } else {
+            document.getElementById('res-xp').innerText="+"+earned; 
+        }
+
         document.getElementById('game-screen').classList.add('hidden'); 
         document.getElementById('result-overlay').classList.remove('hidden'); 
         
@@ -2070,6 +2166,8 @@
 
     function openVersionHistory() { document.getElementById('version-overlay').classList.remove('hidden'); }
     function closeVersionHistory() { document.getElementById('version-overlay').classList.add('hidden'); }
+    function openHowToPlay() { document.getElementById('howto-overlay').classList.remove('hidden'); }
+    function closeHowToPlay() { document.getElementById('howto-overlay').classList.add('hidden'); }
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let isMuted = true;
@@ -2828,34 +2926,55 @@
         openOathMenu();
     }
 
-    
+    // ▼ 起動時チェック関数（修正版：IDの揺らぎに対応）
     function checkAdminGifts() {
-        if (!rawData.gifts || rawData.gifts.length === 0) return;
+        if (!rawData.gifts || rawData.gifts.length === 0) {
+            updateGiftButtonState();
+            return;
+        }
 
-        const unclaimed = rawData.gifts.filter(g => !gameState.claimedGifts.includes(g.id));
+        // ここも同様に修正して、正しく未受取判定を行う
+        const unclaimed = rawData.gifts.filter(g => {
+            const id = g.id || g['ID'];
+            return id && !gameState.claimedGifts.includes(id);
+        });
+
+        // ボタンの状態を最新にする
+        updateGiftButtonState();
 
         if (unclaimed.length > 0) {
+            // 未受取があるなら、起動時にウィンドウを開く
             openGiftMenu(unclaimed);
         }
     }
 
     function openGiftMenu(giftsToShow = null) {
+        // ▼ 引数がない（タイトル画面のボタンから開いた）場合
+        // 「未受取」かつ「有効なIDがある」ものだけを抽出する
         if (!giftsToShow) {
             if (!rawData.gifts) return;
-            giftsToShow = rawData.gifts.filter(g => !gameState.claimedGifts.includes(g.id));
+            giftsToShow = rawData.gifts.filter(g => {
+                const id = g.id || g['ID']; // ★ここを修正：IDとidの両方に対応
+                return id && !gameState.claimedGifts.includes(id);
+            });
         }
 
-        if (giftsToShow.length === 0) return;
+        // 表示するものがなければウィンドウを開かない（念のための処理）
+        if (giftsToShow.length === 0) {
+             alert("受け取るプレゼントはありません。");
+             updateGiftButtonState(); // ボタン状態もついでに同期
+             return;
+        }
 
         const list = document.getElementById('gift-list');
         list.innerHTML = '';
 
         giftsToShow.forEach(g => {
-            // 日本語キーと英語キーの両方に対応
+            // ここも ID/id タイトル/title などの表記ゆれを吸収
+            const id = g.id || g['ID'] || 'unknown';
             const title = g.title || g['タイトル'] || 'No Title';
             const msg = g.message || g['メッセージ'] || 'No Message';
             const exp = g.exp || g['EXP'] || 0;
-            const id = g.id || g['ID'] || 'unknown';
 
             list.innerHTML += `
                 <div class="gift-item" data-id="${id}" data-exp="${exp}">
@@ -2888,13 +3007,10 @@
             const expVal = item.getAttribute('data-exp');
             const exp = parseInt(expVal, 10);
 
-            // IDが有効、かつ未受け取り、かつEXPが正常な数値の場合のみ処理
+            // IDが有効、かつ未受け取りの場合のみ処理
             if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) {
                 gameState.claimedGifts.push(id);
-                
-                if (!isNaN(exp)) {
-                    totalExp += exp;
-                }
+                if (!isNaN(exp)) totalExp += exp;
                 count++;
             }
         });
@@ -2908,13 +3024,42 @@
             alert(`🎁 ギフトを${count}件受け取りました！\n合計: +${totalExp} XP`);
             
             closeGiftMenu();
-            checkTitles(); 
+            checkTitles();
+            
+            // ★受け取り完了！ボタンをグレーアウトさせる
+            updateGiftButtonState();
         } else {
-            // 有効なギフトがなかった場合（すでに受け取り済みなど）
             closeGiftMenu();
         }
     }
+// ▼ ギフトボタンの見た目を更新する関数（修正版：IDの揺らぎに対応）
+    function updateGiftButtonState() {
+        if (!rawData.gifts) return;
+        
+        // IDが「id」でも「ID」でも正しく判定できるように修正
+        const unclaimed = rawData.gifts.filter(g => {
+            const id = g.id || g['ID']; // キーの揺らぎに対応
+            return id && !gameState.claimedGifts.includes(id);
+        });
 
+        const btn = document.getElementById('btn-gift');
+        const badge = document.getElementById('gift-badge');
+
+        if (unclaimed.length > 0) {
+            // 未受取あり
+            btn.disabled = false;
+            btn.style.opacity = "1.0";
+            btn.style.filter = "none";
+            badge.innerText = unclaimed.length;
+            badge.classList.remove('hidden');
+        } else {
+            // 全て受取済
+            btn.disabled = true;
+            btn.style.opacity = "0.7"; 
+            badge.classList.add('hidden');
+        }
+    }
+    
 </script>
 </body>
 </html>
