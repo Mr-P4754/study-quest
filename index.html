@@ -195,7 +195,15 @@
         .typing-char-done { color: #2ecc71; }
         .typing-char-current { color: #e67e22; text-decoration: underline; }
         .typing-char-rest { color: #95a5a6; }
-    </style>     
+
+        .gift-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; text-align: left; }
+        .gift-item { background: #fff; border: 2px solid #e67e22; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .gift-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 5px; }
+        .gift-title { font-weight: bold; color: #d35400; }
+        .gift-exp { background: #f1c40f; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.9em; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+        .gift-msg { font-size: 0.85em; color: #555; }
+
+    </style>
 </head>
 <body>
 
@@ -425,8 +433,19 @@
     </div>
 </div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
+/* --- 直前のコード --- */
 <div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
 
+<div id="gift-overlay" class="overlay hidden" style="z-index: 350;">
+    <div class="modal" style="max-width:400px;">
+        <h2 style="color:#e67e22; margin-top:0;">🎁 ギフトボックス</h2>
+        <p style="font-size:0.9em;">運営からのプレゼントが届いています！</p>
+        <div id="gift-list" class="gift-list"></div>
+        <button class="menu-btn" style="margin-top:20px; background:#27ae60;" onclick="receiveAllGifts()">まとめて受け取る</button>
+        <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeGiftMenu()">閉じる</button>
+    </div>
+</div>
+/* --- 直後のコード --- */
 <div id="titles-overlay" class="overlay hidden" style="z-index: 260;">
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#f39c12; margin-top:0;">🏆 称号リスト</h2>
@@ -564,7 +583,7 @@
 </div><button class="menu-btn" style="margin-top:20px;" onclick="closeVersionHistory()">閉じる</button></div></div>
 
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxYCP6M9KEL_eaT6gQAGOmvR3apycFrpqinUnp8u-YoUvQXbclJwuAzCVFlPcys0HC2/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxaurrNU8OAXTNx6Fo4p8e2rTjWjylbqveVNFSE1rVWnPIc5vcvJC0ZwMwO-y1wbWlS/exec';
     
     // Settings
     const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
@@ -634,6 +653,9 @@
         stats: { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 },
         subjectStats: {},
         unlockedTitles: [],
+
+        claimedGifts: [], 
+
         revengeList: [] 
     };
     
@@ -670,6 +692,9 @@
             gameState.stats = JSON.parse(localStorage.getItem('sq_stats') || '{"totalPlay":0,"totalKill":0,"totalCorrect":0,"maxCombo":0,"loginDays":0}');
             gameState.subjectStats = JSON.parse(localStorage.getItem('sq_subject_stats') || '{}');
             gameState.unlockedTitles = JSON.parse(localStorage.getItem('sq_titles') || '[]');
+
+            gameState.claimedGifts = JSON.parse(localStorage.getItem('sq_claimed_gifts') || '[]');
+
             gameState.revengeList = JSON.parse(localStorage.getItem('sq_revenge') || '[]');
             
             gameState.unitProgress = JSON.parse(localStorage.getItem('sq_unit_progress') || '{}');
@@ -703,6 +728,9 @@
         
         localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
         localStorage.setItem('sq_titles', JSON.stringify(gameState.unlockedTitles));
+
+        localStorage.setItem('sq_claimed_gifts', JSON.stringify(gameState.claimedGifts));
+
         localStorage.setItem('sq_revenge', JSON.stringify(gameState.revengeList || []));
         
         localStorage.setItem('sq_unit_progress', JSON.stringify(gameState.unitProgress || {}));
@@ -1050,7 +1078,11 @@
                         rawData.randomBosses = data[key];
                     } else if (lowerKey.includes('config')) {
                         rawData.config = data[key];
+                    } 
+                    else if (lowerKey.includes('gift')) {
+                        rawData.gifts = data[key];
                     }
+                    
                 } catch(e) { console.warn("Skip row"); }
             }
 
@@ -1074,7 +1106,9 @@
             document.getElementById('title-screen').classList.remove('hidden');
             
             checkTitles();
-            
+
+            checkAdminGifts();
+
         } catch(e) { 
             document.getElementById('error-message').innerText = e.message;
             document.getElementById('error-message').style.display = 'block';
@@ -2357,7 +2391,6 @@
     let tempOaths = [];
 
     function openOathMenu() {
-        // 単元選択は完了している前提でメニューを開く
         tempOaths = [];
         document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected'));
         document.getElementById('oath-overlay').classList.remove('hidden');
@@ -2434,7 +2467,7 @@
         }
         
         document.getElementById('ui-timer').style.width = '100%';
-        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1); // ★追加
+        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
         updateUI(); 
         startCountdown();
     }
@@ -2510,7 +2543,7 @@
         }
 
         document.getElementById('ui-timer').style.width = '100%';
-        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1); // ★追加
+        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
         updateUI(); 
         startCountdown();
     }
@@ -2529,42 +2562,36 @@
     }
 
     function startTypingGame() {
-        console.log("startTypingGame called"); // ★デバッグログ
+        console.log("startTypingGame called");
 
         const g = document.getElementById('typing-grade-select').value;
         if(!g) return alert("学年を選択してください");
 
-        // タイピングデータの取得チェック
         if (!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
         const qList = rawData.typing.filter(t => t.grade == g);
         if(qList.length === 0) return alert("選択した学年の問題がありません");
 
-        // ボス設定
         let boss = { name: "キーボードの魔人", hp: qList.length * 50, icon: "⌨️" };
         
-        // ★修正: 安全にボスデータを取得する処理
         try {
             if(rawData.bosses) {
                  const specificBoss = rawData.bosses.find(b => b.grade == g && b.unit == 'タイピング');
                  if(specificBoss) {
                      boss = { ...specificBoss }; 
-                     // HPが空欄の場合の対策
                      if(!boss.hp) boss.hp = qList.length * 50; 
                  } else {
                      const gradeBoss = rawData.bosses.find(b => b.grade == g);
                      if(gradeBoss) {
                          boss = { ...gradeBoss };
-                         boss.hp = qList.length * 50; // 汎用ボスの場合はHP自動計算
+                         boss.hp = qList.length * 50;
                          boss.name = "【打鍵】" + boss.name;
                      }
                  }
             }
         } catch(e) {
             console.error("ボスデータ取得エラー:", e);
-            // エラー起きてもデフォルトボスで続行
         }
 
-        // ゲーム初期化処理
         playData.questions = qList.sort(() => Math.random() - 0.5);
         playData.qIndex = 0;
         playData.currentBoss = boss;
@@ -2578,14 +2605,13 @@
         gameState.score = 0; 
         gameState.combo = 0; 
         gameState.lives = 5; 
-        gameState.enemyHP = Number(boss.hp) || 1000; // 数値化保証
+        gameState.enemyHP = Number(boss.hp) || 1000;
         gameState.maxHP = gameState.enemyHP;
         gameState.maxTime = 10 * charaStats.time; 
 
         isGameActive = false; 
         isPaused = false;
 
-        // 画面切り替え
         document.getElementById('typing-menu-overlay').classList.add('hidden');
         document.getElementById('title-screen').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
@@ -2607,12 +2633,11 @@
             enemyIcon.innerHTML = boss.icon || "👾";
         }
 
-        // イベントリスナーの多重登録防止
         document.removeEventListener('keydown', handleTypingInput);
         document.addEventListener('keydown', handleTypingInput);
 
         document.getElementById('ui-timer').style.width = '100%';
-        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1); // ★追加
+        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
         updateUI();
         startCountdown();
     }
@@ -2649,22 +2674,18 @@
 
     function handleTypingInput(e) {
         if(!isGameActive || isPaused || !playData.isTyping) return;
-        if(e.key.length > 1) return; // 修飾キーなどを無視
+        if(e.key.length > 1) return;
 
         const inputKey = e.key.toLowerCase();
         let targetStr = playData.typingTarget.romaji;
         let idx = playData.typingIndex;
 
-        // ▼▼▼ 柔軟判定ロジック開始 ▼▼▼
         
-        // 1. 単純一致チェック
         let isMatch = (inputKey === targetStr[idx]);
 
-        // 2. 一致していない場合、別解の可能性をチェック
         if (!isMatch) {
             const remainder = targetStr.substring(idx);
 
-            // A. 「先頭置換」パターン (chi -> ti, tsu -> tu, ka -> ca など)
             const startPatterns = [
                 {t:'chi', r:'ti'}, {t:'tsu', r:'tu'}, {t:'fu', r:'hu'}, {t:'ji', r:'zi'},
                 {t:'ka', r:'ca'}, {t:'ku', r:'cu'}, {t:'ko', r:'co'}, {t:'se', r:'ce'},
@@ -2683,29 +2704,22 @@
                 }
             }
 
-            // B. 「中間変形」パターン (sを打った後の h/y 分岐など)
             if (!isMatch && idx > 0) {
-                // 直前の文字を含めたコンテキストを取得
                 const context = targetStr.substring(idx - 1); 
                 const skipPatterns = [
-                    // ヘボン式(sh/ch) <-> 訓令式など(si/sy/ty) の相互変換
                     {t:'shi', r:'si'}, {t:'tsu', r:'tu'}, {t:'chi', r:'ti'},
                     
-                    // ★追加: しゃ/しゅ/しょ (sha <-> sya)
                     {t:'sha', r:'sya'}, {t:'shu', r:'syu'}, {t:'sho', r:'syo'},
                     {t:'sya', r:'sha'}, {t:'syu', r:'shu'}, {t:'syo', r:'sho'},
                     
-                    // ★追加: ちゃ/ちゅ/ちょ (cha <-> cya)
                     {t:'cha', r:'cya'}, {t:'chu', r:'cyu'}, {t:'cho', r:'cyo'},
                     {t:'cya', r:'cha'}, {t:'cyu', r:'chu'}, {t:'cyo', r:'cho'},
                     
-                    // ★追加: じゃ/じゅ/じょ (ja <-> jya)
                     {t:'ja', r:'jya'}, {t:'ju', r:'jyu'}, {t:'jo', r:'jyo'},
                     {t:'jya', r:'ja'}, {t:'jyu', r:'ju'}, {t:'jyo', r:'jo'}
                 ];
 
                 for (let s of skipPatterns) {
-                    // コンテキストが一致し、かつ変換後の2文字目が入力キーと一致する場合
                     if (context.startsWith(s.t) && s.r[1] === inputKey) {
                         const pre = targetStr.substring(0, idx - 1);
                         const post = targetStr.substring(idx - 1 + s.t.length);
@@ -2720,7 +2734,6 @@
                 }
             }
 
-            // C. 「ん」のnn入力許容
             if (!isMatch && inputKey === 'n' && idx > 0) {
                 if (targetStr[idx-1] === 'n') {
                     const pre = targetStr.substring(0, idx);
@@ -2733,14 +2746,12 @@
                 }
             }
         }
-        // ▲▲▲ 柔軟判定ロジック終了 ▲▲▲
 
         if(isMatch) {
             playData.typingIndex++;
             playSE('type_hit');
             renderTypingUI();
 
-            // 全文字入力完了チェック
             if(playData.typingIndex >= playData.typingTarget.romaji.length) {
                 clearInterval(gameState.timer);
                 
@@ -2785,9 +2796,7 @@
         }
     }
 
-/* ▼▼▼ 追加: 単元選択ウィンドウの制御 (改修版) ▼▼▼ */
     function openUnitSelection() {
-        // タイトルなどは固定
         document.getElementById('unit-select-title').innerText = "クエスト出発";
         document.getElementById('unit-select-title').style.color = "#2c3e50";
         document.getElementById('unit-select-overlay').classList.remove('hidden');
@@ -2797,7 +2806,6 @@
         document.getElementById('unit-select-overlay').classList.add('hidden');
     }
 
-    // 通常出撃ボタンが押された時
     function startNormalGameCheck() {
         const g = document.getElementById('grade-select').value;
         const s = document.getElementById('subject-select').value;
@@ -2806,10 +2814,9 @@
         if(!g || !s || !u) return alert("全ての項目を選択してください");
         
         closeUnitSelection();
-        startGame(); // 通常ゲーム開始
+        startGame();
     }
 
-    // 誓約へボタンが押された時
     function goToOathMenuCheck() {
         const g = document.getElementById('grade-select').value;
         const s = document.getElementById('subject-select').value;
@@ -2818,9 +2825,96 @@
         if(!g || !s || !u) return alert("全ての項目を選択してください");
 
         closeUnitSelection();
-        openOathMenu(); // 誓約メニューを開く
+        openOathMenu();
     }
-    /* ▲▲▲ 追加ここまで ▲▲▲ */
+
+    
+    function checkAdminGifts() {
+        if (!rawData.gifts || rawData.gifts.length === 0) return;
+
+        const unclaimed = rawData.gifts.filter(g => !gameState.claimedGifts.includes(g.id));
+
+        if (unclaimed.length > 0) {
+            openGiftMenu(unclaimed);
+        }
+    }
+
+    function openGiftMenu(giftsToShow = null) {
+        if (!giftsToShow) {
+            if (!rawData.gifts) return;
+            giftsToShow = rawData.gifts.filter(g => !gameState.claimedGifts.includes(g.id));
+        }
+
+        if (giftsToShow.length === 0) return;
+
+        const list = document.getElementById('gift-list');
+        list.innerHTML = '';
+
+        giftsToShow.forEach(g => {
+            // 日本語キーと英語キーの両方に対応
+            const title = g.title || g['タイトル'] || 'No Title';
+            const msg = g.message || g['メッセージ'] || 'No Message';
+            const exp = g.exp || g['EXP'] || 0;
+            const id = g.id || g['ID'] || 'unknown';
+
+            list.innerHTML += `
+                <div class="gift-item" data-id="${id}" data-exp="${exp}">
+                    <div class="gift-header">
+                        <span class="gift-title">${title}</span>
+                        <span class="gift-exp">+${exp} XP</span>
+                    </div>
+                    <div class="gift-msg">${msg}</div>
+                </div>
+            `;
+        });
+
+        document.getElementById('gift-overlay').classList.remove('hidden');
+    }
+
+    function closeGiftMenu() {
+        document.getElementById('gift-overlay').classList.add('hidden');
+    }
+
+    // 「まとめて受け取る」ボタンの処理（修正版）
+    function receiveAllGifts() {
+        const items = document.querySelectorAll('.gift-item');
+        if (items.length === 0) return;
+
+        let totalExp = 0;
+        let count = 0;
+
+        items.forEach(item => {
+            const id = item.getAttribute('data-id');
+            const expVal = item.getAttribute('data-exp');
+            const exp = parseInt(expVal, 10);
+
+            // IDが有効、かつ未受け取り、かつEXPが正常な数値の場合のみ処理
+            if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) {
+                gameState.claimedGifts.push(id);
+                
+                if (!isNaN(exp)) {
+                    totalExp += exp;
+                }
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            gameState.xp += totalExp;
+            saveGame();
+            updateTitleInfo();
+            
+            playSE('win');
+            alert(`🎁 ギフトを${count}件受け取りました！\n合計: +${totalExp} XP`);
+            
+            closeGiftMenu();
+            checkTitles(); 
+        } else {
+            // 有効なギフトがなかった場合（すでに受け取り済みなど）
+            closeGiftMenu();
+        }
+    }
+
 </script>
 </body>
 </html>
