@@ -2060,15 +2060,29 @@
     function playSE(type) {
         if(isMuted) return;
         if(audioCtx.state === 'suspended') audioCtx.resume();
-
         const osc = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         osc.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-
         const now = audioCtx.currentTime;
 
-        if (type === 'hit') {
+        if (type === 'type_hit') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1500, now);
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now); osc.stop(now + 0.08);
+        }
+        else if (type === 'type_miss') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 0.15);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.linearRampToValueAtTime(0.001, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+        }
+
+        else if (type === 'hit') {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(880, now);
             osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
@@ -2563,7 +2577,7 @@
         const charaStats = getCharaStats();
         gameState.score = 0; 
         gameState.combo = 0; 
-        gameState.lives = 3; 
+        gameState.lives = 5; 
         gameState.enemyHP = Number(boss.hp) || 1000; // 数値化保証
         gameState.maxHP = gameState.enemyHP;
         gameState.maxTime = 10 * charaStats.time; 
@@ -2723,7 +2737,7 @@
 
         if(isMatch) {
             playData.typingIndex++;
-            playSE('hit');
+            playSE('type_hit');
             renderTypingUI();
 
             // 全文字入力完了チェック
@@ -2755,7 +2769,7 @@
                 }
             }
         } else {
-            playSE('miss');
+            playSE('type_miss');
             gameState.lives--;
             gameState.combo = 0;
             showCutIn("MISS");
