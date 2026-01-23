@@ -12,7 +12,6 @@
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: #2c3e50; z-index: 10; transition: opacity 0.3s; }
         .hidden { display: none !important; }
 
-        /* Animations */
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes damageFloat { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 15% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -150%) scale(1.0); opacity: 0; } }
@@ -26,7 +25,6 @@
         .anim-paused { animation-play-state: paused !important; }
         .cutin { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5em; font-weight: 900; color: #f1c40f; -webkit-text-stroke: 3px #c0392b; text-shadow: 4px 4px 0 #000; pointer-events: none; z-index: 2000; animation: damageFloat 1.2s ease-out forwards; white-space: nowrap; }
         
-        /* UI Components */
         .header { padding: 5px 10px; background: #34495e; border-bottom: 4px solid #2c3e50; display: flex; justify-content: space-between; align-items: center; height: 55px; box-shadow: 0 4px 0 rgba(0,0,0,0.2); z-index: 20; flex-shrink: 0; gap: 8px; width: 100%; box-sizing: border-box; }
         .life-container { font-size: 1.2em; color: #e74c3c; letter-spacing: 1px; flex-shrink: 0; }
         .timer-container { flex-grow: 1; background: #444; height: 16px; position: relative; border: 2px solid #fff; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
@@ -37,7 +35,6 @@
         .header-pause-btn { background: #f39c12; color: #fff; border: 2px solid #fff; border-radius: 5px; width: 36px; height: 36px; font-size: 1.0em; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 0 #d35400; flex-shrink: 0; padding: 0; }
         .header-pause-btn:active { transform: translateY(2px); box-shadow: none; }
 
-        /* Title Area */
         .title-screen-bg { background: linear-gradient(135deg, #2c3e50, #1a252f); }
 .title-logo { font-size: 1.8em; font-weight: 900; margin-top: 2px; margin-bottom: 2px; color: #f1c40f; text-shadow: 3px 3px 0 #e67e22, 0 0 15px rgba(241, 196, 15, 0.5); line-height: 1.0; letter-spacing: 0.05em; white-space: nowrap; }
         .version-text { color:#bdc3c7; margin-bottom: 5px; cursor: pointer; text-decoration: underline; font-size: 0.8em; transition: color 0.2s; }
@@ -111,7 +108,6 @@
         .enhance-info { display: flex; justify-content: space-between; font-weight: bold; color: #2c3e50; font-size: 0.9em; }
         .enhance-preview { color: #27ae60; }
 
-        /* Title List Styles */
         .title-item { background: #fdfefe; border: 2px solid #bdc3c7; border-radius: 10px; padding: 10px; margin-bottom: 10px; text-align: left; opacity: 0.7; transition: all 0.2s; position: relative; }
         .title-item.unlocked { border-color: #f1c40f; opacity: 1; box-shadow: 0 4px 10px rgba(241, 196, 15, 0.2); background: #fffbe6; }
         .title-item.claimed { border-color: #27ae60; background: #eafaf1; opacity: 0.8; }
@@ -124,7 +120,6 @@
 
         .rarity-SSR { color: #f1c40f; text-shadow: 0 0 1px #000; font-weight: 900; } .rarity-SR { color: #e74c3c; font-weight: bold; } .rarity-R { color: #3498db; font-weight: bold; } .rarity-N { color: #7f8c8d; }
         
-        /* ★追加: URと限界突破(虹枠)スタイル */
         .rarity-UR { color: #e056fd; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 10px #e056fd; animation: pulseRed 1s infinite alternate; }
         .char-card.mastered { border: 3px solid transparent; background-image: linear-gradient(#fff, #fff), linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff); background-origin: border-box; background-clip: content-box, border-box; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); transform: scale(1.02); }
         .char-card.mastered .char-stock-badge { background: linear-gradient(45deg, #f1c40f, #e67e22); border: 1px solid #fff; box-shadow: 0 0 5px #f1c40f; }
@@ -153,16 +148,13 @@
         .mission-btn.active { background: #e67e22; border-bottom: 3px solid #d35400; }
         .mission-btn.disabled { background: #bdc3c7; color: #7f8c8d; cursor: default; }
         .mission-complete { background: #d4edda; border-color: #c3e6cb; }
-        /* Version History */
         .version-list { text-align: left; padding: 10px; max-height: 300px; overflow-y: auto; font-size: 0.9em; line-height: 1.6; }
         .version-list h4 { color: #e67e22; margin: 10px 0 5px 0; border-bottom: 1px solid #ddd; }
         .version-list ul { margin: 0; padding-left: 20px; }
         #loading-screen { z-index: 200; display: flex; justify-content: center; align-items: center; }
-        /* ... (前略) ... */
         .spinner { width: 50px; height: 50px; border: 5px solid #fff; border-top: 5px solid #f1c40f; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         #error-message { color: #e74c3c; margin-top: 20px; font-weight: bold; max-width: 80%; background: white; padding: 10px; border-radius: 5px; display: none; }
 
-        /* ▼▼▼ 追加: レーダーチャート & 成績表 ▼▼▼ */
         .record-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .chart-box { position: relative; width: 280px; height: 280px; margin: 10px auto; background: #fff; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; }
         .grade-table { width: 95%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; background: #fff; }
@@ -176,7 +168,6 @@
         .rank-E { color: #3498db; }
         .rank-F, .rank-G { color: #95a5a6; }
         
-        /* キャンペーンテロップ */
         .campaign-banner { background: linear-gradient(90deg, #c0392b, #e74c3c); color: #fff; width: 100%; padding: 5px 0; font-weight: bold; font-size: 0.9em; overflow: hidden; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 5px; display: none; }
         .campaign-text { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
@@ -463,7 +454,6 @@
     </div>
 </div>
 <div id="gacha-result-overlay" class="overlay hidden"><div class="modal" style="max-width:400px;"><div id="gr-container"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeGachaResult()">OK</button></div></div>
-/* --- 直前のコード --- */
 <div id="shop-overlay" class="overlay hidden"><div class="modal"><h2 style="color:#27ae60;">🛒 学習アイテム</h2><div style="text-align:right;">所持XP: <span id="shop-xp">0</span></div><div id="shop-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px;" onclick="closeShop()">閉じる</button></div></div>
 
 <div id="gift-overlay" class="overlay hidden" style="z-index: 350;">
@@ -475,7 +465,6 @@
         <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeGiftMenu()">閉じる</button>
     </div>
 </div>
-/* --- 直後のコード --- */
 <div id="titles-overlay" class="overlay hidden" style="z-index: 260;">
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#f39c12; margin-top:0;">🏆 称号リスト</h2>
@@ -801,10 +790,8 @@
         
         gameState.itemLevels = safeParse('sq_items_v2', {});
         
-        // ★重要: インベントリの強力な読み込み
         gameState.charaInventory = safeParse('sq_inventory', {});
         
-        // もし空っぽなら、古いデータ(sq_charas)からの復旧を試みる
         if (!gameState.charaInventory || Object.keys(gameState.charaInventory).length === 0) {
             const oldCharas = localStorage.getItem('sq_charas');
             if (oldCharas) {
@@ -820,7 +807,6 @@
                 } catch(e) {}
             }
             
-            // それでも空なら初期キャラ
             if (Object.keys(gameState.charaInventory).length === 0) {
                 gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } };
             }
@@ -1027,7 +1013,6 @@ function saveGame() {
     }
 }
 
-    /* ▼▼▼ POST通信版 downloadData ▼▼▼ */
     async function downloadData() {
         const inputId = document.getElementById('input-sync-id').value.trim();
         if(!inputId) return alert("IDを入力してください");
@@ -1045,7 +1030,6 @@ function saveGame() {
         btn.innerText = "受信中..."; btn.disabled = true;
 
         try {
-            // ★変更点: POSTメソッドで「action: load」を送る
             const res = await fetch(API_URL, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1055,7 +1039,6 @@ function saveGame() {
             });
             const json = await res.json();
 
-            // エラーチェック（初期データが返ってきた場合）
             if (json.questions || json.appVersion) {
                 alert("【エラー】\nサーバー設定が反映されていません。\nGASのURLが古いか、デプロイが更新されていません。");
                 return;
@@ -1063,13 +1046,10 @@ function saveGame() {
 
             if(json.status === 'success') {
                 let data = json.data;
-                // 文字列パース（二重対策）
-                if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e) {} }
                 if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e) {} }
 
                 if(!data) { alert("データの中身が空でした。"); return; }
 
-                // ユーティリティ
                 const forceObj = (v) => { if(!v)return{}; if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return{}}} return v; };
                 const forceArr = (v) => { if(!v)return[]; if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return[]}} return Array.isArray(v)?v:[]; };
 
@@ -1079,7 +1059,6 @@ function saveGame() {
                     oldList.forEach(id => { newInventory[id] = { level: 1, count: 1, exp: 0 }; });
                 }
 
-                // データ適用
                 gameState.xp = parseInt(data.xp || 0);
                 gameState.equipped = String(data.equipped || '1');
                 gameState.itemLevels = forceObj(data.itemLevels);
@@ -1410,7 +1389,7 @@ async function fetchData() {
         }
 
         document.getElementById('ui-timer').style.width = '100%';
-        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1); // ★追加
+        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
         updateUI(); 
         startCountdown();
     }
@@ -1624,7 +1603,10 @@ async function fetchData() {
                 damage = Math.ceil(gameState.maxHP / playData.questions.length);
             } else {
                 const stats = getCharaStats();
-                damage = Math.floor(50 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * 1.8) * (1 + (gameState.combo * 0.1)));
+                
+                const speedMultiplier = 1.8 * stats.time; 
+                
+                damage = Math.floor(80 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * speedMultiplier) * (1 + (gameState.combo * 0.05)));
             }
 
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
@@ -1739,8 +1721,9 @@ async function fetchData() {
 
         const stats=getCharaStats(); 
         
-        let baseRate = isClear ? 1.2 : 1.0;
-        
+        let conditionRate = 1.0;
+        const CAMPAIGN_RATE = 3.0;
+
         let isCampaign = false;
         if (playData.context && rawData.config && !playData.isRevenge && !playData.isRandom && !playData.isTyping) {
             isCampaign = rawData.config.some(c => 
@@ -1753,20 +1736,25 @@ async function fetchData() {
 
         if (playData.activeOaths && playData.activeOaths.length > 0) {
             const count = playData.activeOaths.length;
-            if (count >= 3) baseRate = 2.0;
-            else if (count === 2) baseRate = 1.75;
-            else baseRate = 1.5;
+            if (count >= 3) conditionRate = 2.0;
+            else if (count === 2) conditionRate = 1.75;
+            else conditionRate = 1.5;
             
-            if (isCampaign) baseRate = 3.0; 
+            if (isCampaign) conditionRate = Math.max(conditionRate, CAMPAIGN_RATE);
         }
         else if (playData.isRevenge || playData.isRandom) {
-            baseRate = 1.5; 
+            conditionRate = 1.5; 
         }
         else if (isCampaign) {
-            baseRate = 3.0; 
+            conditionRate = CAMPAIGN_RATE; 
         }
 
-        let earned = Math.floor(gameState.score * baseRate * stats.exp);
+        const partA = gameState.score * stats.exp;
+        const partB = isClear ? (gameState.score * 0.2) : 0;
+        const partC = gameState.score * (conditionRate - 1.0);
+
+        let earned = Math.floor(partA + partB + partC);
+
         gameState.xp += earned; 
         
         if (playData.context && !playData.isRevenge && !playData.isRandom) {
@@ -1916,15 +1904,12 @@ async function fetchData() {
         
         saveGame();
         renderZukan();
-        /* --- 直前のコード（rollGacha関数の終わり） --- */
         updateTitleInfo();
         checkTitles();
         showGachaResults(results);
     }
 
-/* ▼▼▼ ここから追加するコード ▼▼▼ */
 
-    // SSR・UR確定枠付き10連ガチャ
     function rollGuaranteedTenGacha(guaranteedRarity, cost) {
         if (gameState.xp < cost) return alert("XPが足りません！\n必要: " + cost + " XP");
         
@@ -1933,7 +1918,6 @@ async function fetchData() {
         gameState.xp -= cost;
         let results = [];
 
-        // 共通のキャラ入手処理
         const addResult = (char) => {
             if (!gameState.charaInventory[char.id]) {
                 gameState.charaInventory[char.id] = { level: 0, count: 0, exp: 0 };
@@ -1944,7 +1928,6 @@ async function fetchData() {
             }
         };
 
-        // 1. 通常枠を9回引く (確率は通常ガチャと同じ)
         for (let i = 0; i < 9; i++) {
             let rand = Math.random();
             let r = 'N';
@@ -2988,12 +2971,17 @@ async function fetchData() {
             playSE('type_hit');
             renderTypingUI();
 
+
             if(playData.typingIndex >= playData.typingTarget.romaji.length) {
                 clearInterval(gameState.timer);
                 
                 const stats = getCharaStats();
-                const damage = Math.floor(100 * stats.atk * (1 + (gameState.combo * 0.1)));
                 
+                const speedMultiplier = 1.8 * stats.time;
+                // "let" を追加して変数を定義します
+                let damage = Math.floor(80 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * speedMultiplier) * (1 + (gameState.combo * 0.05)));
+                
+
                 gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
                 gameState.score += damage; 
                 gameState.combo++;
@@ -3064,43 +3052,36 @@ async function fetchData() {
         openOathMenu();
     }
 
-    // ▼ 起動時チェック関数（修正版：IDの揺らぎに対応）
     function checkAdminGifts() {
         if (!rawData.gifts || rawData.gifts.length === 0) {
             updateGiftButtonState();
             return;
         }
 
-        // ここも同様に修正して、正しく未受取判定を行う
         const unclaimed = rawData.gifts.filter(g => {
             const id = g.id || g['ID'];
             return id && !gameState.claimedGifts.includes(id);
         });
 
-        // ボタンの状態を最新にする
         updateGiftButtonState();
 
         if (unclaimed.length > 0) {
-            // 未受取があるなら、起動時にウィンドウを開く
             openGiftMenu(unclaimed);
         }
     }
 
     function openGiftMenu(giftsToShow = null) {
-        // ▼ 引数がない（タイトル画面のボタンから開いた）場合
-        // 「未受取」かつ「有効なIDがある」ものだけを抽出する
         if (!giftsToShow) {
             if (!rawData.gifts) return;
             giftsToShow = rawData.gifts.filter(g => {
-                const id = g.id || g['ID']; // ★ここを修正：IDとidの両方に対応
+                const id = g.id || g['ID'];
                 return id && !gameState.claimedGifts.includes(id);
             });
         }
 
-        // 表示するものがなければウィンドウを開かない（念のための処理）
         if (giftsToShow.length === 0) {
              alert("受け取るプレゼントはありません。");
-             updateGiftButtonState(); // ボタン状態もついでに同期
+             updateGiftButtonState();
              return;
         }
 
@@ -3108,7 +3089,6 @@ async function fetchData() {
         list.innerHTML = '';
 
         giftsToShow.forEach(g => {
-            // ここも ID/id タイトル/title などの表記ゆれを吸収
             const id = g.id || g['ID'] || 'unknown';
             const title = g.title || g['タイトル'] || 'No Title';
             const msg = g.message || g['メッセージ'] || 'No Message';
@@ -3132,7 +3112,6 @@ async function fetchData() {
         document.getElementById('gift-overlay').classList.add('hidden');
     }
 
-    // 「まとめて受け取る」ボタンの処理（修正版）
     function receiveAllGifts() {
         const items = document.querySelectorAll('.gift-item');
         if (items.length === 0) return;
@@ -3145,7 +3124,6 @@ async function fetchData() {
             const expVal = item.getAttribute('data-exp');
             const exp = parseInt(expVal, 10);
 
-            // IDが有効、かつ未受け取りの場合のみ処理
             if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) {
                 gameState.claimedGifts.push(id);
                 if (!isNaN(exp)) totalExp += exp;
@@ -3164,19 +3142,16 @@ async function fetchData() {
             closeGiftMenu();
             checkTitles();
             
-            // ★受け取り完了！ボタンをグレーアウトさせる
             updateGiftButtonState();
         } else {
             closeGiftMenu();
         }
     }
-// ▼ ギフトボタンの見た目を更新する関数（修正版：IDの揺らぎに対応）
     function updateGiftButtonState() {
         if (!rawData.gifts) return;
         
-        // IDが「id」でも「ID」でも正しく判定できるように修正
         const unclaimed = rawData.gifts.filter(g => {
-            const id = g.id || g['ID']; // キーの揺らぎに対応
+            const id = g.id || g['ID'];
             return id && !gameState.claimedGifts.includes(id);
         });
 
@@ -3184,14 +3159,12 @@ async function fetchData() {
         const badge = document.getElementById('gift-badge');
 
         if (unclaimed.length > 0) {
-            // 未受取あり
             btn.disabled = false;
             btn.style.opacity = "1.0";
             btn.style.filter = "none";
             badge.innerText = unclaimed.length;
             badge.classList.remove('hidden');
         } else {
-            // 全て受取済
             btn.disabled = true;
             btn.style.opacity = "0.7"; 
             badge.classList.add('hidden');
