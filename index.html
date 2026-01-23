@@ -678,7 +678,7 @@
 </div>
     
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxaurrNU8OAXTNx6Fo4p8e2rTjWjylbqveVNFSE1rVWnPIc5vcvJC0ZwMwO-y1wbWlS/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyG3MnjSn1D1flR3-LR1AzfoijF_ID7GJzZ1d5gYgemZd504kGwou02cV-M8c8kfJwi/exec';
     
     // Settings
     const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
@@ -772,50 +772,74 @@
         let id = localStorage.getItem('sq_user_id');
         if (!id) {
             id = Math.random().toString(36).substring(2, 10);
-            localStorage.setItem('sq_user_id', id);
-        }
-        currentUserId = id;
+        localStorage.setItem('sq_user_id', id);
     }
+    currentUserId = id;
+}
 
     function loadSaveData() {
+        // ユーティリティ: 安全にパースする（二重JSON対策済み）
+        const safeParse = (key, defaultVal) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (raw === null || raw === undefined || raw === "undefined") return defaultVal;
+                let parsed = JSON.parse(raw);
+                if (typeof parsed === 'string') {
+                    try { parsed = JSON.parse(parsed); } catch(e){}
+                }
+                return parsed || defaultVal;
+            } catch (e) {
+                return defaultVal;
+            }
+        };
+
         try {
             gameState.xp = parseInt(localStorage.getItem('sq_xp') || '0');
-            gameState.equipped = localStorage.getItem('sq_equip') || '1';
-            gameState.itemLevels = JSON.parse(localStorage.getItem('sq_items_v2') || '{}') || {};
-            gameState.charaInventory = JSON.parse(localStorage.getItem('sq_inventory') || '{}') || {};
-            
-            gameState.stats = JSON.parse(localStorage.getItem('sq_stats') || '{"totalPlay":0,"totalKill":0,"totalCorrect":0,"maxCombo":0,"loginDays":0}');
-            gameState.subjectStats = JSON.parse(localStorage.getItem('sq_subject_stats') || '{}');
-            gameState.unlockedTitles = JSON.parse(localStorage.getItem('sq_titles') || '[]');
+        } catch(e) { gameState.xp = 0; }
 
-            gameState.claimedGifts = JSON.parse(localStorage.getItem('sq_claimed_gifts') || '[]');
-
-            gameState.revengeList = JSON.parse(localStorage.getItem('sq_revenge') || '[]');
-            
-            gameState.unitProgress = JSON.parse(localStorage.getItem('sq_unit_progress') || '{}');
-            
-            if (Object.keys(gameState.charaInventory).length === 0) {
-                const oldCharas = localStorage.getItem('sq_charas');
-                if (oldCharas) {
+        gameState.equipped = localStorage.getItem('sq_equip') || '1';
+        
+        gameState.itemLevels = safeParse('sq_items_v2', {});
+        
+        // ★重要: インベントリの強力な読み込み
+        gameState.charaInventory = safeParse('sq_inventory', {});
+        
+        // もし空っぽなら、古いデータ(sq_charas)からの復旧を試みる
+        if (!gameState.charaInventory || Object.keys(gameState.charaInventory).length === 0) {
+            const oldCharas = localStorage.getItem('sq_charas');
+            if (oldCharas) {
+                try {
                     const idList = JSON.parse(oldCharas);
-                    idList.forEach(id => {
-                        gameState.charaInventory[id] = { level: 1, count: 1, exp: 0 };
-                    });
-                } else {
-                    gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } };
-                }
+                    if (Array.isArray(idList) && idList.length > 0) {
+                        console.log("Restoring from old data...");
+                        idList.forEach(id => {
+                            gameState.charaInventory[id] = { level: 1, count: 1, exp: 0 };
+                        });
+                        localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
+                    }
+                } catch(e) {}
             }
-        } catch(e) {
-            console.error("Save Data Error:", e);
-            gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } }; 
-            gameState.itemLevels = {};
-            gameState.stats = { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
-            gameState.unlockedTitles = [];
+            
+            // それでも空なら初期キャラ
+            if (Object.keys(gameState.charaInventory).length === 0) {
+                gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } };
+            }
         }
+        
+        gameState.stats = safeParse('sq_stats', { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 });
+        gameState.subjectStats = safeParse('sq_subject_stats', {});
+        gameState.unlockedTitles = safeParse('sq_titles', []);
+        gameState.claimedGifts = safeParse('sq_claimed_gifts', []);
+        gameState.revengeList = safeParse('sq_revenge', []);
+        gameState.unitProgress = safeParse('sq_unit_progress', {});
+        
+        try {
+            dailyMissions = safeParse('sq_missions', { date:"", progress:{}, claimed:{} });
+        } catch(e){}
     }
 
-    function saveGame() {
-        localStorage.setItem('sq_xp', gameState.xp);
+function saveGame() {
+    localStorage.setItem('sq_xp', gameState.xp);
         localStorage.setItem('sq_equip', gameState.equipped);
         localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
         localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
@@ -998,13 +1022,14 @@
             
         } catch(e) {
             alert("通信エラー: " + e);
-        } finally {
-            btn.innerText = originalText; btn.disabled = false;
-        }
+    } finally {
+        btn.innerText = originalText; btn.disabled = false;
     }
+}
 
+    /* ▼▼▼ POST通信版 downloadData ▼▼▼ */
     async function downloadData() {
-        const inputId = document.getElementById('input-sync-id').value;
+        const inputId = document.getElementById('input-sync-id').value.trim();
         if(!inputId) return alert("IDを入力してください");
         
         if(!confirm("データを読み込みますか？\n現在のデータは上書きされます。")) return;
@@ -1020,25 +1045,53 @@
         btn.innerText = "受信中..."; btn.disabled = true;
 
         try {
-            const res = await fetch(API_URL + `?action=load&userId=${inputId}`);
+            // ★変更点: POSTメソッドで「action: load」を送る
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'load',
+                    userId: inputId
+                })
+            });
             const json = await res.json();
 
+            // エラーチェック（初期データが返ってきた場合）
+            if (json.questions || json.appVersion) {
+                alert("【エラー】\nサーバー設定が反映されていません。\nGASのURLが古いか、デプロイが更新されていません。");
+                return;
+            }
+
             if(json.status === 'success') {
-                const data = json.data;
-                if(!data) {
-                    alert("データが見つかりませんでした。");
-                    return;
+                let data = json.data;
+                // 文字列パース（二重対策）
+                if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e) {} }
+                if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e) {} }
+
+                if(!data) { alert("データの中身が空でした。"); return; }
+
+                // ユーティリティ
+                const forceObj = (v) => { if(!v)return{}; if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return{}}} return v; };
+                const forceArr = (v) => { if(!v)return[]; if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return[]}} return Array.isArray(v)?v:[]; };
+
+                let newInventory = forceObj(data.charaInventory);
+                if (Object.keys(newInventory).length === 0 && data.charas) {
+                    const oldList = forceArr(data.charas);
+                    oldList.forEach(id => { newInventory[id] = { level: 1, count: 1, exp: 0 }; });
                 }
-                
-                gameState.xp = data.xp || 0;
-                gameState.equipped = data.equipped || '1';
-                gameState.itemLevels = data.itemLevels || {};
-                gameState.charaInventory = data.charaInventory || {};
-                dailyMissions = data.missions || dailyMissions;
-                gameState.stats = data.stats || { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
-                gameState.unlockedTitles = data.unlockedTitles || [];
-                gameState.revengeList = data.revengeList || [];
-                gameState.unitProgress = data.unitProgress || {};
+
+                // データ適用
+                gameState.xp = parseInt(data.xp || 0);
+                gameState.equipped = String(data.equipped || '1');
+                gameState.itemLevels = forceObj(data.itemLevels);
+                gameState.charaInventory = newInventory;
+                dailyMissions = forceObj(data.missions);
+                if(!dailyMissions.date) dailyMissions = { date:"", progress:{}, claimed:{} };
+                gameState.stats = forceObj(data.stats);
+                if(!gameState.stats.totalPlay) gameState.stats = { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
+                gameState.unlockedTitles = forceArr(data.unlockedTitles);
+                gameState.claimedGifts = forceArr(data.claimedGifts);
+                gameState.revengeList = forceArr(data.revengeList);
+                gameState.unitProgress = forceObj(data.unitProgress);
 
                 currentUserId = inputId;
                 localStorage.setItem('sq_user_id', inputId);
@@ -1046,18 +1099,20 @@
                 saveGame();
                 alert("データの読み込みに成功しました！\nリロードします。");
                 location.reload();
+
             } else {
-                alert("読み込み失敗: " + json.message);
+                alert("読み込み失敗: " + (json.message || "Unknown error"));
             }
         } catch(e) {
+            console.error(e);
             alert("通信エラー: " + e);
         } finally {
             btn.innerText = originalText; btn.disabled = false;
         }
     }
 
-    async function fetchData() {
-        try {
+async function fetchData() {
+    try {
             const res = await fetch(API_URL + '?t=' + new Date().getTime());
             
             if (!res.ok) throw new Error("Network response was not ok");
