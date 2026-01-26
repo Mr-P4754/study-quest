@@ -973,6 +973,9 @@ function saveGame() {
     async function uploadData() {
         if(!confirm("現在のデータをクラウドに保存しますか？\n（同じIDの古いデータは上書きされます）")) return;
         
+        // --- 修正箇所：ここから ---
+        saveGame(); // 送信前に現在のメモリ上の状態をLocalstorageに書き出し、整合性を整える
+
         const backupData = {
             xp: gameState.xp,
             equipped: gameState.equipped,
@@ -981,9 +984,11 @@ function saveGame() {
             missions: dailyMissions,
             stats: gameState.stats,
             unlockedTitles: gameState.unlockedTitles,
+            claimedGifts: gameState.claimedGifts, // 受取履歴を明示的に含める
             revengeList: gameState.revengeList,
             unitProgress: gameState.unitProgress
         };
+        // --- 修正箇所：ここまで ---
 
         const btn = document.querySelector('#sync-overlay button'); 
         const originalText = btn.innerText;
@@ -1068,8 +1073,19 @@ function saveGame() {
                 gameState.stats = forceObj(data.stats);
                 if(!gameState.stats.totalPlay) gameState.stats = { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
                 gameState.unlockedTitles = forceArr(data.unlockedTitles);
-                gameState.claimedGifts = forceArr(data.claimedGifts);
-                gameState.revengeList = forceArr(data.revengeList);
+                // ギフト受取済みリストを確実に更新
+                gameState.claimedGifts = forceArr(data.claimedGifts);
+                gameState.revengeList = forceArr(data.revengeList);
+                gameState.unitProgress = forceObj(data.unitProgress);
+
+                currentUserId = inputId;
+                localStorage.setItem('sq_user_id', inputId);
+                
+                saveGame();
+                // 追加：UI（ギフトボタンのバッジや無効化）を即座に反映させる
+                updateGiftButtonState(); 
+
+                alert("データの読み込みに成功しました！\nリロードします。");
                 gameState.unitProgress = forceObj(data.unitProgress);
 
                 currentUserId = inputId;
@@ -2971,18 +2987,18 @@ async function fetchData() {
             playSE('type_hit');
             renderTypingUI();
 
-
             if(playData.typingIndex >= playData.typingTarget.romaji.length) {
                 clearInterval(gameState.timer);
                 
                 const stats = getCharaStats();
                 
+                // --- 修正箇所：ここから ---
                 const speedMultiplier = 1.8 * stats.time;
-                // "let" を追加して変数を定義します
                 let damage = Math.floor(80 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * speedMultiplier) * (1 + (gameState.combo * 0.05)));
                 
-
                 gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
+                // --- 修正箇所：ここまで ---
+
                 gameState.score += damage; 
                 gameState.combo++;
                 showCutIn("-" + damage);
