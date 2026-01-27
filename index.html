@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -221,7 +222,7 @@
         .gift-title { font-weight: bold; color: #d35400; }
         .gift-exp { background: #f1c40f; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.9em; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
         /* ...既存のCSS... */
-        .gift-msg { font-size: 0.85em; color: #555; }
+        .gift-msg { font-size: 0.85em; color: #555; }
 
         /* ▼▼▼ 追加: 進化・転生システム用CSS ▼▼▼ */
         .name-deco-evo { color: #f1c40f; text-shadow: 0 0 3px #d35400; animation: pulseRed 2s infinite; }
@@ -239,7 +240,7 @@
         .btn-reincarnation { background: linear-gradient(to right, #3498db, #8e44ad); border-bottom: 3px solid #5b2c6f; }
         /* ▲▲▲ 追加ここまで ▲▲▲ */
 
-    </style>
+    </style>
 </head>
 <body>
 
@@ -256,7 +257,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 7.0.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 7.1.1</div>
     
     <div class="menu-btn-container">
         <button class="menu-btn" onclick="openUnitSelection()">
@@ -484,9 +485,9 @@
                 </button>
             </div>
 
-            <div id="evo-container" class="evo-btn-container hidden" style="margin-top: 10px;"></div>
-            
-            <button class="menu-btn" style="margin-top:20px; background:#bdc3c7; border-bottom:5px solid #95a5a6; color:#2c3e50; font-size: 0.9em; height: 45px; width: 100%;" onclick="closeCharaDetail()">閉じる</button>
+            <div id="evo-container" class="evo-btn-container hidden" style="margin-top: 10px;"></div>
+            
+            <button class="menu-btn" style="margin-top:20px; background:#bdc3c7; border-bottom:5px solid #95a5a6; color:#2c3e50; font-size: 0.9em; height: 45px; width: 100%;" onclick="closeCharaDetail()">閉じる</button>
         </div>
     </div>
 </div>
@@ -624,7 +625,22 @@
 </div>
 
 <div id="version-overlay" class="overlay hidden"><div class="modal" style="max-width:500px;"><h2 style="color:#2c3e50;">更新履歴</h2><div class="version-list">
-    <h4 style="color:#e67e22; border-bottom:2px solid #e67e22;">Ver 6.0.0 (Major Update)</h4>
+    <h4 style="color:#e67e22; border-bottom:2px solid #e67e22;">Ver 7.1.1 (Evolution Update)</h4>
+    
+    <h5 style="margin:10px 0 5px; color:#d35400;">✨ 新システム実装</h5>
+    <ul>
+        <li><b>🌟 進化 & 🪽 転生</b>: レベルMAXのキャラを更に強化可能に。<br>レア度アップや複数スキル属性に対応。</li>
+        <li><b>🛡️ UI改修</b>: 図鑑・強化画面のボタン配置と立体感を改善。</li>
+    </ul>
+
+    <h5 style="margin:10px 0 5px; color:#27ae60;">📖 その他</h5>
+    <ul>
+        <li><b>プレイガイド更新</b>: 最新仕様に合わせて説明を一新。</li>
+        <li><b>不具合修正</b>: 一部端末での表示崩れを修正。</li>
+    </ul>
+
+    <hr style="margin:15px 0; border:1px dashed #ccc;">
+    <h4 style="color:#7f8c8d; border-bottom:2px solid #bdc3c7;">Ver 6.0.0 (Major Update)</h4>
     
     <h5 style="margin:10px 0 5px; color:#d35400;">✨ 新機能・大型実装</h5>
     <ul>
@@ -662,58 +678,72 @@
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>制限時間内に正解を選んでボスを攻撃！</li>
                 <li><b>コンボ</b>を繋ぐとダメージアップ！</li>
-                <li>早く解答するほど「スピード正解」ボーナス。ダメージアップ！</li>
+                <li>早く解答するほど「スピード正解」ボーナス。</li>
                 <li>ライフが0になるとゲームオーバー。</li>
             </ul>
 
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e67e22; margin:15px 0 5px;">🎮 モード解説</h4>
-            
-            <div style="margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:5px;">
-                <b style="color:#e67e22;">▶ クエスト (通常出撃)</b><br>
-                学年・教科・単元を選んで学習する基本モード。<br>
-                <div style="background:#fff3cd; padding:5px; border-radius:5px; margin-top:3px; border:1px solid #f1c40f;">
-                    <span style="color:#e74c3c; font-weight:bold;">★ 強化クエスト (キャンペーン)</span><br>
-                    タイトル画面で告知されている単元（★付き）は<br>
-                    獲得経験値が <span style="font-size:1.2em; font-weight:900; color:#c0392b;">3倍</span> になります！
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e74c3c; margin:15px 0 5px;">🦸 キャラクターとスキル</h4>
+            <p style="margin:5px 0; font-size:0.9em;">装備するキャラの「スキル属性」で戦略が変わります。</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px;">
+                    <div style="color:#e74c3c; font-weight:bold;">⚔️ ATK (攻撃)</div>
+                    <div style="font-size:0.85em; color:#555;">攻撃力特化。HPの高いボス攻略に必須です。</div>
+                </div>
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px;">
+                    <div style="color:#f39c12; font-weight:bold;">⏱️ TIME (時間)</div>
+                    <div style="font-size:0.85em; color:#555;">制限時間が延長。難問やスピードボーナス狙いに。</div>
+                </div>
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px;">
+                    <div style="color:#2ecc71; font-weight:bold;">✨ EXP (経験値)</div>
+                    <div style="font-size:0.85em; color:#555;">獲得XPアップ。稼ぎプレイやレベル上げに最適。</div>
+                </div>
+                <div style="border:1px solid #ddd; padding:5px; border-radius:5px; background:#f9f9f9;">
+                    <div style="color:#8e44ad; font-weight:bold;">👑 ALL (万能)</div>
+                    <div style="font-size:0.85em; color:#555;">全能力がアップする強力なスキルです。</div>
                 </div>
             </div>
 
-            <div style="margin-bottom:8px;">
-                <b style="color:#8e44ad;">😈 誓約 (ハンデ戦)</b><br>
-                「制限時間半分」「ライフ1」などの制約をつけて出撃。<br>
-                クリアすると経験値が<b>1.5倍〜2.0倍</b>になります。<br>
-                <small>※強化クエストと重複した場合、高い方の<b>3倍</b>が優先されます。</small>
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #f1c40f; margin:15px 0 5px;">⚡ 進化と転生</h4>
+            <div style="margin-bottom:8px; border-bottom:1px dashed #ccc; padding-bottom:5px;">
+                <b style="color:#e67e22;">🌟 進化 (Evolution)</b><br>
+                レベルMAXのキャラと在庫(素材)を集めると進化が可能。<br>
+                レアリティが上がり、基礎ステータスが大幅に強化されます。また、30％の確率で新しいスキルを習得します。
+            </div>
+            <div>
+                <b style="color:#3498db;">🪽 転生 (Reincarnation)</b><br>
+                URキャラが進化した姿。レベルは0に戻りますが、<b>習得したスキルを引き継いで</b>初期レアリティからやり直せます。<br>
+                最強のキャラを育てるためのやり込み要素です。
             </div>
 
-            <div style="margin-bottom:8px;">
-                <b style="color:#c0392b;">💀 リベンジ・ダンジョン</b><br>
-                <b>「間違えた問題」</b>だけが再出題される復習専用モード。<br>
-                通常プレイで間違えるとボタンが有効になります。<br>
-                クリアするとリストから消去されます。
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #3498db; margin:15px 0 5px;">🎮 モード解説</h4>
+            
+            <div style="margin-bottom:5px;">
+                <b style="color:#e67e22;">▶ クエスト</b>: 基本モード。★マークは<b>XP3倍</b>！
+            </div>
+            <div style="margin-bottom:5px;">
+                <b style="color:#8e44ad;">😈 誓約</b>: ハンデを背負って出撃。報酬<b>1.5〜2.0倍</b>。
+            </div>
+            <div style="margin-bottom:5px;">
+                <b style="color:#c0392b;">💀 リベンジ</b>: 間違えた問題のみ再出題。
+            </div>
+            <div style="margin-bottom:5px;">
+                <b style="color:#34495e;">🎲 ランダム</b>: 学年全範囲から出題。報酬<b>1.5倍</b>。
+            </div>
+            <div style="margin-bottom:5px;">
+                <b style="color:#8e44ad;">⌨️ タイピング</b>: キーボード専用モード。<br>
+                <span style="color:#c0392b; font-size:0.85em; font-weight:bold;">※スマホ・タブレットではプレイできません。</span>
             </div>
 
-            <div style="margin-bottom:8px;">
-                <b style="color:#34495e;">🎲 ランダム (未知の迷宮)</b><br>
-                学年だけ指定し、全教科からランダムに出題されます。<br>
-                実力試しに最適。<b>報酬EXP 1.5倍</b>。
-            </div>
-
-            <div style="margin-bottom:8px;">
-                <b style="color:#8e44ad;">⌨️ タイピング</b><br>
-                キーボード専用モード。<br>
-                ローマ字入力で敵を倒します。フリック入力不可。
-            </div>
-
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #f1c40f; margin:15px 0 5px;">💡 攻略のヒント</h4>
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #27ae60; margin:15px 0 5px;">💡 システム・攻略</h4>
             <ul style="padding-left:20px; margin:5px 0;">
-                <li><b>キャラを装備しよう</b>: ガチャで引いたキャラを装備すると、攻撃力や制限時間が伸びます。</li>
-                <li><b>強化合成</b>: 使わないキャラ（Nなど）を素材にして、SSRキャラのレベルを上げましょう。</li>
-                <li><b>ショップ活用</b>: 貯まったEXPで「集中ハチマキ」などを買うと永続的に強くなります。</li>
-                <li><b>称号ボーナス</b>: 条件（ログイン日数や撃破数）を満たすと、称号画面から大量のEXPがもらえます。</li>
+                <li><b>💎 ガチャ</b>: 通常ガチャの他、XPを貯めて<b>「SSR/UR確定ガチャ」</b>も回せます。</li>
+                <li><b>🔥 強化合成</b>: 図鑑から行います。素材は<b>まとめて選択</b>して一気にレベル上げが可能！</li>
+                <li><b>🛒 ショップ</b>: 貯まったXPで「集中ハチマキ」などを買うと永続的に強くなります。</li>
+                <li><b>☁️ クラウドセーブ</b>: メニューからIDを発行し、機種変更や別端末へデータを引き継げます。</li>
             </ul>
 
         </div>
-        <button class="menu-btn" style="margin-top:15px; background:#95a5a6;" onclick="closeHowToPlay()">閉じる</button>
+        <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeHowToPlay()">閉じる</button>
     </div>
 </div>
     
@@ -721,7 +751,7 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbyG3MnjSn1D1flR3-LR1AzfoijF_ID7GJzZ1d5gYgemZd504kGwou02cV-M8c8kfJwi/exec';
     
     // Settings
-    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
+    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
     // ▼▼▼ 追加: 進化・転生用定数 ▼▼▼
     const EVO_COST_XP = { 'N': 10000, 'R': 50000, 'SR': 200000, 'SSR': 500000 };
     const EVO_STOCK_REQ = 10;
@@ -730,7 +760,7 @@
     const SKILL_TYPES = ['ATK', 'TIME', 'EXP'];
     const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
     // ▲▲▲ 追加ここまで ▲▲▲
-    const LV_BONUS_RATE = 0.01;
+    const LV_BONUS_RATE = 0.01;
     const EXP_REQ = 100;
     const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200, 'UR': 500 };
     const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000, 'UR': 5000 };
@@ -1132,19 +1162,19 @@ function saveGame() {
                 gameState.stats = forceObj(data.stats);
                 if(!gameState.stats.totalPlay) gameState.stats = { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0 };
                 gameState.unlockedTitles = forceArr(data.unlockedTitles);
-                // ギフト受取済みリストを確実に更新
-                gameState.claimedGifts = forceArr(data.claimedGifts);
-                gameState.revengeList = forceArr(data.revengeList);
-                gameState.unitProgress = forceObj(data.unitProgress);
+                // ギフト受取済みリストを確実に更新
+                gameState.claimedGifts = forceArr(data.claimedGifts);
+                gameState.revengeList = forceArr(data.revengeList);
+                gameState.unitProgress = forceObj(data.unitProgress);
 
-                currentUserId = inputId;
-                localStorage.setItem('sq_user_id', inputId);
-                
-                saveGame();
+                currentUserId = inputId;
+                localStorage.setItem('sq_user_id', inputId);
+                
+                saveGame();
                 // 追加：UI（ギフトボタンのバッジや無効化）を即座に反映させる
                 updateGiftButtonState(); 
 
-                alert("データの読み込みに成功しました！\nリロードします。");
+                alert("データの読み込みに成功しました！\nリロードします。");
                 gameState.unitProgress = forceObj(data.unitProgress);
 
                 currentUserId = inputId;
@@ -1571,23 +1601,23 @@ async function fetchData() {
     }
 
     function getCharaStats() {
-        let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
-        if(rawData.characters) {
+        let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
+        if(rawData.characters) {
             // 変数定義を明確化
-            const charId = gameState.equipped;
-            const charaData = rawData.characters.find(c => c.id == charId);
+            const charId = gameState.equipped;
+            const charaData = rawData.characters.find(c => c.id == charId);
             
-            if(charaData) {
-                let userChara = gameState.charaInventory[charId];
-                let level = userChara ? userChara.level : 0;
+            if(charaData) {
+                let userChara = gameState.charaInventory[charId];
+                let level = userChara ? userChara.level : 0;
 
                 // ▼▼▼ 進化・転生ロジック: 基礎値の取得 ▼▼▼
                 // 進化済みでcustomValueを持っていればそれを使用、なければマスタデータを使用
                 let baseVal = (userChara && userChara.isEvolved && userChara.customValue) ? userChara.customValue : Number(charaData.value);
                 
                 // レベル補正を加算して最終値を決定
-                let finalVal = baseVal + (level * LV_BONUS_RATE);
-                
+                let finalVal = baseVal + (level * LV_BONUS_RATE);
+                
                 // ▼▼▼ 進化・転生ロジック: スキルの取得 ▼▼▼
                 // 保持しているスキルリストがあればそれを使用、なければマスタデータのタイプ(単体)を使用
                 let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type];
@@ -1606,28 +1636,28 @@ async function fetchData() {
                         if(type === 'EXP') stats.exp = finalVal;
                     }
                 });
-            }
-        }
+            }
+        }
 
         // --- アイテム補正 (既存処理) ---
-        if(gameState.itemLevels && rawData.shopItems) {
-            Object.keys(gameState.itemLevels).forEach(itemId => {
-                const item = rawData.shopItems.find(i => i.id === itemId);
-                const level = gameState.itemLevels[itemId];
-                if(item && level > 0) {
-                    if(item.type === 'ATK') stats.atk += (Number(item.value) * level);
-                    if(item.type === 'TIME') stats.time += (Number(item.value) * level);
-                    if(item.type === 'EXP') stats.exp += (Number(item.value) * level);
-                }
-            });
-        }
-        
-        if (playData.activeOaths && playData.activeOaths.includes('weak')) {
-            stats.atk *= 0.5;
-        }
+        if(gameState.itemLevels && rawData.shopItems) {
+            Object.keys(gameState.itemLevels).forEach(itemId => {
+                const item = rawData.shopItems.find(i => i.id === itemId);
+                const level = gameState.itemLevels[itemId];
+                if(item && level > 0) {
+                    if(item.type === 'ATK') stats.atk += (Number(item.value) * level);
+                    if(item.type === 'TIME') stats.time += (Number(item.value) * level);
+                    if(item.type === 'EXP') stats.exp += (Number(item.value) * level);
+                }
+            });
+        }
+        
+        if (playData.activeOaths && playData.activeOaths.includes('weak')) {
+            stats.atk *= 0.5;
+        }
 
-        return stats;
-    }
+        return stats;
+    }
 
 
     function getDisplayName(char, inv) {
@@ -1658,7 +1688,7 @@ async function fetchData() {
 
         if (gameState.xp < costXP) return alert(`EXPが足りません (必要: ${costXP})`);
         
-        if (!confirm(`【進化確認】\n消費: ${costXP} XP, 在庫${EVO_STOCK_REQ}個\n\n・レアリティが上昇します\n・レベルは1に戻ります\n・基礎効果値がランダム強化されます\n\n実行しますか？`)) return;
+        if (!confirm(`【進化確認】\n消費: ${costXP} XP, 在庫${EVO_STOCK_REQ}個\n\n・レアリティが上昇します\n・レベルは0に戻ります\n・基礎効果値がランダム強化されます\n\n実行しますか？`)) return;
 
         // 消費処理
         gameState.xp -= costXP;
@@ -1710,7 +1740,7 @@ async function fetchData() {
         if (!inv) return;
 
         if (gameState.xp < REBORN_COST_XP) return alert(`EXPが足りません (必要: ${REBORN_COST_XP})`);
-        if (!confirm(`【転生確認】\n消費: ${REBORN_COST_XP} EXP\n\n・レアリティと基礎値が初期状態に戻ります\n・レベルは1に戻ります\n・習得したスキルは引き継ぎます\n・転生回数が増え、名前に🪽がつきます\n\n実行しますか？`)) return;
+        if (!confirm(`【転生確認】\n消費: ${REBORN_COST_XP} EXP\n\n・レアリティと基礎値が初期状態に戻ります\n・レベルは0に戻ります\n・習得したスキルは引き継ぎます\n・転生回数が増え、名前に🪽がつきます\n\n実行しますか？`)) return;
 
         gameState.xp -= REBORN_COST_XP;
         
@@ -1733,8 +1763,8 @@ async function fetchData() {
     }
 
 
-    function nextQuestion() {
-        if(!isGameActive) return;
+    function nextQuestion() {
+        if(!isGameActive) return;
         if(playData.qIndex >= playData.questions.length) { playData.questions.sort(()=>Math.random()-0.5); playData.qIndex = 0; }
         const q = playData.questions[playData.qIndex];
         playData.currentQ = q;
@@ -1875,12 +1905,12 @@ async function fetchData() {
             const chara = rawData.characters ? rawData.characters.find(c => c.id == charaId) : null;
             
             if(chara) {
-                const inv = gameState.charaInventory[charaId] || { level: 1 };
+                const inv = gameState.charaInventory[charaId] || { level: 1 };
                 // ▼ 修正: 進化データ参照
                 const baseVal = (inv.isEvolved && inv.customValue) ? inv.customValue : chara.value;
                 const r = inv.currentRarity || chara.rarity;
                 const name = getDisplayName(chara, inv); // 名前装飾
-                let val = Number(baseVal) + (inv.level * LV_BONUS_RATE);
+                let val = Number(baseVal) + (inv.level * LV_BONUS_RATE);
                 // ▲ 修正ここまで
                 let visual = "";
                 
@@ -1894,13 +1924,13 @@ async function fetchData() {
                     <div style="display:flex; align-items:center; gap:10px; text-align:left;">
                         ${visual}
                         <div>
-                            <div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${name}</div>
-                            <div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div>
-                            <div style="font-size:0.7em; color:#bdc3c7;">
-                                <span class="rarity-${r}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${r}</span>
-                                効果: x${val.toFixed(2)}
-                            </div>
-                        </div>
+                            <div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${name}</div>
+                            <div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div>
+                            <div style="font-size:0.7em; color:#bdc3c7;">
+                                <span class="rarity-${r}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${r}</span>
+                                効果: x${val.toFixed(2)}
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -2233,52 +2263,52 @@ async function fetchData() {
             return 0;
         });
 
-        list.forEach(c=>{ 
-            const data = gameState.charaInventory[c.id]; 
-            const isOwned = !!data;
-            const div = document.createElement('div');
-            
-            let masterClass = '';
-            if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+        list.forEach(c=>{ 
+            const data = gameState.charaInventory[c.id]; 
+            const isOwned = !!data;
+            const div = document.createElement('div');
+            
+            let masterClass = '';
+            if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
 
-            div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
-            
-            let visual, nameText, lvlBadge = '', stockBadge = '';
+            div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
+            
+            let visual, nameText, lvlBadge = '', stockBadge = '';
             // ▼▼▼ 追加: 変数定義 ▼▼▼
             let decoName = "???"; 
-            
-            if(isOwned) {
-                visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
+            
+            if(isOwned) {
+                visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
                 
                 // ▼▼▼ 修正: 現在のレアリティ取得と名前装飾の適用 ▼▼▼
                 const currentRarity = data.currentRarity || c.rarity;
                 decoName = getDisplayName(c, data);
 
                 // レアリティ表示部分を現在のレアリティに合わせる
-                nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
+                nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
                 // ▲▲▲ 修正ここまで ▲▲▲
 
-                lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
-                if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
-                div.onclick = () => openCharaDetail(c.id);
-            } else {
-                visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
-                nameText = "???";
-            }
-            
+                lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
+                if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
+                div.onclick = () => openCharaDetail(c.id);
+            } else {
+                visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
+                nameText = "???";
+            }
+            
             // ▼▼▼ 修正: 名前（decoName）を表示する行を追加 ▼▼▼
-            div.innerHTML = `${lvlBadge}${stockBadge}${visual}
+            div.innerHTML = `${lvlBadge}${stockBadge}${visual}
                              <div style="font-weight:bold;font-size:0.8em;">${nameText}</div>
                              <div style="font-size:0.7em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${decoName}</div>`;
-            g.appendChild(div);
-        });
+            g.appendChild(div);
+        });
     }
 
-    function openCharaDetail(id) { 
-        viewingCharaId=id; 
-        const c=rawData.characters.find(x=>x.id==id); 
-        const o=gameState.charaInventory[id]; 
-        if(!c||!o)return; 
+    function openCharaDetail(id) { 
+        viewingCharaId=id; 
+        const c=rawData.characters.find(x=>x.id==id); 
+        const o=gameState.charaInventory[id]; 
+        if(!c||!o)return; 
 
         // ▼▼▼ データ準備 ▼▼▼
         const currentR = o.currentRarity || c.rarity;
@@ -2287,32 +2317,32 @@ async function fetchData() {
         const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
         
         // ▼▼▼ UI更新 ▼▼▼
-        document.getElementById('cd-name').innerHTML = getDisplayName(c, o); // innerHTMLで装飾タグを有効化
-        document.getElementById('cd-rarity').innerText = currentR; 
-        document.getElementById('cd-rarity').className = "rarity-" + currentR; 
-        
-        const maxLv = RARITY_CAPS[currentR] || 10;
-        document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
+        document.getElementById('cd-name').innerHTML = getDisplayName(c, o); // innerHTMLで装飾タグを有効化
+        document.getElementById('cd-rarity').innerText = currentR; 
+        document.getElementById('cd-rarity').className = "rarity-" + currentR; 
+        
+        const maxLv = RARITY_CAPS[currentR] || 10;
+        document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
 
         // スキル表示（タグ化）
         let skillHtml = '';
         currentSkills.forEach(s => { skillHtml += `<span class="skill-tag ${s}">${s}</span>`; });
-        document.getElementById('cd-type').innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
-        
-        let val = baseVal + (o.level * LV_BONUS_RATE);
-        document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
-        
-        document.getElementById('cd-stock').innerText=o.count + "個"; 
-        document.getElementById('cd-desc').innerText = c.desc || "";
-        
-        document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ;
-        document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
-        
+        document.getElementById('cd-type').innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
+        
+        let val = baseVal + (o.level * LV_BONUS_RATE);
+        document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
+        
+        document.getElementById('cd-stock').innerText=o.count + "個"; 
+        document.getElementById('cd-desc').innerText = c.desc || "";
+        
+        document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ;
+        document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
+        
         // 画像表示
         if(c.imageUrl.startsWith('http')) document.getElementById('cd-img').src=c.imageUrl; 
-        else document.getElementById('cd-img').src=''; 
+        else document.getElementById('cd-img').src=''; 
 
-        document.getElementById('chara-detail-overlay').classList.remove('hidden'); 
+        document.getElementById('chara-detail-overlay').classList.remove('hidden'); 
 
         // ▼▼▼ 進化・転生ボタン制御 ▼▼▼
         const evoContainer = document.getElementById('evo-container');
@@ -2320,28 +2350,38 @@ async function fetchData() {
         evoContainer.classList.add('hidden');
 
         // 1. 進化ボタンの表示条件
-        // レベルMAX かつ 在庫が必要数以上 かつ 現在レアリティがUR未満
         if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
             const cost = EVO_COST_XP[currentR];
             const btn = document.createElement('button');
-            btn.className = 'evo-btn btn-evolution';
-            btn.innerHTML = `✨ 進化させる<br><span style="font-size:0.8em">消費: ${cost}EXP / 在庫${EVO_STOCK_REQ}個</span>`;
+            
+            btn.className = 'detail-btn'; 
+            btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)';
+            btn.style.borderBottom = '5px solid #d35400'; // 厚みの色
+            btn.style.marginBottom = '10px';
+            btn.style.height = '60px'; // 進化ボタンは少し特別感を出して大きく
+
+            btn.innerHTML = `🌟 限界突破・進化！<br><span style="font-size:0.75em">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`;
             btn.onclick = executeEvolution;
             evoContainer.appendChild(btn);
             evoContainer.classList.remove('hidden');
         }
 
         // 2. 転生ボタンの表示条件
-        // 現在レアリティがUR かつ 元々のレアリティがURではない（=進化したキャラである）
         if (currentR === 'UR' && c.rarity !== 'UR') {
             const btn = document.createElement('button');
-            btn.className = 'evo-btn btn-reincarnation';
-            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.8em">消費: ${REBORN_COST_XP}EXP / スキル継承</span>`;
+            
+            btn.className = 'detail-btn';
+            btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)';
+            btn.style.borderBottom = '5px solid #5b2c6f'; // 厚みの色
+            btn.style.marginBottom = '10px';
+            btn.style.height = '60px';
+
+            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ スキル継承</span>`;
             btn.onclick = executeReincarnation;
             evoContainer.appendChild(btn);
             evoContainer.classList.remove('hidden');
         }
-    }
+    }
     
     function closeCharaDetail() { 
         document.getElementById('chara-detail-overlay').classList.add('hidden'); 
@@ -2414,103 +2454,103 @@ async function fetchData() {
     }
 
     function updateEnhancePreview(gainExp) {
-        document.getElementById('enhance-total-exp').innerText = gainExp;
-        
-        const t = gameState.charaInventory[viewingCharaId];
-        const chara = rawData.characters.find(x => x.id === viewingCharaId);
-        if (!t || !chara) return;
+        document.getElementById('enhance-total-exp').innerText = gainExp;
+        
+        const t = gameState.charaInventory[viewingCharaId];
+        const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        if (!t || !chara) return;
 
-        // 修正: 現在のレアリティに基づく上限を取得
-        const currentR = t.currentRarity || chara.rarity;
-        const maxLv = RARITY_CAPS[currentR] || 10;
-        
-        let simExp = t.exp + gainExp;
-        let simLv = t.level;
-        
-        while (simExp >= EXP_REQ) {
-            if (simLv >= maxLv) {
-                simExp = 0;
-                break;
-            }
-            simExp -= EXP_REQ;
-            simLv++;
-        }
-        
-        const preview = document.getElementById('enhance-lv-preview');
-        if (simLv > t.level) {
-            preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`;
-            preview.style.color = '#e67e22';
-        } else {
-            preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`;
-            preview.style.color = '#7f8c8d';
-        }
-    }
+        // 修正: 現在のレアリティに基づく上限を取得
+        const currentR = t.currentRarity || chara.rarity;
+        const maxLv = RARITY_CAPS[currentR] || 10;
+        
+        let simExp = t.exp + gainExp;
+        let simLv = t.level;
+        
+        while (simExp >= EXP_REQ) {
+            if (simLv >= maxLv) {
+                simExp = 0;
+                break;
+            }
+            simExp -= EXP_REQ;
+            simLv++;
+        }
+        
+        const preview = document.getElementById('enhance-lv-preview');
+        if (simLv > t.level) {
+            preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`;
+            preview.style.color = '#e67e22';
+        } else {
+            preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`;
+            preview.style.color = '#7f8c8d';
+        }
+    }
 
     function executeBulkEnhance() {
-        const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0);
-        if (totalSelected === 0) return alert("素材を選択してください");
+        const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0);
+        if (totalSelected === 0) return alert("素材を選択してください");
 
-        let totalGain = 0;
-        Object.keys(selectedMaterials).forEach(id => {
-            const count = selectedMaterials[id];
-            if (count > 0) {
-                const matChar = rawData.characters.find(c => c.id === id);
-                const expVal = MAT_EXP[matChar.rarity] || 25;
-                totalGain += (expVal * count);
-            }
-        });
+        let totalGain = 0;
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (count > 0) {
+                const matChar = rawData.characters.find(c => c.id === id);
+                const expVal = MAT_EXP[matChar.rarity] || 25;
+                totalGain += (expVal * count);
+            }
+        });
 
-        if (!confirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`)) return;
+        if (!confirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`)) return;
 
-        Object.keys(selectedMaterials).forEach(id => {
-            const count = selectedMaterials[id];
-            if (gameState.charaInventory[id]) {
-                gameState.charaInventory[id].count -= count;
-                if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0;
-            }
-        });
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (gameState.charaInventory[id]) {
+                gameState.charaInventory[id].count -= count;
+                if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0;
+            }
+        });
 
-        const t = gameState.charaInventory[viewingCharaId];
-        const chara = rawData.characters.find(x => x.id === viewingCharaId);
-        
+        const t = gameState.charaInventory[viewingCharaId];
+        const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        
         // 修正: 現在のレアリティに基づく上限を取得
         const currentR = t.currentRarity || chara.rarity;
         const maxLv = RARITY_CAPS[currentR] || 10;
 
-        t.exp = (Number(t.exp) || 0) + totalGain;
-        let lvUpCount = 0;
+        t.exp = (Number(t.exp) || 0) + totalGain;
+        let lvUpCount = 0;
 
-        while (t.exp >= EXP_REQ) {
-            if (t.level >= maxLv) {
-                t.exp = 0;
-                break;
-            }
-            t.exp -= EXP_REQ;
-            t.level++;
-            lvUpCount++;
-        }
+        while (t.exp >= EXP_REQ) {
+            if (t.level >= maxLv) {
+                t.exp = 0;
+                break;
+            }
+            t.exp -= EXP_REQ;
+            t.level++;
+            lvUpCount++;
+        }
 
-        updateMissionProgress('enhance', 1);
-        checkTitles();
-        saveGame();
+        updateMissionProgress('enhance', 1);
+        checkTitles();
+        saveGame();
 
-        alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
-        
-        selectedMaterials = {};
-        renderEnhanceList();
-        
-        updateEnhancePreview(0);
-        
-        if(chara) {
-            document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv;
-            document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ;
-            document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
+        alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
+        
+        selectedMaterials = {};
+        renderEnhanceList();
+        
+        updateEnhancePreview(0);
+        
+        if(chara) {
+            document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv;
+            document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ;
+            document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
             
             // 修正: 進化後の基礎値を考慮して表示を更新
             const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value);
-            document.getElementById('cd-val').innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
-        }
-    }
+            document.getElementById('cd-val').innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
+        }
+    }
     
     function openShop() { 
         document.getElementById('shop-overlay').classList.remove('hidden'); 
