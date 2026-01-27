@@ -131,7 +131,35 @@
         .detail-img { width: 100px; height: 100px; object-fit: contain; margin: 10px auto; background: #eee; border-radius: 10px; padding: 10px; border: 2px solid #ccc; }
         .detail-stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
         .detail-btn-row { display: flex; gap: 10px; margin-top: 20px; }
-        .detail-btn { flex: 1; padding: 10px; border-radius: 5px; border: none; font-weight: bold; color: white; cursor: pointer; }
+        .detail-btn { 
+            width: 100%;
+            height: 50px;
+            margin: 0;
+            padding: 5px;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            transition: all 0.1s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'BIZ UDPGothic', sans-serif;
+            font-size: 0.95em;
+            box-sizing: border-box;
+            cursor: pointer;
+            /* 厚みのコア：rgbaではなく不透明な濃い色を指定する必要があるためHTML側で色を指定 */
+            border-bottom: 5px solid #000; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 押し込んだ時の動きをmenu-btnと完全に同期 */
+        .detail-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+            border-bottom: none;
+        }
         .exp-bar-container { width: 100%; height: 10px; background: #ddd; border-radius: 5px; margin: 5px 0; overflow: hidden; }
         .exp-bar-fill { height: 100%; background: #3498db; width: 0%; transition: width 0.3s; }
         .material-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; max-height: 250px; overflow-y: auto; margin-top: 10px; }
@@ -192,9 +220,26 @@
         .gift-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-bottom: 5px; }
         .gift-title { font-weight: bold; color: #d35400; }
         .gift-exp { background: #f1c40f; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.9em; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
-        .gift-msg { font-size: 0.85em; color: #555; }
+        /* ...既存のCSS... */
+        .gift-msg { font-size: 0.85em; color: #555; }
 
-    </style>
+        /* ▼▼▼ 追加: 進化・転生システム用CSS ▼▼▼ */
+        .name-deco-evo { color: #f1c40f; text-shadow: 0 0 3px #d35400; animation: pulseRed 2s infinite; }
+        .name-deco-reborn { color: #00d2ff; text-shadow: 0 0 3px #0055ff; font-weight: bold; }
+        
+        .skill-tag-container { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; justify-content: flex-start; }
+        .skill-tag { font-size: 0.75em; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #fff; background: #34495e; border: 1px solid rgba(255,255,255,0.3); }
+        .skill-tag.ATK { background: #e74c3c; } .skill-tag.TIME { background: #f39c12; } .skill-tag.EXP { background: #2ecc71; }
+        .skill-tag.ALL { background: linear-gradient(45deg, #8e44ad, #f1c40f); border: 1px solid #fff; box-shadow: 0 0 5px rgba(241, 196, 15, 0.5); }
+
+        .evo-btn-container { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #bdc3c7; }
+        .evo-btn { padding: 10px; border-radius: 8px; font-weight: bold; color: white; border: none; cursor: pointer; text-shadow: 1px 1px 0 rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+        .evo-btn:active { transform: scale(0.98); }
+        .btn-evolution { background: linear-gradient(to bottom, #f1c40f, #e67e22); border-bottom: 3px solid #d35400; color: #2c3e50; }
+        .btn-reincarnation { background: linear-gradient(to right, #3498db, #8e44ad); border-bottom: 3px solid #5b2c6f; }
+        /* ▲▲▲ 追加ここまで ▲▲▲ */
+
+    </style>
 </head>
 <body>
 
@@ -427,15 +472,21 @@
             
             <p id="cd-desc" style="font-size:0.8em; color:#7f8c8d; margin:10px 0; min-height:3em;">説明文</p>
             
-            <div class="detail-btn-row">
-                <button class="detail-btn" style="background:#2ecc71;" onclick="equipCurrentChara()">装備する</button>
-            </div>
-            <div class="detail-btn-row">
-                <button id="btn-enhance" class="detail-btn" style="background:#e67e22;" onclick="openEnhanceMenu()">強化<br><span style="font-size:0.7em;">素材選択へ</span></button>
-                <button id="btn-sell" class="detail-btn" style="background:#95a5a6;" onclick="sellCharaStock()">売却</button>
+            <div class="detail-btn-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                <button class="detail-btn" style="background:#2ecc71; border-bottom: 5px solid #27ae60; grid-column: span 2;" onclick="equipCurrentChara()">
+                    🛡️ このキャラを装備
+                </button>
+                <button id="btn-enhance" class="detail-btn" style="background:#e67e22; border-bottom: 5px solid #d35400;" onclick="openEnhanceMenu()">
+                    🔥 強化合成
+                </button>
+                <button id="btn-sell" class="detail-btn" style="background:#95a5a6; border-bottom: 5px solid #7f8c8d;" onclick="sellCharaStock()">
+                    💰 素材売却
+                </button>
             </div>
 
-            <button class="menu-btn" style="margin-top:20px; font-size:0.9em; padding:8px; background:#bdc3c7; border-color:#95a5a6;" onclick="closeCharaDetail()">閉じる</button>
+            <div id="evo-container" class="evo-btn-container hidden" style="margin-top: 10px;"></div>
+            
+            <button class="menu-btn" style="margin-top:20px; background:#bdc3c7; border-bottom:5px solid #95a5a6; color:#2c3e50; font-size: 0.9em; height: 45px; width: 100%;" onclick="closeCharaDetail()">閉じる</button>
         </div>
     </div>
 </div>
@@ -577,7 +628,7 @@
     
     <h5 style="margin:10px 0 5px; color:#d35400;">✨ 新機能・大型実装</h5>
     <ul>
-        <li><b>🏆 称号システム</b>: 全30種の実績を追加。達成で大量XP獲得。</li>
+        <li><b>🏆 称号システム</b>: 全30種の実績を追加。達成で大量EXP獲得。</li>
         <li><b>☁️ クラウドセーブ</b>: 端末間でのデータ引き継ぎに対応。</li>
         <li><b>⚡ 強化刷新</b>: 素材の複数選択・一括強化が可能に。</li>
     </ul>
@@ -644,7 +695,7 @@
             <div style="margin-bottom:8px;">
                 <b style="color:#34495e;">🎲 ランダム (未知の迷宮)</b><br>
                 学年だけ指定し、全教科からランダムに出題されます。<br>
-                実力試しに最適。<b>報酬XP 1.5倍</b>。
+                実力試しに最適。<b>報酬EXP 1.5倍</b>。
             </div>
 
             <div style="margin-bottom:8px;">
@@ -657,8 +708,8 @@
             <ul style="padding-left:20px; margin:5px 0;">
                 <li><b>キャラを装備しよう</b>: ガチャで引いたキャラを装備すると、攻撃力や制限時間が伸びます。</li>
                 <li><b>強化合成</b>: 使わないキャラ（Nなど）を素材にして、SSRキャラのレベルを上げましょう。</li>
-                <li><b>ショップ活用</b>: 貯まったXPで「集中ハチマキ」などを買うと永続的に強くなります。</li>
-                <li><b>称号ボーナス</b>: 条件（ログイン日数や撃破数）を満たすと、称号画面から大量のXPがもらえます。</li>
+                <li><b>ショップ活用</b>: 貯まったEXPで「集中ハチマキ」などを買うと永続的に強くなります。</li>
+                <li><b>称号ボーナス</b>: 条件（ログイン日数や撃破数）を満たすと、称号画面から大量のEXPがもらえます。</li>
             </ul>
 
         </div>
@@ -670,8 +721,16 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbyG3MnjSn1D1flR3-LR1AzfoijF_ID7GJzZ1d5gYgemZd504kGwou02cV-M8c8kfJwi/exec';
     
     // Settings
-    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
-    const LV_BONUS_RATE = 0.01;
+    const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
+    // ▼▼▼ 追加: 進化・転生用定数 ▼▼▼
+    const EVO_COST_XP = { 'N': 10000, 'R': 50000, 'SR': 200000, 'SSR': 500000 };
+    const EVO_STOCK_REQ = 10;
+    const REBORN_COST_XP = 100000;
+    const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
+    const SKILL_TYPES = ['ATK', 'TIME', 'EXP'];
+    const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
+    // ▲▲▲ 追加ここまで ▲▲▲
+    const LV_BONUS_RATE = 0.01;
     const EXP_REQ = 100;
     const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200, 'UR': 500 };
     const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000, 'UR': 5000 };
@@ -710,9 +769,9 @@
         { id:'t24', name:'博物館館長', req:'collection>=30', val:30, reward:100000, desc:'図鑑30種収集' },
         { id:'t25', name:'アイテム愛好家', req:'itemMax', val:1, reward:50000, desc:'アイテムLv.MAX' },
         
-        { id:'t26', name:'小金持ち', req:'xp>=100000', val:100000, reward:10000, desc:'所持XP 10万達成' },
-        { id:'t27', name:'大富豪', req:'xp>=1000000', val:1000000, reward:100000, desc:'所持XP 100万達成' },
-        { id:'t28', name:'億万長者', req:'xp>=10000000', val:10000000, reward:1000000, desc:'所持XP 1000万達成' },
+        { id:'t26', name:'小金持ち', req:'xp>=100000', val:100000, reward:10000, desc:'所持EXP 10万達成' },
+        { id:'t27', name:'大富豪', req:'xp>=1000000', val:1000000, reward:100000, desc:'所持EXP 100万達成' },
+        { id:'t28', name:'億万長者', req:'xp>=10000000', val:10000000, reward:1000000, desc:'所持EXP 1000万達成' },
         
         { id:'t29', name:'奇跡の出会い', req:'ssr', val:1, reward:50000, desc:'SSR入手' },
         { id:'t30', name:'限界突破', req:'lvMax', val:1, reward:50000, desc:'キャラLv.20到達' }
@@ -1512,47 +1571,170 @@ async function fetchData() {
     }
 
     function getCharaStats() {
-        let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
-        if(rawData.characters) {
-            const charaData = rawData.characters.find(c => c.id == gameState.equipped);
-            if(charaData) {
-                let userChara = gameState.charaInventory[gameState.equipped];
-                let level = userChara ? userChara.level : 0;
-                let val = Number(charaData.value);
-                let finalVal = val + (level * LV_BONUS_RATE);
+        let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
+        if(rawData.characters) {
+            // 変数定義を明確化
+            const charId = gameState.equipped;
+            const charaData = rawData.characters.find(c => c.id == charId);
+            
+            if(charaData) {
+                let userChara = gameState.charaInventory[charId];
+                let level = userChara ? userChara.level : 0;
+
+                // ▼▼▼ 進化・転生ロジック: 基礎値の取得 ▼▼▼
+                // 進化済みでcustomValueを持っていればそれを使用、なければマスタデータを使用
+                let baseVal = (userChara && userChara.isEvolved && userChara.customValue) ? userChara.customValue : Number(charaData.value);
                 
-                if(charaData.type === 'ALL') {
-                    stats.atk = finalVal;
-                    stats.time = finalVal;
-                    stats.exp = finalVal;
-                } else {
-                    if(charaData.type === 'ATK') stats.atk = finalVal;
-                    if(charaData.type === 'TIME') stats.time = finalVal;
-                    if(charaData.type === 'EXP') stats.exp = finalVal;
+                // レベル補正を加算して最終値を決定
+                let finalVal = baseVal + (level * LV_BONUS_RATE);
+                
+                // ▼▼▼ 進化・転生ロジック: スキルの取得 ▼▼▼
+                // 保持しているスキルリストがあればそれを使用、なければマスタデータのタイプ(単体)を使用
+                let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type];
+
+                // スキル適用ループ (複数スキル対応)
+                skills.forEach(type => {
+                    if(type === 'ALL') {
+                        // ALLの場合は全ステータスに数値を適用
+                        stats.atk = finalVal;
+                        stats.time = finalVal;
+                        stats.exp = finalVal;
+                    } else {
+                        // 各個別タイプへの適用
+                        if(type === 'ATK') stats.atk = finalVal;
+                        if(type === 'TIME') stats.time = finalVal;
+                        if(type === 'EXP') stats.exp = finalVal;
+                    }
+                });
+            }
+        }
+
+        // --- アイテム補正 (既存処理) ---
+        if(gameState.itemLevels && rawData.shopItems) {
+            Object.keys(gameState.itemLevels).forEach(itemId => {
+                const item = rawData.shopItems.find(i => i.id === itemId);
+                const level = gameState.itemLevels[itemId];
+                if(item && level > 0) {
+                    if(item.type === 'ATK') stats.atk += (Number(item.value) * level);
+                    if(item.type === 'TIME') stats.time += (Number(item.value) * level);
+                    if(item.type === 'EXP') stats.exp += (Number(item.value) * level);
+                }
+            });
+        }
+        
+        if (playData.activeOaths && playData.activeOaths.includes('weak')) {
+            stats.atk *= 0.5;
+        }
+
+        return stats;
+    }
+
+
+    function getDisplayName(char, inv) {
+        if (!inv) return char.name;
+        let name = char.name;
+        
+        // 進化チェック (現在レアリティ > 初期レアリティ)
+        const currentR = inv.currentRarity || char.rarity;
+        if (getRarityIndex(currentR) > getRarityIndex(char.rarity)) {
+            name += '<span class="name-deco-evo">✨️</span>';
+        }
+        
+        // 転生チェック
+        if (inv.reincarnationCount && inv.reincarnationCount > 0) {
+            name += '<span class="name-deco-reborn">🪽</span>';
+        }
+        return name;
+    }
+
+    function executeEvolution() {
+        const id = viewingCharaId;
+        const char = rawData.characters.find(c => c.id == id);
+        const inv = gameState.charaInventory[id];
+        if (!inv) return;
+
+        const currentR = inv.currentRarity || char.rarity;
+        const costXP = EVO_COST_XP[currentR];
+
+        if (gameState.xp < costXP) return alert(`EXPが足りません (必要: ${costXP})`);
+        
+        if (!confirm(`【進化確認】\n消費: ${costXP} XP, 在庫${EVO_STOCK_REQ}個\n\n・レアリティが上昇します\n・レベルは1に戻ります\n・基礎効果値がランダム強化されます\n\n実行しますか？`)) return;
+
+        // 消費処理
+        gameState.xp -= costXP;
+        inv.count -= EVO_STOCK_REQ;
+
+        // パラメータ更新
+        const nextIdx = getRarityIndex(currentR) + 1;
+        inv.currentRarity = RARITY_ORDER[nextIdx];
+        inv.level = 0;
+        inv.exp = 0;
+
+        // 基礎値強化 (+0.25, +0.30, +0.35 のランダム)
+        const baseVal = (inv.isEvolved && inv.customValue) ? inv.customValue : Number(char.value);
+        const bonus = [0.25, 0.30, 0.35][Math.floor(Math.random() * 3)];
+        inv.customValue = baseVal + bonus;
+
+        // スキル追加抽選 (30%)
+        if (!inv.skills) inv.skills = [char.type];
+        if (!inv.skills.includes('ALL')) {
+            if (Math.random() < 0.30) {
+                const missing = SKILL_TYPES.filter(s => !inv.skills.includes(s));
+                if (missing.length > 0) {
+                    const addSkill = missing[Math.floor(Math.random() * missing.length)];
+                    inv.skills.push(addSkill);
+                    alert(`✨ スキル追加成功！\n[${addSkill}] を習得しました！`);
+                }
+                // 3色揃ったらALLに変化
+                if (SKILL_TYPES.every(s => inv.skills.includes(s))) {
+                    inv.skills = ['ALL'];
+                    alert(`👑 全属性制覇！スキルが [ALL] に進化しました！`);
                 }
             }
         }
-        if(gameState.itemLevels && rawData.shopItems) {
-            Object.keys(gameState.itemLevels).forEach(itemId => {
-                const item = rawData.shopItems.find(i => i.id === itemId);
-                const level = gameState.itemLevels[itemId];
-                if(item && level > 0) {
-                    if(item.type === 'ATK') stats.atk += (Number(item.value) * level);
-                    if(item.type === 'TIME') stats.time += (Number(item.value) * level);
-                    if(item.type === 'EXP') stats.exp += (Number(item.value) * level);
-                }
-            });
-        }
-        
-        if (playData.activeOaths && playData.activeOaths.includes('weak')) {
-            stats.atk *= 0.5;
-        }
 
-        return stats;
+        inv.isEvolved = true;
+        
+        saveGame();
+        playSE('win');
+        alert(`進化成功！\nレアリティ: ${inv.currentRarity}\n基礎効果: x${inv.customValue.toFixed(2)} (+${bonus.toFixed(2)})`);
+        openCharaDetail(id);
+        renderZukan();
+        updateTitleInfo();
     }
 
-    function nextQuestion() {
-        if(!isGameActive) return;
+    function executeReincarnation() {
+        const id = viewingCharaId;
+        const char = rawData.characters.find(c => c.id == id);
+        const inv = gameState.charaInventory[id];
+        if (!inv) return;
+
+        if (gameState.xp < REBORN_COST_XP) return alert(`EXPが足りません (必要: ${REBORN_COST_XP})`);
+        if (!confirm(`【転生確認】\n消費: ${REBORN_COST_XP} EXP\n\n・レアリティと基礎値が初期状態に戻ります\n・レベルは1に戻ります\n・習得したスキルは引き継ぎます\n・転生回数が増え、名前に🪽がつきます\n\n実行しますか？`)) return;
+
+        gameState.xp -= REBORN_COST_XP;
+        
+        // リセット処理
+        inv.currentRarity = char.rarity;
+        inv.customValue = Number(char.value);
+        inv.level = 1;
+        inv.exp = 0;
+        
+        // 継承・加算処理
+        inv.reincarnationCount = (inv.reincarnationCount || 0) + 1;
+        inv.isEvolved = false; // レアリティが戻るので進化フラグはオフ
+
+        saveGame();
+        playSE('start');
+        alert("転生完了！\n強くてニューゲームの始まりです！");
+        openCharaDetail(id);
+        renderZukan();
+        updateTitleInfo();
+    }
+
+
+    function nextQuestion() {
+        if(!isGameActive) return;
         if(playData.qIndex >= playData.questions.length) { playData.questions.sort(()=>Math.random()-0.5); playData.qIndex = 0; }
         const q = playData.questions[playData.qIndex];
         playData.currentQ = q;
@@ -1693,8 +1875,13 @@ async function fetchData() {
             const chara = rawData.characters ? rawData.characters.find(c => c.id == charaId) : null;
             
             if(chara) {
-                const inv = gameState.charaInventory[charaId] || { level: 1 };
-                let val = chara.value + (inv.level * LV_BONUS_RATE);
+                const inv = gameState.charaInventory[charaId] || { level: 1 };
+                // ▼ 修正: 進化データ参照
+                const baseVal = (inv.isEvolved && inv.customValue) ? inv.customValue : chara.value;
+                const r = inv.currentRarity || chara.rarity;
+                const name = getDisplayName(chara, inv); // 名前装飾
+                let val = Number(baseVal) + (inv.level * LV_BONUS_RATE);
+                // ▲ 修正ここまで
                 let visual = "";
                 
                 if(chara.imageUrl && chara.imageUrl.startsWith('http')) {
@@ -1707,13 +1894,13 @@ async function fetchData() {
                     <div style="display:flex; align-items:center; gap:10px; text-align:left;">
                         ${visual}
                         <div>
-                            <div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${chara.name}</div>
-                            <div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div>
-                            <div style="font-size:0.7em; color:#bdc3c7;">
-                                <span class="rarity-${chara.rarity}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${chara.rarity}</span>
-                                効果: x${val.toFixed(2)}
-                            </div>
-                        </div>
+                            <div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${name}</div>
+                            <div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div>
+                            <div style="font-size:0.7em; color:#bdc3c7;">
+                                <span class="rarity-${r}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${r}</span>
+                                効果: x${val.toFixed(2)}
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -1874,7 +2061,7 @@ async function fetchData() {
             const isClaimed = dailyMissions.claimed.allClear;
             let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
             let btnClass = isClaimed ? 'disabled' : ''; 
-            let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} XPを受け取る`;
+            let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} EXPを受け取る`;
             let btnAction = isClaimed ? '' : 'onclick="claimAllClear()"';
 
             l.innerHTML += `
@@ -1884,15 +2071,15 @@ async function fetchData() {
                 </div>`; 
         } 
     }
-    function claimMission(id,r) { if(dailyMissions.claimed[id])return; dailyMissions.claimed[id]=true; gameState.xp+=r; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(r+"XP獲得"); }
-    function claimAllClear() { if(dailyMissions.claimed.allClear)return; dailyMissions.claimed.allClear=true; gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(MISSION_ALL_CLEAR+"XP獲得"); }
+    function claimMission(id,r) { if(dailyMissions.claimed[id])return; dailyMissions.claimed[id]=true; gameState.xp+=r; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(r+"EXP獲得"); }
+    function claimAllClear() { if(dailyMissions.claimed.allClear)return; dailyMissions.claimed.allClear=true; gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(MISSION_ALL_CLEAR+"EXP獲得"); }
 
     function openGacha() { document.getElementById('gacha-overlay').classList.remove('hidden'); document.getElementById('gacha-xp').innerText=gameState.xp; renderZukan(); }
     function closeGacha() { document.getElementById('gacha-overlay').classList.add('hidden'); updateTitleInfo(); }
     
     function rollGacha(count) {
         const cost = 3000 * count;
-        if (gameState.xp < cost) return alert("XPが足りません！\n必要: " + cost + " XP");
+        if (gameState.xp < cost) return alert("EXPが足りません！\n必要: " + cost + " EXP");
         
         gameState.xp -= cost;
         let results = [];
@@ -1927,9 +2114,9 @@ async function fetchData() {
 
 
     function rollGuaranteedTenGacha(guaranteedRarity, cost) {
-        if (gameState.xp < cost) return alert("XPが足りません！\n必要: " + cost + " XP");
+        if (gameState.xp < cost) return alert("XPが足りません！\n必要: " + cost + " EXP");
         
-        if (!confirm(`【確認】\n${cost} XPを消費して、\n${guaranteedRarity}以上確定10連スカウトを行いますか？`)) return;
+        if (!confirm(`【確認】\n${cost} EXPを消費して、\n${guaranteedRarity}以上確定10連スカウトを行いますか？`)) return;
 
         gameState.xp -= cost;
         let results = [];
@@ -2046,60 +2233,115 @@ async function fetchData() {
             return 0;
         });
 
-        list.forEach(c=>{ 
-            const data = gameState.charaInventory[c.id]; 
-            const isOwned = !!data;
-            const div = document.createElement('div');
-            
-            let masterClass = '';
-            if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+        list.forEach(c=>{ 
+            const data = gameState.charaInventory[c.id]; 
+            const isOwned = !!data;
+            const div = document.createElement('div');
+            
+            let masterClass = '';
+            if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
 
-            div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
-            
-            let visual, nameText, lvlBadge = '', stockBadge = '';
-            
-            if(isOwned) {
-                visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
-                nameText = `${c.rarity} / ${c.type}`;
-                lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
-                if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
-                div.onclick = () => openCharaDetail(c.id);
-            } else {
-                visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
-                nameText = "???";
-            }
-            
-            div.innerHTML = `${lvlBadge}${stockBadge}${visual}<div style="font-weight:bold;font-size:0.8em;">${nameText}</div>`;
-            g.appendChild(div);
-        });
+            div.className = `char-card ${isOwned?'owned':''} ${gameState.equipped==c.id?'active':''} ${masterClass}`;
+            
+            let visual, nameText, lvlBadge = '', stockBadge = '';
+            // ▼▼▼ 追加: 変数定義 ▼▼▼
+            let decoName = "???"; 
+            
+            if(isOwned) {
+                visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
+                
+                // ▼▼▼ 修正: 現在のレアリティ取得と名前装飾の適用 ▼▼▼
+                const currentRarity = data.currentRarity || c.rarity;
+                decoName = getDisplayName(c, data);
+
+                // レアリティ表示部分を現在のレアリティに合わせる
+                nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
+                // ▲▲▲ 修正ここまで ▲▲▲
+
+                lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`;
+                if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
+                div.onclick = () => openCharaDetail(c.id);
+            } else {
+                visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`;
+                nameText = "???";
+            }
+            
+            // ▼▼▼ 修正: 名前（decoName）を表示する行を追加 ▼▼▼
+            div.innerHTML = `${lvlBadge}${stockBadge}${visual}
+                             <div style="font-weight:bold;font-size:0.8em;">${nameText}</div>
+                             <div style="font-size:0.7em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${decoName}</div>`;
+            g.appendChild(div);
+        });
     }
 
-    function openCharaDetail(id) { 
-        viewingCharaId=id; 
-        const c=rawData.characters.find(x=>x.id==id); 
-        const o=gameState.charaInventory[id]; 
-        if(!c||!o)return; 
+    function openCharaDetail(id) { 
+        viewingCharaId=id; 
+        const c=rawData.characters.find(x=>x.id==id); 
+        const o=gameState.charaInventory[id]; 
+        if(!c||!o)return; 
+
+        // ▼▼▼ データ準備 ▼▼▼
+        const currentR = o.currentRarity || c.rarity;
+        const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
+        // 進化済みならcustomValueを使用、そうでなければマスタデータを使用
+        const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
         
-        document.getElementById('cd-name').innerText=c.name; 
-        document.getElementById('cd-rarity').innerText=c.rarity; 
-        document.getElementById('cd-rarity').className = "rarity-" + c.rarity; 
-        
-        const maxLv = RARITY_CAPS[c.rarity] || 10;
-        document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
-        document.getElementById('cd-type').innerText=c.type; 
-        
-        let val = c.value + (o.level * LV_BONUS_RATE);
-        document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
-        
-        document.getElementById('cd-stock').innerText=o.count + "個"; 
-        document.getElementById('cd-desc').innerText = c.desc || "";
-        
-        document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ;
-        document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
-        
-        document.getElementById('chara-detail-overlay').classList.remove('hidden'); 
-        if(c.imageUrl.startsWith('http')) document.getElementById('cd-img').src=c.imageUrl; else document.getElementById('cd-img').src=''; 
-    }
+        // ▼▼▼ UI更新 ▼▼▼
+        document.getElementById('cd-name').innerHTML = getDisplayName(c, o); // innerHTMLで装飾タグを有効化
+        document.getElementById('cd-rarity').innerText = currentR; 
+        document.getElementById('cd-rarity').className = "rarity-" + currentR; 
+        
+        const maxLv = RARITY_CAPS[currentR] || 10;
+        document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
+
+        // スキル表示（タグ化）
+        let skillHtml = '';
+        currentSkills.forEach(s => { skillHtml += `<span class="skill-tag ${s}">${s}</span>`; });
+        document.getElementById('cd-type').innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
+        
+        let val = baseVal + (o.level * LV_BONUS_RATE);
+        document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
+        
+        document.getElementById('cd-stock').innerText=o.count + "個"; 
+        document.getElementById('cd-desc').innerText = c.desc || "";
+        
+        document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ;
+        document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
+        
+        // 画像表示
+        if(c.imageUrl.startsWith('http')) document.getElementById('cd-img').src=c.imageUrl; 
+        else document.getElementById('cd-img').src=''; 
+
+        document.getElementById('chara-detail-overlay').classList.remove('hidden'); 
+
+        // ▼▼▼ 進化・転生ボタン制御 ▼▼▼
+        const evoContainer = document.getElementById('evo-container');
+        evoContainer.innerHTML = '';
+        evoContainer.classList.add('hidden');
+
+        // 1. 進化ボタンの表示条件
+        // レベルMAX かつ 在庫が必要数以上 かつ 現在レアリティがUR未満
+        if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
+            const cost = EVO_COST_XP[currentR];
+            const btn = document.createElement('button');
+            btn.className = 'evo-btn btn-evolution';
+            btn.innerHTML = `✨ 進化させる<br><span style="font-size:0.8em">消費: ${cost}EXP / 在庫${EVO_STOCK_REQ}個</span>`;
+            btn.onclick = executeEvolution;
+            evoContainer.appendChild(btn);
+            evoContainer.classList.remove('hidden');
+        }
+
+        // 2. 転生ボタンの表示条件
+        // 現在レアリティがUR かつ 元々のレアリティがURではない（=進化したキャラである）
+        if (currentR === 'UR' && c.rarity !== 'UR') {
+            const btn = document.createElement('button');
+            btn.className = 'evo-btn btn-reincarnation';
+            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.8em">消費: ${REBORN_COST_XP}EXP / スキル継承</span>`;
+            btn.onclick = executeReincarnation;
+            evoContainer.appendChild(btn);
+            evoContainer.classList.remove('hidden');
+        }
+    }
     
     function closeCharaDetail() { 
         document.getElementById('chara-detail-overlay').classList.add('hidden'); 
@@ -2172,95 +2414,103 @@ async function fetchData() {
     }
 
     function updateEnhancePreview(gainExp) {
-        document.getElementById('enhance-total-exp').innerText = gainExp;
-        
-        const t = gameState.charaInventory[viewingCharaId];
-        const chara = rawData.characters.find(x => x.id === viewingCharaId);
-        if (!t || !chara) return;
+        document.getElementById('enhance-total-exp').innerText = gainExp;
+        
+        const t = gameState.charaInventory[viewingCharaId];
+        const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        if (!t || !chara) return;
 
-        const maxLv = RARITY_CAPS[chara.rarity] || 10;
-        
-        let simExp = t.exp + gainExp;
-        let simLv = t.level;
-        
-        while (simExp >= EXP_REQ) {
-            if (simLv >= maxLv) {
-                simExp = 0;
-                break;
-            }
-            simExp -= EXP_REQ;
-            simLv++;
-        }
-        
-        const preview = document.getElementById('enhance-lv-preview');
-        if (simLv > t.level) {
-            preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`;
-            preview.style.color = '#e67e22';
-        } else {
-            preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`;
-            preview.style.color = '#7f8c8d';
-        }
-    }
+        // 修正: 現在のレアリティに基づく上限を取得
+        const currentR = t.currentRarity || chara.rarity;
+        const maxLv = RARITY_CAPS[currentR] || 10;
+        
+        let simExp = t.exp + gainExp;
+        let simLv = t.level;
+        
+        while (simExp >= EXP_REQ) {
+            if (simLv >= maxLv) {
+                simExp = 0;
+                break;
+            }
+            simExp -= EXP_REQ;
+            simLv++;
+        }
+        
+        const preview = document.getElementById('enhance-lv-preview');
+        if (simLv > t.level) {
+            preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`;
+            preview.style.color = '#e67e22';
+        } else {
+            preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`;
+            preview.style.color = '#7f8c8d';
+        }
+    }
 
     function executeBulkEnhance() {
-        const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0);
-        if (totalSelected === 0) return alert("素材を選択してください");
+        const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0);
+        if (totalSelected === 0) return alert("素材を選択してください");
 
-        let totalGain = 0;
-        Object.keys(selectedMaterials).forEach(id => {
-            const count = selectedMaterials[id];
-            if (count > 0) {
-                const matChar = rawData.characters.find(c => c.id === id);
-                const expVal = MAT_EXP[matChar.rarity] || 25;
-                totalGain += (expVal * count);
-            }
-        });
+        let totalGain = 0;
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (count > 0) {
+                const matChar = rawData.characters.find(c => c.id === id);
+                const expVal = MAT_EXP[matChar.rarity] || 25;
+                totalGain += (expVal * count);
+            }
+        });
 
-        if (!confirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`)) return;
+        if (!confirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`)) return;
 
-        Object.keys(selectedMaterials).forEach(id => {
-            const count = selectedMaterials[id];
-            if (gameState.charaInventory[id]) {
-                gameState.charaInventory[id].count -= count;
-                if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0;
-            }
-        });
+        Object.keys(selectedMaterials).forEach(id => {
+            const count = selectedMaterials[id];
+            if (gameState.charaInventory[id]) {
+                gameState.charaInventory[id].count -= count;
+                if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0;
+            }
+        });
 
-        const t = gameState.charaInventory[viewingCharaId];
-        const chara = rawData.characters.find(x => x.id === viewingCharaId);
-        const maxLv = RARITY_CAPS[chara.rarity] || 10;
+        const t = gameState.charaInventory[viewingCharaId];
+        const chara = rawData.characters.find(x => x.id === viewingCharaId);
+        
+        // 修正: 現在のレアリティに基づく上限を取得
+        const currentR = t.currentRarity || chara.rarity;
+        const maxLv = RARITY_CAPS[currentR] || 10;
 
-        t.exp = (Number(t.exp) || 0) + totalGain;
-        let lvUpCount = 0;
+        t.exp = (Number(t.exp) || 0) + totalGain;
+        let lvUpCount = 0;
 
-        while (t.exp >= EXP_REQ) {
-            if (t.level >= maxLv) {
-                t.exp = 0;
-                break;
-            }
-            t.exp -= EXP_REQ;
-            t.level++;
-            lvUpCount++;
-        }
+        while (t.exp >= EXP_REQ) {
+            if (t.level >= maxLv) {
+                t.exp = 0;
+                break;
+            }
+            t.exp -= EXP_REQ;
+            t.level++;
+            lvUpCount++;
+        }
 
-        updateMissionProgress('enhance', 1);
-        checkTitles();
-        saveGame();
+        updateMissionProgress('enhance', 1);
+        checkTitles();
+        saveGame();
 
-        alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
-        
-        selectedMaterials = {};
-        renderEnhanceList();
-        
-        updateEnhancePreview(0);
-        
-        if(chara) {
-            document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv;
-            document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ;
-            document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
-            document.getElementById('cd-val').innerText='x'+(chara.value+(t.level*LV_BONUS_RATE)).toFixed(2);
-        }
-    }
+        alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
+        
+        selectedMaterials = {};
+        renderEnhanceList();
+        
+        updateEnhancePreview(0);
+        
+        if(chara) {
+            document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv;
+            document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ;
+            document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
+            
+            // 修正: 進化後の基礎値を考慮して表示を更新
+            const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value);
+            document.getElementById('cd-val').innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
+        }
+    }
     
     function openShop() { 
         document.getElementById('shop-overlay').classList.remove('hidden'); 
