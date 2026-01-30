@@ -1004,7 +1004,7 @@ async function fetchData() {
                     } else if (lowerKey.includes('character')) {
                         rawData.characters = data[key].filter(d => d).map(c => { const name = getVal(c, ['name', '名前']) || "Unknown"; return { id: String(c.id || c.ID || generateHashId(name, 'chara')), name: name, rarity: getVal(c, ['rarity', 'レア']) || "N", type: getVal(c, ['type', 'タイプ']) || "ATK", value: Number(getVal(c, ['value', '補正値', '効果値']) || 1.0), desc: getVal(c, ['desc', '解説']), imageUrl: convertDriveUrl(getVal(c, ['imageUrl', '画像URL', '画像'])) }; });
                     } else if (lowerKey.includes('boss')) {
-                        rawData.bosses = data[key].filter(d => d).map(b => ({ grade: getVal(b, ['grade', '学年']), unit: getVal(b, ['unit', '単元']), name: getVal(b, ['name', 'bossName', 'ボス名']) || "Boss", hp: Number(getVal(b, ['hp', 'bossHP', 'ボスHP']) || 1000), icon: convertDriveUrl(getFuzzyVal(b, 'ボス画像', "👾")) }));
+                        rawData.bosses = data[key].filter(d => d).map(b => ({ grade: getVal(b, ['grade', '学年']), unit: getVal(b, ['unit', '単元']), name: getVal(b, ['name', 'bossName', 'ボス名']) || "Boss", hp: Number(getVal(b, ['hp', 'bossHP', 'ボスHP']) || 3000), icon: convertDriveUrl(getFuzzyVal(b, 'ボス画像', "👾")) }));
                     } else if (lowerKey.includes('shop')) {
                         rawData.shopItems = data[key].filter(d => d).map(i => { const name = getVal(i, ['name', 'アイテム名']) || "Item"; return { id: String(i.id || i.ID || generateHashId(name, 'item')), name: name, price: Number(getVal(i, ['price', '価格']) || 1000), type: getVal(i, ['type', 'タイプ']) || "ATK", value: Number(getVal(i, ['value', '効果値']) || 0.1), desc: getVal(i, ['desc', '説明']), icon: getVal(i, ['icon', 'アイコン']) || "🎁" }; });
                     } else if (lowerKey.includes('typing')) {
@@ -1111,7 +1111,7 @@ async function fetchData() {
         playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false;
         playData.context = { grade: g, subject: s, unit: u };
         const charaStats = getCharaStats();
-        gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||1000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time;
+        gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time;
         isGameActive = false; isPaused = false;
         document.getElementById('pause-overlay').classList.add('hidden');
         document.getElementById('title-screen').classList.add('hidden');
@@ -1288,9 +1288,27 @@ async function fetchData() {
             let damage = 0;
             if (playData.isRevenge) { damage = Math.ceil(gameState.maxHP / playData.questions.length); } 
             else {
+                // --- バランス調整(Ver 7.2) ---
                 const stats = getCharaStats();
-                const speedMultiplier = 1.8 * stats.time; 
-                damage = Math.floor(80 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * speedMultiplier) * (1 + (gameState.combo * 0.05)));
+                
+                // 1. 基礎攻撃力
+                const baseAtk = 100;
+                
+                // 2. 時間係数 (0.2 ~ 1.0)
+                // 遅れるとダメージ全体が減少する（アクション性重視）
+                const rawRatio = gameState.timeLeft / gameState.maxTime;
+                const timeFactor = 0.2 + (rawRatio * 0.8);
+
+                // 3. ステータス補正 (ATKそのまま, TIMEは係数0.5)
+                // 例: ATK2.8 => 2.8, TIME2.8 => 1.9
+                const statFactor = stats.atk + ((stats.time - 1) * 0.5);
+
+                // 4. コンボ補正 (2.5%/回, 最大1.0)
+                // 40コンボで最大補正(+100%)に到達
+                const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
+
+                // 最終計算: 基礎攻撃力 × 時間係数 × (ステータス + コンボ)
+                damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             }
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage);
             gameState.score += damage; gameState.combo++;
@@ -1558,7 +1576,7 @@ async function fetchData() {
         
         const detailBtnRow = document.querySelector('.detail-btn-row');
         if (document.querySelector('.item-use-area')) document.querySelector('.item-use-area').remove();
-        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 500)" ${(gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 1000)" ${(gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 2000)" ${(gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
+        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${(gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${(gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${(gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
         
         document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ; document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
         if(c.imageUrl.startsWith('http')) document.getElementById('cd-img').src=c.imageUrl; else document.getElementById('cd-img').src=''; 
@@ -1670,7 +1688,11 @@ async function fetchData() {
                 l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" onclick="buyItem('${i.id}',${p})">${lv>=10?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
             }); 
         } else {
-            const rates = [ { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 500, icon: '📔' }, { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 1000, icon: '📕' }, { id: 'xpBookLarge', name: '大の書', cost: 50, gain: 2000, icon: '📘' } ];
+            const rates = [ 
+                { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 100, icon: '📔' }, 
+                { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 500, icon: '📕' }, 
+                { id: 'xpBookLarge', name: '大の書', cost: 50, gain: 1000, icon: '📘' } 
+            ];
             rates.forEach(ex => {
                 const canEx = (gameState.inventory.redPages >= ex.cost && gameState.inventory.bluePages >= ex.cost);
                 // --- 修正: 現在の所持数を表示に追加 ---
@@ -1800,7 +1822,7 @@ async function fetchData() {
         playData.context = { grade: g, subject: s, unit: u };
         const charaStats = getCharaStats();
         gameState.score = 0; gameState.combo = 0; gameState.lives = playData.activeOaths.includes('backwater') ? 1 : 3;
-        gameState.enemyHP = Number(boss.hp)||1000; gameState.maxHP = gameState.enemyHP; 
+        gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; 
         let timeMulti = playData.activeOaths.includes('rapid') ? 0.5 : 1.0; gameState.maxTime = 10 * charaStats.time * timeMulti;
         isGameActive = false; isPaused = false;
         document.getElementById('oath-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
@@ -1856,7 +1878,7 @@ async function fetchData() {
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false; playData.isTyping = true; playData.context = null;
         const charaStats = getCharaStats();
-        gameState.score = 0; gameState.combo = 0; gameState.lives = 5; gameState.enemyHP = Number(boss.hp) || 1000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time; 
+        gameState.score = 0; gameState.combo = 0; gameState.lives = 5; gameState.enemyHP = Number(boss.hp) || 3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time; 
         isGameActive = false; isPaused = false;
         document.getElementById('typing-menu-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
         document.getElementById('ui-choices').classList.add('hidden'); document.getElementById('ui-typing-area').classList.remove('hidden'); document.getElementById('ui-question').classList.add('hidden');
