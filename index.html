@@ -1106,7 +1106,7 @@ async function fetchData() {
         let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
         if(qList.length === 0) return alert("問題がありません");
         let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
-        if(!boss) boss = { name: "テストの魔人", hp: 1000, icon: "😈" };
+        if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" };
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false;
         playData.context = { grade: g, subject: s, unit: u };
@@ -1689,7 +1689,7 @@ async function fetchData() {
             }); 
         } else {
             const rates = [ 
-                { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 100, icon: '📔' }, 
+                { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 200, icon: '📔' }, 
                 { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 500, icon: '📕' }, 
                 { id: 'xpBookLarge', name: '大の書', cost: 50, gain: 1000, icon: '📘' } 
             ];
@@ -1816,7 +1816,7 @@ async function fetchData() {
         let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
         if(qList.length === 0) return alert("問題がありません");
         let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
-        if(!boss) boss = { name: "試練の魔人", hp: 1500, icon: "👿" };
+        if(!boss) boss = { name: "試練の魔人", hp: 3000, icon: "👿" };
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         playData.isRevenge = false; playData.activeOaths = [...tempOaths]; playData.isRandom = false; 
         playData.context = { grade: g, subject: s, unit: u };
