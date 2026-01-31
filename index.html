@@ -766,10 +766,10 @@
         let id = localStorage.getItem('sq_user_id');
         if (!id) {
             id = Math.random().toString(36).substring(2, 10);
-        localStorage.setItem('sq_user_id', id);
+            localStorage.setItem('sq_user_id', id);
+        }
+        currentUserId = id;
     }
-    currentUserId = id;
-}
 
     function loadSaveData() {
         const safeParse = (key, defaultVal) => {
@@ -808,7 +808,6 @@
         gameState.revengeList = safeParse('sq_revenge', []);
         gameState.unitProgress = safeParse('sq_unit_progress', {});
         
-        // --- 修正: 読み込んだデータの数値チェックと初期化を強化 ---
         const loadedInv = safeParse('sq_item_inventory', {});
         gameState.inventory = {
             redPages: Number(loadedInv.redPages) || 0,
@@ -821,8 +820,8 @@
         try { dailyMissions = safeParse('sq_missions', { date:"", progress:{}, claimed:{} }); } catch(e){}
     }
 
-function saveGame() {
-    localStorage.setItem('sq_xp', gameState.xp);
+    function saveGame() {
+        localStorage.setItem('sq_xp', gameState.xp);
         localStorage.setItem('sq_equip', gameState.equipped);
         localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
         localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
@@ -961,7 +960,6 @@ function saveGame() {
                 gameState.revengeList = forceArr(data.revengeList);
                 gameState.unitProgress = forceObj(data.unitProgress);
                 
-                // --- 修正: クラウドデータ読み込み時の数値補正 ---
                 const cInv = forceObj(data.inventory);
                 gameState.inventory = {
                     redPages: Number(cInv.redPages) || 0,
@@ -1106,7 +1104,7 @@ async function fetchData() {
         let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
         if(qList.length === 0) return alert("問題がありません");
         let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
-        if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" };
+        if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" }; // 修正: デフォルトHPを3000に
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false;
         playData.context = { grade: g, subject: s, unit: u };
@@ -1688,6 +1686,7 @@ async function fetchData() {
                 l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" onclick="buyItem('${i.id}',${p})">${lv>=10?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
             }); 
         } else {
+            // 修正: 小200, 中500, 大1000
             const rates = [ 
                 { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 200, icon: '📔' }, 
                 { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 500, icon: '📕' }, 
@@ -1816,7 +1815,7 @@ async function fetchData() {
         let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
         if(qList.length === 0) return alert("問題がありません");
         let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
-        if(!boss) boss = { name: "試練の魔人", hp: 3000, icon: "👿" };
+        if(!boss) boss = { name: "試練の魔人", hp: 1500, icon: "👿" };
         playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
         playData.isRevenge = false; playData.activeOaths = [...tempOaths]; playData.isRandom = false; 
         playData.context = { grade: g, subject: s, unit: u };
@@ -1870,25 +1869,83 @@ async function fetchData() {
     }
     function closeTypingMenu() { document.getElementById('typing-menu-overlay').classList.add('hidden'); }
     function startTypingGame() {
-        const g = document.getElementById('typing-grade-select').value; if(!g) return alert("学年を選択してください");
+        const g = document.getElementById('typing-grade-select').value; 
+        if(!g) return alert("学年を選択してください");
+        
         if (!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
-        const qList = rawData.typing.filter(t => t.grade == g); if(qList.length === 0) return alert("選択した学年の問題がありません");
+        
+        const qList = rawData.typing.filter(t => t.grade == g); 
+        if(qList.length === 0) return alert("選択した学年の問題がありません");
+        
         let boss = { name: "キーボードの魔人", hp: qList.length * 50, icon: "⌨️" };
-        try { if(rawData.bosses) { const specificBoss = rawData.bosses.find(b => b.grade == g && b.unit == 'タイピング'); if(specificBoss) { boss = { ...specificBoss }; if(!boss.hp) boss.hp = qList.length * 50; } else { const gradeBoss = rawData.bosses.find(b => b.grade == g); if(gradeBoss) { boss = { ...gradeBoss }; boss.hp = qList.length * 50; boss.name = "【打鍵】" + boss.name; } } } } catch(e) {}
-        playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
-        playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false; playData.isTyping = true; playData.context = null;
+        try { 
+            if(rawData.bosses) { 
+                const specificBoss = rawData.bosses.find(b => b.grade == g && b.unit == 'タイピング'); 
+                if(specificBoss) { 
+                    boss = { ...specificBoss }; 
+                    if(!boss.hp) boss.hp = qList.length * 50; 
+                } else { 
+                    const gradeBoss = rawData.bosses.find(b => b.grade == g); 
+                    if(gradeBoss) { 
+                        boss = { ...gradeBoss }; 
+                        boss.hp = qList.length * 50; 
+                        boss.name = "【打鍵】" + boss.name; 
+                    } 
+                } 
+            } 
+        } catch(e) {}
+        
+        playData.questions = qList.sort(() => Math.random() - 0.5); 
+        playData.qIndex = 0; 
+        playData.currentBoss = boss;
+        playData.isRevenge = false; 
+        playData.activeOaths = []; 
+        playData.isRandom = false; 
+        playData.isTyping = true; 
+        playData.context = null;
+        
         const charaStats = getCharaStats();
-        gameState.score = 0; gameState.combo = 0; gameState.lives = 5; gameState.enemyHP = Number(boss.hp) || 3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time; 
-        isGameActive = false; isPaused = false;
-        document.getElementById('typing-menu-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
-        document.getElementById('ui-choices').classList.add('hidden'); document.getElementById('ui-typing-area').classList.remove('hidden'); document.getElementById('ui-question').classList.add('hidden');
-        const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-        enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
+        gameState.score = 0; 
+        gameState.combo = 0; 
+        gameState.lives = 5; 
+        gameState.enemyHP = Number(boss.hp) || 3000; 
+        gameState.maxHP = gameState.enemyHP; 
+        gameState.maxTime = 10 * charaStats.time; 
+        
+        isGameActive = false; 
+        isPaused = false;
+        
+        document.getElementById('typing-menu-overlay').classList.add('hidden'); 
+        document.getElementById('title-screen').classList.add('hidden'); 
+        document.getElementById('game-screen').classList.remove('hidden');
+        
+        document.getElementById('ui-choices').classList.add('hidden'); 
+        document.getElementById('ui-typing-area').classList.remove('hidden'); 
+        document.getElementById('ui-question').classList.add('hidden');
+        
+        const enemyBox = document.querySelector('.enemy-visual-box'); 
+        const enemyIcon = document.getElementById('ui-enemy-icon');
+        enemyBox.classList.remove('anim-paused', 'fade-out'); 
+        enemyIcon.classList.remove('shake-anim');
+        
         document.getElementById('ui-enemy-name').innerText = boss.name;
-        if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
-        document.removeEventListener('keydown', handleTypingInput); document.addEventListener('keydown', handleTypingInput);
-        document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
-        updateUI(); startCountdown();
+        if(boss.icon && boss.icon.startsWith('http')) { 
+            enemyIcon.innerHTML = `<img src="${boss.icon}">`; 
+        } else { 
+            enemyIcon.innerHTML = boss.icon || "👾"; 
+        }
+        
+        document.removeEventListener('keydown', handleTypingInput); 
+        document.addEventListener('keydown', handleTypingInput);
+        
+        document.getElementById('ui-timer').style.width = '100%'; 
+        document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
+        
+        document.getElementById('ui-typing-jp').innerText = "READY...";
+        document.getElementById('ui-typing-romaji').innerHTML = "";
+
+        updateUI(); 
+        startCountdown();
     }
     function nextTypingQuestion() { if(playData.qIndex >= playData.questions.length) { playData.questions.sort(()=>Math.random()-0.5); playData.qIndex = 0; } const q = playData.questions[playData.qIndex]; playData.typingTarget = q; playData.typingIndex = 0; renderTypingUI(); startTimer(); }
     function renderTypingUI() {
@@ -1916,7 +1973,14 @@ async function fetchData() {
             playData.typingIndex++; playSE('type_hit'); renderTypingUI();
             if(playData.typingIndex >= playData.typingTarget.romaji.length) {
                 clearInterval(gameState.timer);
-                const stats = getCharaStats(); const speedMultiplier = 1.8 * stats.time; let damage = Math.floor(80 * stats.atk * (0.2 + (gameState.timeLeft / gameState.maxTime) * speedMultiplier) * (1 + (gameState.combo * 0.05)));
+                const stats = getCharaStats();
+                const baseAtk = 100;
+                const rawRatio = gameState.timeLeft / gameState.maxTime;
+                const timeFactor = 0.2 + (rawRatio * 0.8);
+                const statFactor = stats.atk + ((stats.time - 1) * 0.5);
+                const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
+                let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
+
                 gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
                 const enemyIcon = document.getElementById('ui-enemy-icon'); enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); updateUI();
                 if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
