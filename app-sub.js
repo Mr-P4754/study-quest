@@ -23,18 +23,26 @@ function togglePause() {
 function resumeGame() { isPaused = false; document.getElementById('pause-overlay').classList.add('hidden'); }
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
-    isGameActive=false; 
-    clearInterval(gameState.timer); 
-    resumeGame(); 
+    isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
     
-    // --- 修正: 高さをリセットする際も !important 指定を解除 ---
+    // UIリセット
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const qBox = document.getElementById('ui-question');
-    if (qBox) { 
-        qBox.style.removeProperty('height'); 
-        qBox.style.removeProperty('min-height'); 
-    }
+    if (qBox) { qBox.style.removeProperty('height'); qBox.style.removeProperty('min-height'); }
     
-    startGame(); 
+    if (playData.isCalculation) { startCalcGame(); }
+    else if (playData.isTyping) { startTypingGame(); }
+    else if (playData.isRandom) { startRandomGame(); }
+    else if (playData.activeOaths && playData.activeOaths.length > 0) { startOathGame(); }
+    else if (playData.isRevenge) { startRevengeMode(); }
+    else { startGame(); }
 }
 async function backToTitleFromPause() { if (!(await showConfirm("戻りますか？"))) return; isGameActive=false; clearInterval(gameState.timer); backToTitle(); }
 
@@ -156,7 +164,13 @@ function backToTitle() {
     document.removeEventListener('keydown', handleTypingInput);
     document.getElementById('ui-choices').classList.remove('hidden'); document.getElementById('ui-typing-area').classList.add('hidden'); document.getElementById('ui-question').classList.remove('hidden');
     
-    // --- 修正: タイトルへ戻る際も !important 指定を解除 ---
+    // UIリセット
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const qBox = document.getElementById('ui-question');
     if (qBox) {
         qBox.style.removeProperty('height');
@@ -502,6 +516,16 @@ function startOathGame() {
     let timeMulti = playData.activeOaths.includes('rapid') ? 0.5 : 1.0; gameState.maxTime = 10 * charaStats.time * timeMulti;
     isGameActive = false; isPaused = false;
     document.getElementById('oath-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    
+    // UIリセット
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
     document.getElementById('ui-enemy-name').innerText = "【誓約】" + boss.name;
@@ -529,6 +553,16 @@ function startRandomGame() {
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; gameState.maxTime = 10 * charaStats.time;
     isGameActive = false; isPaused = false;
     document.getElementById('random-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    
+    // UIリセット
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
     document.getElementById('ui-enemy-name').innerText = "【迷宮】" + boss.name;
@@ -571,15 +605,21 @@ function startTypingGame() {
     isGameActive = false; isPaused = false;
     
     document.getElementById('typing-menu-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
-    document.getElementById('ui-choices').classList.add('hidden'); document.getElementById('ui-typing-area').classList.remove('hidden'); document.getElementById('ui-question').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden'); document.getElementById('calc-keypad').classList.add('hidden'); document.getElementById('calc-layout').classList.add('hidden'); document.getElementById('ui-calc-progress').classList.add('hidden');
     
+    document.getElementById('ui-choices').classList.add('hidden'); 
+    document.getElementById('ui-typing-area').classList.remove('hidden'); 
+    document.getElementById('ui-question').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden'); 
+    document.getElementById('calc-keypad').classList.add('hidden'); 
+    document.getElementById('calc-layout').classList.add('hidden'); 
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
     
     document.getElementById('ui-enemy-name').innerText = boss.name;
     if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
-    document.getElementById('ui-question').classList.remove('hidden'); document.getElementById('ui-calc-answer').classList.add('hidden'); document.getElementById('calc-keypad').classList.add('hidden'); document.getElementById('ui-calc-progress').classList.add('hidden');
     document.querySelector('.enemy-stats-row').style.display = '';
 
     document.removeEventListener('keydown', handleTypingInput); document.addEventListener('keydown', handleTypingInput);
@@ -588,6 +628,7 @@ function startTypingGame() {
 
     updateUI(); startCountdown();
 }
+
 function startCalcGame() {
     const type = document.getElementById('calc-type-select').value; const mode = document.getElementById('calc-mode-select').value;
     if (!type || !mode) return alert("問題形式とモードを選択してください");
@@ -605,7 +646,6 @@ function startCalcGame() {
     document.getElementById('ui-enemy-name').innerText = '計算クエスト'; enemyIcon.innerHTML = '🧮';
     document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = playData.calcMode === '3min' ? '180.0' : '0.0';
     
-    // --- 修正: CSSの !important 指定を上書きするために setProperty を使用 ---
     const qBox = document.getElementById('ui-question');
     if (qBox) {
         qBox.style.setProperty('height', '50px', 'important');
