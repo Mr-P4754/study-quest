@@ -401,7 +401,18 @@ function startGame() {
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time;
     isGameActive = false; isPaused = false;
-    document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden'); document.getElementById('calc-layout').classList.add('hidden');
+    
+    document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden'); 
+    
+    // --- UIリセット ---
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
     document.getElementById('ui-enemy-name').innerText = boss.name;
@@ -421,7 +432,18 @@ function startRevengeMode() {
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; gameState.maxTime = 10 * charaStats.time;
     isGameActive = false; isPaused = false;
+    
     document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    
+    // --- UIリセット ---
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    document.querySelector('.enemy-stats-row').style.display = '';
+
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
     document.getElementById('ui-enemy-name').innerText = boss.name; enemyIcon.innerHTML = boss.icon; 
@@ -494,7 +516,6 @@ function getDisplayName(char, inv) {
     return name;
 }
 
-// 修正：不足していた関数を追加
 function nextTypingQuestion() {
     if (!isGameActive) return;
     if (playData.qIndex >= playData.questions.length) {
