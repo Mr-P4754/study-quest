@@ -31,7 +31,6 @@ async function retryGame() {
     if (!(await showConfirm("やり直しますか？"))) return; 
     isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
     
-    // UIリセット
     document.getElementById('calc-layout').classList.add('hidden');
     document.getElementById('ui-calc-answer').classList.add('hidden');
     document.getElementById('calc-keypad').classList.add('hidden');
@@ -70,20 +69,31 @@ function finishGame(isClear) {
         playSE(isClear ? 'win' : 'lose');
         const duration = playData.calcMode === '3min' ? 180 - playData.calcTimeLeft : playData.calcElapsed;
         const correct = playData.calcCorrect;
+        const totalQ = playData.calcQIndex;
+        const accuracy = totalQ > 0 ? (correct / totalQ) * 100 : 0;
+
         if (playData.calcMode === '3min') {
             if (correct >= 90) calcRank = 'S'; else if (correct >= 75) calcRank = 'A'; else if (correct >= 60) calcRank = 'B'; else if (correct >= 45) calcRank = 'C'; else calcRank = 'D';
         } else {
-            if (correct === playData.calcCountTarget) { if (duration <= 90) calcRank = 'S'; else if (duration <= 120) calcRank = 'A'; else if (duration <= 150) calcRank = 'B'; else calcRank = 'C'; } else if (correct >= 90) calcRank = 'A'; else if (correct >= 80) calcRank = 'B'; else if (correct >= 70) calcRank = 'C'; else calcRank = 'D';
+            if (correct === playData.calcCountTarget) { 
+                if (duration <= 90 && accuracy >= 95) calcRank = 'S'; 
+                else if (duration <= 120 && accuracy >= 90) calcRank = 'A'; 
+                else if (duration <= 150 && accuracy >= 80) calcRank = 'B'; 
+                else calcRank = 'C'; 
+            } else if (correct >= 90 && accuracy >= 90) calcRank = 'A'; 
+            else if (correct >= 80 && accuracy >= 80) calcRank = 'B'; 
+            else if (correct >= 70 && accuracy >= 70) calcRank = 'C'; 
+            else calcRank = 'D';
         }
         addCalcRecord({ correct, time: duration, date: new Date().toLocaleString('ja-JP') });
         if (correct > 0) {
-            // 基本量の3倍
-            const pageCount = (calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1) * 3;
-            const pageIcon = '📘';
+            const pageCount = (calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1) * 10;
             if (!gameState.inventory) gameState.inventory = {};
             if (!gameState.inventory.bluePages) gameState.inventory.bluePages = 0;
+            if (!gameState.inventory.redPages) gameState.inventory.redPages = 0;
             gameState.inventory.bluePages += pageCount;
-            dropInfo = { count: pageCount, icon: pageIcon };
+            gameState.inventory.redPages += pageCount;
+            dropInfo = { count: pageCount, icon: '📕📘' };
         }
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
     } else {
@@ -148,7 +158,6 @@ function finishGame(isClear) {
     document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; 
     document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; 
     
-    // スコア表示のラベル変更
     const resScoreSpan = document.getElementById('res-score');
     if (resScoreSpan && resScoreSpan.previousSibling) {
         resScoreSpan.previousSibling.nodeValue = playData.isCalculation ? "総問題数: " : "獲得スコア: ";
@@ -180,7 +189,10 @@ function finishGame(isClear) {
         document.getElementById('res-details').innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     }
     
-    if (playData.isCalculation && dropInfo.count > 0) { document.getElementById('res-drop').innerHTML = `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}`; }
+    if (playData.isCalculation && dropInfo.count > 0) { 
+        document.getElementById('res-drop').innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
+    }
+    
     document.getElementById('game-screen').classList.add('hidden'); document.getElementById('result-overlay').classList.remove('hidden'); checkTitles();
 }
 
@@ -192,7 +204,6 @@ function backToTitle() {
     document.removeEventListener('keydown', handleTypingInput);
     document.getElementById('ui-choices').classList.remove('hidden'); document.getElementById('ui-typing-area').classList.add('hidden'); document.getElementById('ui-question').classList.remove('hidden');
     
-    // UIリセット
     document.getElementById('calc-layout').classList.add('hidden');
     document.getElementById('ui-calc-answer').classList.add('hidden');
     document.getElementById('calc-keypad').classList.add('hidden');
@@ -675,7 +686,6 @@ function startCalcGame() {
     document.getElementById('ui-enemy-name').innerText = '計算クエスト'; enemyIcon.innerHTML = '🧮';
     document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = playData.calcMode === '3min' ? '180.0' : '0.0';
     
-    // SCORE部分のラベルを「問題数」「正解数」に変更
     const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling) uiScoreSpan.previousSibling.nodeValue = "問題数 ";
     const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling) uiComboSpan.previousSibling.nodeValue = "正解数 ";
 
@@ -730,7 +740,7 @@ function submitCalcAnswer() {
     playData.calcQIndex += 1; 
     playData.calcInput = ''; 
     renderCalcInput(); 
-    updateUI(); // 回答直後に問題数を更新
+    updateUI();
     setTimeout(() => answerBox.classList.remove('correct', 'wrong'), 420);
     
     if (playData.calcMode === '100q' && playData.calcQIndex >= playData.calcCountTarget) { finishGame(true); return; }
