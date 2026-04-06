@@ -87,13 +87,18 @@ function finishGame(isClear) {
         }
         addCalcRecord({ correct, time: duration, date: new Date().toLocaleString('ja-JP') });
         if (correct > 0) {
-            const pageCount = (calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1) * 10;
+            const basePage = calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1;
+            const pageCount = basePage * 10; // 基本量の10倍
+            
             if (!gameState.inventory) gameState.inventory = {};
             if (!gameState.inventory.bluePages) gameState.inventory.bluePages = 0;
             if (!gameState.inventory.redPages) gameState.inventory.redPages = 0;
+            
+            // 赤と青の両方を加算
             gameState.inventory.bluePages += pageCount;
             gameState.inventory.redPages += pageCount;
-            dropInfo = { count: pageCount, icon: '📕📘' };
+            
+            dropInfo = { count: pageCount, icon: '📕📘', isCalc: true };
         }
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
     } else {
@@ -181,16 +186,18 @@ function finishGame(isClear) {
                 <div>⏱️ <b>タイム</b> : ${duration} 秒</div>
             </div>
         `;
+        
+        // --- 修正: 赤と青の両方を確定で表示 ---
+        if (dropInfo.count > 0) {
+            document.getElementById('res-drop').innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
+        }
+        
     } else if (isCampaign && isClear) {
         document.getElementById('res-xp').innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
         document.getElementById('res-details').innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     } else {
         document.getElementById('res-xp').innerHTML = "+" + earned;
         document.getElementById('res-details').innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
-    }
-    
-    if (playData.isCalculation && dropInfo.count > 0) { 
-        document.getElementById('res-drop').innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
     }
     
     document.getElementById('game-screen').classList.add('hidden'); document.getElementById('result-overlay').classList.remove('hidden'); checkTitles();
