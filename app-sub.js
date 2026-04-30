@@ -858,3 +858,68 @@ function receiveAllGifts() {
     if (count > 0) { gameState.xp += totalExp; saveGame(); updateTitleInfo(); playSE('win'); alert(`🎁 ギフトを${count}件受け取りました！\n合計: +${totalExp} XP`); closeGiftMenu(); checkTitles(); updateGiftButtonState(); } else { closeGiftMenu(); }
 }
 function updateGiftButtonState() { if (!rawData.gifts) return; const unclaimed = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); const btn = document.getElementById('btn-gift'); const badge = document.getElementById('gift-badge'); if (unclaimed.length > 0) { btn.disabled = false; btn.style.opacity = "1.0"; btn.style.filter = "none"; badge.innerText = unclaimed.length; badge.classList.remove('hidden'); } else { btn.disabled = true; btn.style.opacity = "0.7"; badge.classList.add('hidden'); } }
+
+async function executeEvolution() {
+    const o = gameState.charaInventory[viewingCharaId];
+    const c = rawData.characters.find(x => x.id == viewingCharaId);
+    if(!o || !c) return;
+    const currentR = o.currentRarity || c.rarity;
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    
+    if (o.level < maxLv || o.count < EVO_STOCK_REQ || currentR === 'UR') return;
+    
+    const cost = EVO_COST_XP[currentR];
+    if (gameState.xp < cost) return alert(`XPが足りません！\n必要: ${cost} XP`);
+    
+    if (!(await showConfirm(`【進化確認】\n${cost} XP と素材${EVO_STOCK_REQ}個を消費して進化させますか？`))) return;
+    
+    gameState.xp -= cost;
+    o.count -= EVO_STOCK_REQ;
+    
+    const nextIdx = RARITY_ORDER.indexOf(currentR) + 1;
+    o.currentRarity = RARITY_ORDER[nextIdx];
+    o.level = 1;
+    o.exp = 0;
+    o.isEvolved = true;
+    o.customValue = (o.customValue || Number(c.value)) + 0.5;
+    
+    saveGame(); 
+    playSE('win'); 
+    alert("限界突破・進化しました！");
+    openCharaDetail(viewingCharaId); 
+    updateTitleInfo();
+}
+
+async function executeReincarnation() {
+    const o = gameState.charaInventory[viewingCharaId];
+    const c = rawData.characters.find(x => x.id == viewingCharaId);
+    if(!o || !c) return;
+    
+    const currentR = o.currentRarity || c.rarity;
+    if (currentR !== 'UR' || c.rarity === 'UR') return;
+    
+    if (gameState.xp < REBORN_COST_XP) return alert(`XPが足りません！\n必要: ${REBORN_COST_XP} XP`);
+    
+    if (!(await showConfirm(`【転生確認】\n${REBORN_COST_XP} XP を消費して転生させますか？\n(レベルは1に戻り、新たなスキルを習得します)`))) return;
+    
+    gameState.xp -= REBORN_COST_XP;
+    
+    o.level = 1;
+    o.exp = 0;
+    o.reincarnationCount = (o.reincarnationCount || 0) + 1;
+    o.customValue = (o.customValue || Number(c.value)) + 1.0;
+    
+    if (!o.skills) o.skills = [c.type];
+    const availableSkills = ['ATK', 'TIME', 'EXP'].filter(s => !o.skills.includes(s));
+    
+    if (availableSkills.length > 0) {
+        o.skills.push(availableSkills[Math.floor(Math.random() * availableSkills.length)]);
+    } else if (!o.skills.includes('ALL')) {
+        o.skills = ['ALL'];
+    }
+    
+    saveGame(); 
+    playSE('win'); 
+    alert("転生に成功しました！新たな力を得ました。");
+    openCharaDetail(viewingCharaId); 
+    updateTitleInfo();
