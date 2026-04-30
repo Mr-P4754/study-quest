@@ -923,3 +923,4 @@ async function executeReincarnation() {
     alert("転生に成功しました！新たな力を得ました。");
     openCharaDetail(viewingCharaId); 
     updateTitleInfo();
+}
