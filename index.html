@@ -22,18 +22,19 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 7.2.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 7.3.0</div>
     
     <div class="menu-btn-container">
         <button class="menu-btn" onclick="openUnitSelection()">▶ クエスト</button>
+        <button class="menu-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="openSurvivalMenu()">🔥 サバイバル</button>
         <button id="btn-revenge" class="menu-btn revenge" onclick="startRevengeMode()" disabled>
-            💀 リベンジ・ダンジョン
+            💀 リベンジ
             <div id="revenge-badge" class="badge hidden">0</div>
         </button>
         <button class="menu-btn" style="background:#8e44ad; border-color:#6c3483;" onclick="openTypingMenu()">⌨️ タイピング</button>
         <button class="menu-btn" style="background:#2c3e50; border-color:#1f618d;" onclick="openCalcMenu()">🧮 計算クエスト</button>
         <button class="menu-btn" style="background:#7f8c8d; border-color:#636e72;" onclick="openRandomMenu()">🎲 ランダム</button>
-        <button class="menu-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="openMissions()">
+        <button class="menu-btn" style="background:#d35400; border-color:#a04000;" onclick="openMissions()">
             📝 MISSION
             <div id="mission-badge" class="badge hidden">!</div>
         </button>
@@ -80,6 +81,19 @@
             <button class="menu-btn oath" style="background:#8e44ad; border-color:#6c3483;" onclick="goToOathMenuCheck()">😈 誓約へ</button>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6;" onclick="closeUnitSelection()">キャンセル</button>
+    </div>
+</div>
+
+<div id="survival-overlay" class="overlay hidden" style="z-index: 290;">
+    <div class="modal" style="max-width:350px;">
+        <h2 style="color:#e74c3c; margin-top:0;">🔥 サバイバル</h2>
+        <p style="font-size:0.9em; text-align:left;">体力が尽きるまで問題を解き続けるエンドレスモードです。<br><br>💎 <b>装備キャラが直接成長します</b></p>
+        <div style="margin: 20px 0;">
+            <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
+            <select id="survival-grade-select" class="select-box" style="width:100%; margin-top:5px; font-size:1.1em; padding:10px;"><option value="">学年を選択...</option></select>
+        </div>
+        <button class="menu-btn" style="background:#e74c3c;" onclick="startSurvivalGame()">特訓開始</button>
+        <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeSurvivalMenu()">やめる</button>
     </div>
 </div>
 
@@ -331,12 +345,11 @@
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#3498db; margin-top:0;">📋 更新履歴</h2>
         <div class="version-list" style="text-align:left; max-height:300px; overflow-y:auto;">
-            <h4>Ver 7.2.0</h4>
+            <h4>Ver 7.3.0</h4>
             <ul>
-                <li>報酬EXPの大幅増額（インフレ調整）</li>
-                <li>新規デイリーミッション追加</li>
-                <li>新規やりこみ称号追加</li>
-                <li>パフォーマンスと安定性の向上</li>
+                <li>新モード「🔥 サバイバル・ダンジョン」追加</li>
+                <li>サバイバル専用のキャラ直接成長システム実装</li>
+                <li>パフォーマンス改善のためシステム構造を最適化</li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeVersionHistory()">閉じる</button>
@@ -355,48 +368,32 @@
                 <li>スコアは正解数とコンボ数で決まります。</li>
                 <li>クリアすると経験値(XP)を獲得し、キャラクターを強化できます。</li>
             </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e74c3c; margin:15px 0 5px;">📕 アイテムと育成</h4>
+            
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e74c3c; margin:15px 0 5px;">🔥 サバイバル・ダンジョン</h4>
             <ul style="padding-left:20px; margin:5px 0;">
-                <li>文系科目で<b>赤ページ</b>、理系科目で<b>青ページ</b>がドロップします。</li>
-                <li>ショップの「交換所」で、ページを消費して<b>経験値の書</b>を入手できます。</li>
-                <li>「図鑑」→「キャラ詳細」から書を使用してレベルアップ！</li>
-                <li>キャラクターのレベルアップで攻撃力や効果が向上します。</li>
+                <li>体力が尽きるまで解き続けるエンドレス特訓モードです。</li>
+                <li>1問正解するごとに、残り時間が<b>「+5秒」回復</b>します。</li>
+                <li>サバイバルではプレイヤーのXPや強化アイテムは落ちません。</li>
+                <li>代わりに、<b>「装備しているキャラクター」に直接経験値が入ります！</b></li>
+                <li>レベルMAXのキャラを装備して限界まで戦い抜けば、<b>限界突破素材（ストック）</b>がドロップします。</li>
             </ul>
+
             <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #3498db; margin:15px 0 5px;">▶️ クエストモード</h4>
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>学年、教科、単元を選択して出発します。</li>
                 <li><b>通常出撃</b>: 選択した単元の問題が出題されます。ボスを倒すとクリア。</li>
                 <li><b>誓約へ</b>: より難易度の高いモード。ライフが1つ減少し、制限時間が短くなりますが、獲得XPが2倍。</li>
-                <li>問題は4択形式。正解を選ぶとボスにダメージを与えます。</li>
-                <li>コンボを維持するとダメージ倍率が上がります。</li>
-                <li>ミスするとコンボがリセットされ、ライフが減ります。</li>
             </ul>
             <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #8e44ad; margin:15px 0 5px;">💀 リベンジ・ダンジョン</h4>
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>過去に敗北したボスに再挑戦できます。</li>
-                <li>リベンジリストに敗北したボスが追加されます。</li>
                 <li>クリアすると通常よりも多くのXPを獲得できます。</li>
-                <li>リベンジ成功でボスキャラクターを入手可能。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #7f8c8d; margin:15px 0 5px;">⌨️ タイピングモード</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>日本語の単語をローマ字でタイピングします。</li>
-                <li>制限時間内に正確に入力するとスコアが上がります。</li>
-                <li>タイピング速度と正確さが重要です。</li>
-                <li>コンボを維持して高得点を狙いましょう。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #f39c12; margin:15px 0 5px;">🎲 ランダムモード</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>ランダムに選ばれた問題が出題されます。</li>
-                <li>様々な教科・単元の知識を試されます。</li>
-                <li>予期せぬ問題で戦略的な思考を養います。</li>
             </ul>
             
             <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2c3e50; margin:15px 0 5px;">🧮 計算クエスト</h4>
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>計算問題に特化したモードです。キーパッドで答えを入力します。</li>
                 <li><b>100問タイムアタック</b>と<b>3分間タイムアタック</b>の2種類があります。</li>
-                <li>クリアタイムや正答率に応じて<b>ランク(S〜D)</b>が判定されます。</li>
                 <li>クリアすると、ランクに応じて<b>大量の赤ページと青ページ</b>(最大50冊ずつ)を獲得できます！</li>
             </ul>
 
@@ -406,32 +403,6 @@
                 <li>キャラクターを入手し、図鑑を完成させましょう。</li>
                 <li>レアリティが高いキャラクターほど強力です。</li>
                 <li>図鑑からキャラクターの詳細を確認・強化できます。</li>
-                <li>10連ガチャでSSR確定などの特典があります。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #27ae60; margin:15px 0 5px;">🛒 ショップ</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>XPでアイテムを購入できます。</li>
-                <li>攻撃力アップなどの効果アイテムがあります。</li>
-                <li>交換所でページをXPの書に交換できます。</li>
-                <li>賢くアイテムを活用して戦いを有利に進めましょう。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #16a085; margin:15px 0 5px;">📊 成績表</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>プレイ統計を確認できます。</li>
-                <li>総プレイ数、総撃破数、正解数などをチェック。</li>
-                <li>教科別の成績も見られます。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #3498db; margin:15px 0 5px;">☁️ クラウドセーブ</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>データをクラウドに保存・読み込みできます。</li>
-                <li>異なるデバイス間でデータを引き継げます。</li>
-                <li>IDをメモしておきましょう。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #ff6b81; margin:15px 0 5px;">🎁 ギフト & 📝 MISSION & 🏆 称号</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li><b>ギフト</b>: 管理者からの特別なプレゼントを受け取りましょう。</li>
-                <li><b>デイリーミッション</b>: 毎日クリアするとXPを獲得。プレイ、撃破、正解、コンボ強化の目標があります。</li>
-                <li><b>称号</b>: 特定の条件を達成すると称号を獲得。XP報酬があります。</li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeHowToPlay()">閉じる</button>
@@ -448,8 +419,10 @@
     </div>
 </div>
     
+    <script src="app-data.js"></script>
     <script src="app-main.js"></script>
-    <script src="app-sub.js"></script>
+    <script src="app-game.js"></script>
+    <script src="app-ui.js"></script>
 
 </body>
 </html>
