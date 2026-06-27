@@ -147,60 +147,6 @@ function getDisplayName(char, inv) {
     return name;
 }
 
-// サバイバルモード実装
-function startSurvivalGame() {
-    const g = document.getElementById('survival-grade-select')?.value; 
-    if(!g) return alert("学年を選択してください");
-    let qList = rawData.questions ? rawData.questions.filter(q => q.grade == g) : [];
-    if(qList.length === 0) return alert("問題がありません");
-    
-    let validOaths = typeof tempOaths !== 'undefined' ? tempOaths.filter(o => o !== 'weak') : [];
-
-    playData.questions = qList.sort(() => Math.random() - 0.5); 
-    playData.qIndex = 0; 
-    playData.currentBoss = { name: "WAVE: 1", icon: "🔥" };
-    playData.isRevenge = false; 
-    playData.activeOaths = validOaths; 
-    playData.isRandom = false; 
-    playData.isTyping = false; 
-    playData.isCalculation = false; 
-    playData.isSurvival = true;
-    playData.context = null;
-    
-    const charaStats = getCharaStats();
-    gameState.score = 0; // サバイバルではスコア＝正解数（WAVE）として扱う
-    gameState.combo = 0; 
-    gameState.lives = validOaths.includes('backwater') ? 1 : 3; 
-    gameState.enemyHP = 1; gameState.maxHP = 1; 
-    let timeMulti = validOaths.includes('rapid') ? 0.5 : 1.0; 
-    gameState.maxTime = 10 * charaStats.time * timeMulti;
-    isGameActive = false; isPaused = false;
-    
-    document.getElementById('survival-overlay')?.classList.add('hidden'); 
-    document.getElementById('title-screen')?.classList.add('hidden'); 
-    document.getElementById('game-screen')?.classList.remove('hidden');
-    
-    document.getElementById('calc-layout')?.classList.add('hidden');
-    document.getElementById('ui-calc-answer')?.classList.add('hidden');
-    document.getElementById('calc-keypad')?.classList.add('hidden');
-    document.getElementById('ui-calc-progress')?.classList.add('hidden');
-    document.getElementById('ui-choices')?.classList.remove('hidden');
-    document.getElementById('ui-typing-area')?.classList.add('hidden');
-    
-    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
-    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = 'none'; // HP隠す
-    
-    const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
-    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "WAVE: 1"; 
-    if(enemyIcon) enemyIcon.innerHTML = "🔥";
-    
-    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
-    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
-    
-    updateUI(); startCountdown();
-}
-
 function nextQuestion() {
     if(!isGameActive) return;
     if(playData.qIndex >= playData.questions.length) { 
@@ -214,19 +160,6 @@ function nextQuestion() {
         div.innerHTML = '';
         choices.forEach(c => { const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c; btn.onclick = () => judge(String(c) === String(q.a), btn); div.appendChild(btn); });
     }
-    startTimer();
-}
-
-function nextTypingQuestion() {
-    if (!isGameActive) return;
-    if (playData.qIndex >= playData.questions.length) {
-        playData.questions.sort(() => Math.random() - 0.5);
-        playData.qIndex = 0;
-    }
-    playData.typingTarget = playData.questions[playData.qIndex];
-    playData.typingIndex = 0;
-    playData.typingMissed = false;
-    renderTypingUI();
     startTimer();
 }
 
@@ -250,8 +183,8 @@ function judge(isCorrect, btn) {
         
         let damage = 0;
         if (playData.isSurvival) {
-            gameState.score += 1; // 正解数をスコアとして記録
-            gameState.timeLeft = Math.min(gameState.maxTime, gameState.timeLeft + 5.0); // +5秒回復
+            gameState.score += 1; 
+            gameState.timeLeft = Math.min(gameState.maxTime, gameState.timeLeft + 5.0); 
             const uienemyName = document.getElementById('ui-enemy-name'); 
             if(uienemyName) uienemyName.innerText = "WAVE: " + (gameState.score + 1);
             showCutIn("+5.0s");
@@ -284,7 +217,19 @@ function judge(isCorrect, btn) {
     }
 }
 
-// Typing & Calculation Methods
+// ------------------------------------------
+// タイピング・計算モード
+// ------------------------------------------
+function nextTypingQuestion() {
+    if (!isGameActive) return;
+    if (playData.qIndex >= playData.questions.length) { playData.questions.sort(() => Math.random() - 0.5); playData.qIndex = 0; }
+    playData.typingTarget = playData.questions[playData.qIndex];
+    playData.typingIndex = 0;
+    playData.typingMissed = false;
+    if (typeof renderTypingUI === 'function') renderTypingUI();
+    startTimer();
+}
+
 function handleTypingInput(e) {
     if (!isGameActive || isPaused) return;
     if (playData.isCalculation && !playData.isTyping) {
@@ -299,16 +244,16 @@ function handleTypingInput(e) {
     if (!isMatch) {
         const remainder = targetStr.substring(idx);
         const startPatterns = [ {t:'chi', r:'ti'}, {t:'tsu', r:'tu'}, {t:'fu', r:'hu'}, {t:'ji', r:'zi'}, {t:'ka', r:'ca'}, {t:'ku', r:'cu'}, {t:'ko', r:'co'}, {t:'se', r:'ce'}, {t:'ja', r:'zya'}, {t:'ju', r:'zyu'}, {t:'jo', r:'zyo'}, {t:'cha', r:'tya'}, {t:'chu', r:'tyu'}, {t:'cho', r:'tyo'} ];
-        for (let p of startPatterns) { if (remainder.startsWith(p.t) && p.r.startsWith(inputKey)) { const newStr = targetStr.substring(0, idx) + p.r + targetStr.substring(idx + p.t.length); playData.typingTarget.romaji = newStr; targetStr = newStr; renderTypingUI(); isMatch = true; break; } }
+        for (let p of startPatterns) { if (remainder.startsWith(p.t) && p.r.startsWith(inputKey)) { const newStr = targetStr.substring(0, idx) + p.r + targetStr.substring(idx + p.t.length); playData.typingTarget.romaji = newStr; targetStr = newStr; if (typeof renderTypingUI === 'function') renderTypingUI(); isMatch = true; break; } }
         if (!isMatch && idx > 0) {
             const context = targetStr.substring(idx - 1); 
             const skipPatterns = [ {t:'shi', r:'si'}, {t:'tsu', r:'tu'}, {t:'chi', r:'ti'}, {t:'sha', r:'sya'}, {t:'shu', r:'syu'}, {t:'sho', r:'syo'}, {t:'sya', r:'sha'}, {t:'syu', r:'shu'}, {t:'syo', r:'sho'}, {t:'cha', r:'cya'}, {t:'chu', r:'cyu'}, {t:'cho', r:'cyo'}, {t:'cya', r:'cha'}, {t:'cyu', r:'chu'}, {t:'cyo', r:'cho'}, {t:'ja', r:'jya'}, {t:'ju', r:'jyu'}, {t:'jo', r:'jyo'}, {t:'jya', r:'ja'}, {t:'jyu', r:'ju'}, {t:'jyo', r:'jo'} ];
-            for (let s of skipPatterns) { if (context.startsWith(s.t) && s.r[1] === inputKey) { const pre = targetStr.substring(0, idx - 1); const post = targetStr.substring(idx - 1 + s.t.length); const newStr = pre + s.r + post; playData.typingTarget.romaji = newStr; targetStr = newStr; renderTypingUI(); isMatch = true; break; } }
+            for (let s of skipPatterns) { if (context.startsWith(s.t) && s.r[1] === inputKey) { const pre = targetStr.substring(0, idx - 1); const post = targetStr.substring(idx - 1 + s.t.length); const newStr = pre + s.r + post; playData.typingTarget.romaji = newStr; targetStr = newStr; if (typeof renderTypingUI === 'function') renderTypingUI(); isMatch = true; break; } }
         }
-        if (!isMatch && inputKey === 'n' && idx > 0) { if (targetStr[idx-1] === 'n') { const pre = targetStr.substring(0, idx); const post = targetStr.substring(idx); const newStr = pre + 'n' + post; playData.typingTarget.romaji = newStr; targetStr = newStr; renderTypingUI(); isMatch = true; } }
+        if (!isMatch && inputKey === 'n' && idx > 0) { if (targetStr[idx-1] === 'n') { const pre = targetStr.substring(0, idx); const post = targetStr.substring(idx); const newStr = pre + 'n' + post; playData.typingTarget.romaji = newStr; targetStr = newStr; if (typeof renderTypingUI === 'function') renderTypingUI(); isMatch = true; } }
     }
     if(isMatch) {
-        playData.typingIndex++; playSE('type_hit'); renderTypingUI();
+        playData.typingIndex++; playSE('type_hit'); if (typeof renderTypingUI === 'function') renderTypingUI();
         if(playData.typingIndex >= playData.typingTarget.romaji.length) {
             clearInterval(gameState.timer);
             const stats = getCharaStats(); const baseAtk = 100; const rawRatio = gameState.timeLeft / gameState.maxTime; const timeFactor = 0.2 + (rawRatio * 0.8);
@@ -319,14 +264,6 @@ function handleTypingInput(e) {
             if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
         }
     } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
-}
-
-function renderTypingUI() {
-    if(!playData.typingTarget) return;
-    const q = playData.typingTarget; const idx = playData.typingIndex; const str = q.romaji;
-    const uiTypingJp = document.getElementById('ui-typing-jp'); if(uiTypingJp) uiTypingJp.innerText = q.japanese;
-    let html = ''; for(let i=0; i<str.length; i++) { if(i < idx) html += `<span class="typing-char-done">${str[i]}</span>`; else if(i === idx) html += `<span class="typing-char-current">${str[i]}</span>`; else html += `<span class="typing-char-rest">${str[i]}</span>`; }
-    const uiTypingRomaji = document.getElementById('ui-typing-romaji'); if(uiTypingRomaji) uiTypingRomaji.innerHTML = html;
 }
 
 function generateCalcQuestion(type) {
@@ -342,7 +279,6 @@ function generateCalcQuestion(type) {
 }
 
 function renderCalcInput() { const ans = document.getElementById('ui-calc-answer'); if(ans) ans.innerText = playData.calcInput || '---'; }
-
 function renderCalcProgress() {
     const progress = playData.calcMode === '100q' ? `${playData.calcQIndex}/${playData.calcCountTarget} 問` : `${playData.calcCorrect} 正解`; 
     const timeText = playData.calcMode === '3min' ? `${Math.max(0, playData.calcTimeLeft).toFixed(1)}秒` : `${playData.calcElapsed.toFixed(1)}秒`;
@@ -391,6 +327,9 @@ function addCalcRecord(entry) {
     gameState.calcRecords[key] = gameState.calcRecords[key].slice(0, 10);
 }
 
+// ------------------------------------------
+// リザルト処理
+// ------------------------------------------
 function finishGame(isClear) { 
     isGameActive=false; clearInterval(gameState.timer); 
     document.removeEventListener('keydown', handleTypingInput);
@@ -401,7 +340,7 @@ function finishGame(isClear) {
     let earned = 0;
     let isCampaign = false;
     
-    // サバイバルモードのリザルト処理
+    // サバイバルモード処理
     if (playData.isSurvival) {
         const correctCount = gameState.score; 
         let oathMultiplier = 1;
@@ -433,7 +372,7 @@ function finishGame(isClear) {
         }
         
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
-        updateMissionProgress('play', 1);
+        if (typeof updateMissionProgress === 'function') updateMissionProgress('play', 1);
         saveGame();
 
         const resTitle = document.getElementById('res-title'); if(resTitle) { resTitle.innerText="SURVIVAL END"; resTitle.style.color="#e74c3c"; }
@@ -449,7 +388,8 @@ function finishGame(isClear) {
         const resDetails = document.getElementById('res-details');
         if(resDetails) resDetails.innerHTML = `<div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">${growthResultText}</div>`;
         
-        document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); checkTitles();
+        document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); 
+        if (typeof checkTitles === 'function') checkTitles();
         return; 
     }
 
@@ -490,7 +430,7 @@ function finishGame(isClear) {
             dropInfo = { count: pageCount, icon: '📕📘', isCalc: true };
         }
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
-        updateMissionProgress('calc', 1);
+        if (typeof updateMissionProgress === 'function') updateMissionProgress('calc', 1);
     } else {
         if(isClear) {
             playSE('win');
@@ -549,9 +489,11 @@ function finishGame(isClear) {
             if (playData.activeOaths && playData.activeOaths.length > 0) gameState.stats.achieved_oath = true;
         }
 
-        if (playData.isTyping) updateMissionProgress('typing', 1);
-        else updateMissionProgress('play', 1);
-        if (isClear && !playData.isTyping) updateMissionProgress('kill', 1); 
+        if (typeof updateMissionProgress === 'function') {
+            if (playData.isTyping) updateMissionProgress('typing', 1);
+            else updateMissionProgress('play', 1);
+            if (isClear && !playData.isTyping) updateMissionProgress('kill', 1); 
+        }
     }
 
     saveGame(); 
@@ -595,7 +537,8 @@ function finishGame(isClear) {
         if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     }
     
-    document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); checkTitles();
+    document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); 
+    if (typeof checkTitles === 'function') checkTitles();
 }
 
 function backToTitle() { 
@@ -625,7 +568,10 @@ function backToTitle() {
     const resScoreSpan = document.getElementById('res-score'); if(resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "獲得スコア: ";
 
     playData.isTyping = false; playData.isCalculation = false; playData.isSurvival = false;
-    stopBGM(); updateTitleInfo(); updateMissionBadge(); checkTitles();
+    stopBGM(); 
+    if (typeof updateTitleInfo === 'function') updateTitleInfo(); 
+    if (typeof updateMissionBadge === 'function') updateMissionBadge(); 
+    if (typeof checkTitles === 'function') checkTitles();
 }
 
 // 音響管理
