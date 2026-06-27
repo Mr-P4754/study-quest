@@ -1,5 +1,5 @@
 // ==========================================
-// app-ui.js (UI制御・メニュー・育成・ショップ)
+// app-ui.js (UI制御・メニュー・育成・ショップ・ガチャ)
 // ==========================================
 
 /* ------------------------------------------
@@ -110,6 +110,15 @@ function openSurvivalMenu() {
     document.getElementById('survival-overlay')?.classList.remove('hidden');
 }
 function closeSurvivalMenu() { document.getElementById('survival-overlay')?.classList.add('hidden'); }
+
+/* ------------------------------------------
+ * クラウドセーブUI
+ * ------------------------------------------ */
+function openSyncMenu() { 
+    document.getElementById('sync-overlay')?.classList.remove('hidden'); 
+    document.getElementById('my-user-id').innerText = currentUserId || "エラー"; 
+}
+function closeSyncMenu() { document.getElementById('sync-overlay')?.classList.add('hidden'); }
 
 /* ------------------------------------------
  * 各種モードのゲーム開始 (Start Functions)
@@ -618,13 +627,13 @@ function closeVersionHistory() { document.getElementById('version-overlay')?.cla
 function openHowToPlay() { document.getElementById('howto-overlay')?.classList.remove('hidden'); }
 function closeHowToPlay() { document.getElementById('howto-overlay')?.classList.add('hidden'); }
 
-
 /* ------------------------------------------
- * ガチャシステム（追加）
+ * ガチャシステム
  * ------------------------------------------ */
 function openGacha() { 
     document.getElementById('gacha-overlay')?.classList.remove('hidden'); 
-    document.getElementById('gacha-xp').innerText = gameState.xp;
+    const gXp = document.getElementById('gacha-xp');
+    if(gXp) gXp.innerText = gameState.xp;
     renderZukan(); 
 }
 
@@ -715,7 +724,7 @@ function closeGachaResult() {
 }
 
 /* ------------------------------------------
- * タイピングUI更新（追加）
+ * タイピングUI更新
  * ------------------------------------------ */
 function renderTypingUI() {
     if (!playData.typingTarget) return;
