@@ -59,6 +59,7 @@ const MISSIONS = [
 ];
 const MISSION_ALL_CLEAR = 3000;
 
+// rawData 初期化 (エラー防止)
 let rawData = { questions: [], characters: [], bosses: [], shopItems: [], typing: [], randomBosses: [], config: [], gifts: [] };
 let playData = { questions: [], qIndex: 0, currentBoss: null, isRevenge: false, activeOaths: [], isRandom: false, isTyping: false, typingTarget: null, typingIndex: 0, typingMissed: false, isCalculation: false, calcType: null, calcMode: null, calcQuestions: [], calcQIndex: 0, calcInput: '', calcCorrect: 0, calcElapsed: 0, calcTimeLeft: 0, calcCountTarget: 0 };
 let countdownTimer = null;
@@ -190,7 +191,7 @@ function saveGame() {
 
 function checkTitles() {
     let count = 0; let collectionCount = 0; let hasSSR = false; let hasLvMax = false;
-    if(gameState.charaInventory && rawData.characters) {
+    if(gameState.charaInventory && rawData.characters && rawData.characters.length > 0) {
         collectionCount = Object.keys(gameState.charaInventory).length;
         Object.keys(gameState.charaInventory).forEach(id => {
             const c = rawData.characters.find(x => x.id === id); const inv = gameState.charaInventory[id];
@@ -211,7 +212,16 @@ function checkTitles() {
         else if (t.req === 'itemMax' && hasItemMax) cleared = true;
         else if (t.req.includes('collection')) { if (collectionCount >= t.val) cleared = true; }
         else if (t.req.includes('xp')) { if (gameState.xp >= t.val) cleared = true; }
-        else { try { const key = t.req.split(/>=/)[0]; const val = gameState.stats[key] || 0; if (val >= t.val) cleared = true; } catch(e){} }
+        else { 
+            try { 
+                const match = t.req.match(/^[a-zA-Z]+/);
+                if(match) {
+                    const key = match[0];
+                    const val = gameState.stats[key] || 0; 
+                    if (val >= t.val) cleared = true; 
+                }
+            } catch(e){} 
+        }
         if (cleared) count++;
     });
     const badge = document.getElementById('title-badge');
@@ -233,12 +243,18 @@ function renderTitles() {
         else {
             if (t.req.includes('collection') && collectionCount >= t.val) isUnlocked = true;
             else if (t.req.includes('xp') && gameState.xp >= t.val) isUnlocked = true;
-            else if (t.req === 'ssr' && Object.keys(gameState.charaInventory).some(id => rawData.characters?.find(c=>c.id==id)?.rarity=='SSR')) isUnlocked = true;
+            else if (t.req === 'ssr' && rawData.characters && Object.keys(gameState.charaInventory).some(id => rawData.characters.find(c=>c.id==id)?.rarity=='SSR')) isUnlocked = true;
             else if (t.req === 'lvMax' && Object.values(gameState.charaInventory).some(inv => inv.level >= 20)) isUnlocked = true;
             else if (t.req === 'itemMax' && Object.values(gameState.itemLevels).some(lv => lv >= MAX_ITEM_LEVEL)) isUnlocked = true;
             else if (t.req === 'perfect' && gameState.stats.achieved_perfect) isUnlocked = true;
             else if (t.req === 'speed' && gameState.stats.achieved_speed) isUnlocked = true;
-            else { const key = t.req.split(/>=/)[0]; if ((gameState.stats[key] || 0) >= t.val) isUnlocked = true; }
+            else { 
+                const match = t.req.match(/^[a-zA-Z]+/);
+                if(match) {
+                    const key = match[0]; 
+                    if ((gameState.stats[key] || 0) >= t.val) isUnlocked = true; 
+                }
+            }
         }
         let statusClass = isClaimed ? 'claimed' : (isUnlocked ? 'unlocked' : '');
         let btnText = isClaimed ? '受取済' : (isUnlocked ? `受取: ${t.reward}XP` : '未達成');
@@ -307,6 +323,7 @@ async function fetchData() {
         const getVal = (obj, keys) => { for (const k of keys) { const v = obj[k]; if (v !== undefined && v !== null && v !== "") return String(v); } return ""; };
         const getFuzzyVal = (obj, keyword, defaultVal) => { const key = Object.keys(obj).find(k => k.includes(keyword)); const val = key ? obj[key] : ""; return (val !== undefined && val !== null && val !== "") ? String(val) : defaultVal; };
         const convertDriveUrl = (url) => { if(!url || !url.startsWith('http')) return url; if(url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('id='))) { let id = ""; const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/); if(match1) id = match1[1]; else { const match2 = url.match(/id=([a-zA-Z0-9_-]+)/); if(match2) id = match2[1]; } if(id) return `https://drive.google.com/thumbnail?sz=w1000&id=${id}`; } return url; };
+        
         rawData = { questions: [], characters: [], bosses: [], shopItems: [], typing: [], randomBosses: [], config: [], gifts: [] };
         const generateHashId = (str, prefix) => { let hash = 0; for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i) | 0; return prefix + "_" + Math.abs(hash); };
 
@@ -322,4 +339,286 @@ async function fetchData() {
                 } else if (lowerKey.includes('character')) {
                     rawData.characters = data[key].filter(d => d).map(c => { const name = getVal(c, ['name', '名前']) || "Unknown"; return { id: String(c.id || c.ID || generateHashId(name, 'chara')), name: name, rarity: getVal(c, ['rarity', 'レア']) || "N", type: getVal(c, ['type', 'タイプ']) || "ATK", value: Number(getVal(c, ['value', '補正値', '効果値']) || 1.0), desc: getVal(c, ['desc', '解説']), imageUrl: convertDriveUrl(getVal(c, ['imageUrl', '画像URL', '画像'])) }; });
                 } else if (lowerKey.includes('boss')) {
-                    rawData.bosses = data[key].filter(d => d).map(b => ({ grade: getVal(b,
+                    rawData.bosses = data[key].filter(d => d).map(b => ({ grade: getVal(b, ['grade', '学年']), unit: getVal(b, ['unit', '単元']), name: getVal(b, ['name', 'bossName', 'ボス名']) || "Boss", hp: Number(getVal(b, ['hp', 'bossHP', 'ボスHP']) || 3000), icon: convertDriveUrl(getFuzzyVal(b, 'ボス画像', "👾")) }));
+                } else if (lowerKey.includes('shop')) {
+                    rawData.shopItems = data[key].filter(d => d).map(i => { const name = getVal(i, ['name', 'アイテム名']) || "Item"; return { id: String(i.id || i.ID || generateHashId(name, 'item')), name: name, price: Number(getVal(i, ['price', '価格']) || 1000), type: getVal(i, ['type', 'タイプ']) || "ATK", value: Number(getVal(i, ['value', '効果値']) || 0.1), desc: getVal(i, ['desc', '説明']), icon: getVal(i, ['icon', 'アイコン']) || "🎁" }; });
+                } else if (lowerKey.includes('typing')) {
+                    rawData.typing = data[key].filter(d => d).map(t => ({ id: String(t.id || t.ID || generateHashId(getVal(t, ['japanese','日本語']), 'type')), japanese: getVal(t, ['japanese', '日本語', 'display']), romaji: getVal(t, ['romaji', 'ローマ字', 'input']).toLowerCase().replace(/\s+/g, ''), grade: getVal(t, ['grade', '学年']) })).filter(t => t.japanese && t.romaji);
+                } else if (lowerKey.includes('randomboss')) { rawData.randomBosses = data[key];
+                } else if (lowerKey.includes('config')) { rawData.config = data[key];
+                } else if (lowerKey.includes('gift')) { rawData.gifts = data[key]; }
+            } catch(e) {}
+        }
+
+        if (rawData.bosses && rawData.characters) {
+            rawData.bosses.forEach(b => {
+                const bossCharId = "boss_" + b.name;
+                if (!rawData.characters.find(c => c.id === bossCharId)) { rawData.characters.push({ id: bossCharId, name: "【魔人】" + b.name, rarity: "UR", type: "ALL", value: 1.3, desc: "かつて立ちはだかった強敵。今は頼もしい味方だ。", imageUrl: b.icon }); }
+            });
+        }
+        if (!rawData.questions || rawData.questions.length === 0) throw new Error("Questions not found.");
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('title-screen').classList.remove('hidden');
+        checkTitles(); 
+        if (typeof checkAdminGifts === 'function') checkAdminGifts();
+    } catch(e) { document.getElementById('error-message').innerText = e.message; document.getElementById('error-message').style.display = 'block'; }
+}
+
+function initTitle() {
+    if(!rawData.questions || rawData.questions.length === 0) return;
+    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g=>g);
+    const gSelect = document.getElementById('grade-select'); if(!gSelect) return; gSelect.innerHTML = '<option value="">学年を選択</option>';
+    grades.forEach(g => gSelect.innerHTML += `<option value="${g}">${g}</option>`);
+    filterSubjects(); updateTitleInfo();
+}
+
+function filterSubjects() {
+    const gSelect = document.getElementById('grade-select'); if(!gSelect) return;
+    const gVal = gSelect.value;
+    const sSelect = document.getElementById('subject-select'); if(!sSelect) return; sSelect.innerHTML = '<option value="">教科を選択</option>';
+    const uSelect = document.getElementById('unit-select'); if(uSelect) uSelect.innerHTML = '<option value="">単元を選択</option>';
+    if(!gVal) return;
+    let targetList = rawData.questions.filter(q => q.grade == gVal);
+    const subjects = [...new Set(targetList.map(q => q.subject))].filter(s=>s);
+    subjects.forEach(s => sSelect.innerHTML += `<option value="${s}">${s}</option>`);
+}
+
+function filterUnits() {
+    const gSelect = document.getElementById('grade-select'); const sSelect = document.getElementById('subject-select'); if(!gSelect || !sSelect) return;
+    const gVal = gSelect.value; const sVal = sSelect.value;
+    const uSelect = document.getElementById('unit-select'); if(!uSelect) return; uSelect.innerHTML = '<option value="">単元を選択</option>';
+    if(!gVal || !sVal) return;
+    let targetList = rawData.questions.filter(q => q.grade == gVal && q.subject == sVal);
+    const units = [...new Set(targetList.map(q => q.unit))].filter(u=>u);
+    const activeConfigs = rawData.config ? rawData.config.filter(c => c.message && c.message !== "") : [];
+    units.forEach(u => {
+        let label = u; const isTarget = activeConfigs.some(c => String(c.grade) === String(gVal) && String(c.subject) === String(sVal) && String(c.unit) === String(u));
+        if (isTarget) label = "★ " + u;
+        if (gameState.unitProgress) { const key = `${gVal}_${sVal}_${u}`; const prog = gameState.unitProgress[key]; if (prog) { if (prog.cleared) label += " ◎"; else if (prog.played) label += " ◯"; } }
+        uSelect.innerHTML += `<option value="${u}">${label}</option>`;
+    });
+}
+
+function updateTitleInfo() {
+    const chara = (rawData.characters && rawData.characters.length > 0) ? rawData.characters.find(c => c.id == gameState.equipped) : null;
+    let lv = (gameState.charaInventory[gameState.equipped] || {}).level || 0;
+    const tEquippedName = document.getElementById('title-equipped-name'); if(tEquippedName) tEquippedName.innerText = (chara ? chara.name : "なし") + " Lv." + lv;
+    const tXp = document.getElementById('title-xp'); if(tXp) tXp.innerText = gameState.xp;
+    const imgContainer = document.getElementById('title-chara-img');
+    if(imgContainer) {
+        if(chara?.imageUrl && chara.imageUrl.startsWith('http')) imgContainer.innerHTML = `<img src="${chara.imageUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+        else imgContainer.innerHTML = `<div style="text-align:center;line-height:40px;">✏️</div>`;
+    }
+    const rBtn = document.getElementById('btn-revenge'); const rCount = (gameState.revengeList || []).length;
+    if(rBtn) {
+        if (rCount > 0) { rBtn.disabled = false; rBtn.innerHTML = `💀 リベンジ・ダンジョン <div class="badge">${rCount}</div>`; } else { rBtn.disabled = true; rBtn.innerHTML = `💀 リベンジ・ダンジョン <div class="badge hidden">0</div>`; }
+    }
+    const banner = document.getElementById('campaign-banner'); const bannerText = document.getElementById('campaign-text');
+    let activeConfigs = []; if (rawData.config) activeConfigs = rawData.config.filter(c => c.message && c.message !== "");
+    if(banner && bannerText) {
+        if (activeConfigs.length > 0) { banner.classList.remove('hidden'); banner.style.display = 'block'; const combinedText = activeConfigs.map(c => `📢 ${c.message} （強化対象: ${c.grade} ${c.subject} ${c.unit}）`).join("   "); bannerText.innerText = combinedText; } else { banner.style.display = 'none'; }
+    }
+}
+
+function startGame() {
+    const gSelect = document.getElementById('grade-select'); const sSelect = document.getElementById('subject-select'); const uSelect = document.getElementById('unit-select'); if(!gSelect || !sSelect || !uSelect) return;
+    const g = gSelect.value, s = sSelect.value, u = uSelect.value;
+    if(!g || !s || !u) return alert("全て選択してください");
+    let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
+    if(qList.length === 0) return alert("問題がありません");
+    let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
+    if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" };
+    if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
+    playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
+    playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false; playData.isTyping = false; playData.isCalculation = false; playData.context = { grade: g, subject: s, unit: u };
+    
+    const charaStats = (typeof getCharaStats === 'function') ? getCharaStats() : { atk: 1.0, time: 1.0, exp: 1.0 };
+    gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time;
+    isGameActive = false; isPaused = false;
+    
+    document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden'); 
+    
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+
+    const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    document.getElementById('ui-enemy-name').innerText = boss.name;
+    if(enemyIcon) {
+        if(boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon; }
+    }
+    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
+    if (typeof updateUI === 'function') updateUI(); 
+    startCountdown();
+}
+
+function startRevengeMode() {
+    if (!gameState.revengeList || gameState.revengeList.length === 0) return;
+    const targetQuestions = rawData.questions.filter(q => gameState.revengeList.includes(q.id));
+    if (targetQuestions.length !== gameState.revengeList.length) { gameState.revengeList = targetQuestions.map(q => q.id); saveGame(); updateTitleInfo(); }
+    if (targetQuestions.length === 0) { alert("復習すべき問題データが見つかりませんでした。"); gameState.revengeList = []; saveGame(); updateTitleInfo(); return; }
+    const boss = { name: "忘却の亡霊", hp: targetQuestions.length * 100, icon: "👻" };
+    playData.questions = targetQuestions.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
+    playData.isRevenge = true; playData.activeOaths = []; playData.isRandom = false; playData.isTyping = false; playData.isCalculation = false; playData.context = null;
+    
+    const charaStats = (typeof getCharaStats === 'function') ? getCharaStats() : { atk: 1.0, time: 1.0, exp: 1.0 };
+    gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; gameState.maxTime = 10 * charaStats.time;
+    isGameActive = false; isPaused = false;
+    
+    document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    
+    document.getElementById('calc-layout').classList.add('hidden');
+    document.getElementById('ui-calc-answer').classList.add('hidden');
+    document.getElementById('calc-keypad').classList.add('hidden');
+    document.getElementById('ui-calc-progress').classList.add('hidden');
+    document.getElementById('ui-choices').classList.remove('hidden');
+    document.getElementById('ui-typing-area').classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+
+    const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    document.getElementById('ui-enemy-name').innerText = boss.name; if(enemyIcon) enemyIcon.innerHTML = boss.icon; 
+    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
+    if (typeof updateUI === 'function') updateUI(); 
+    startCountdown();
+}
+
+function startCountdown() {
+    const qBox = document.getElementById('ui-question'); const cGrid = document.getElementById('ui-choices');
+    if(qBox) qBox.innerText = "READY..."; if(cGrid) cGrid.innerHTML = ""; 
+    let count = 3; if (typeof showCutIn === 'function') showCutIn(count); if (typeof playSE === 'function') playSE('count'); 
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+        if (document.getElementById('game-screen').classList.contains('hidden')) { clearInterval(countdownTimer); return; }
+        count--;
+        if(count > 0) { if (typeof showCutIn === 'function') showCutIn(count); if (typeof playSE === 'function') playSE('count'); } 
+        else if(count === 0) { if (typeof showCutIn === 'function') showCutIn("GO!"); if (typeof playSE === 'function') playSE('start'); } 
+        else {
+            clearInterval(countdownTimer); isGameActive = true;
+            if (playData.isCalculation) { if (typeof nextCalcQuestion === 'function') nextCalcQuestion(); startCalcTimer(); } 
+            else if(playData.isTyping) { if (typeof nextTypingQuestion === 'function') nextTypingQuestion(); } 
+            else { nextQuestion(); }
+            if (typeof playBGM === 'function') playBGM();
+        }
+    }, 1000);
+}
+
+function startCalcTimer() {
+    if (gameState.timer) clearInterval(gameState.timer);
+    const bar = document.getElementById('ui-timer');
+    gameState.timer = setInterval(() => {
+        if (isPaused || !isGameActive) return;
+        if (playData.calcMode === '3min') {
+            playData.calcTimeLeft -= 0.1;
+            if(bar) bar.style.width = Math.max(0, playData.calcTimeLeft / 180 * 100) + '%';
+            document.getElementById('ui-timer-text').innerText = Math.max(0, playData.calcTimeLeft).toFixed(1);
+            if (typeof renderCalcProgress === 'function') renderCalcProgress();
+            if (playData.calcTimeLeft <= 0) { clearInterval(gameState.timer); if (typeof finishGame === 'function') finishGame(true); }
+        } else {
+            playData.calcElapsed += 0.1; document.getElementById('ui-timer-text').innerText = playData.calcElapsed.toFixed(1);
+            if (playData.calcCountTarget > 0 && bar) { bar.style.width = Math.min(100, (playData.calcQIndex / playData.calcCountTarget) * 100) + '%'; }
+            if (typeof renderCalcProgress === 'function') renderCalcProgress();
+        }
+    }, 100);
+}
+
+function getCharaStats() {
+    let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
+    if(rawData.characters && rawData.characters.length > 0) {
+        const charaData = rawData.characters.find(c => c.id == gameState.equipped);
+        if(charaData) {
+            let userChara = gameState.charaInventory[gameState.equipped];
+            let level = userChara ? userChara.level : 0;
+            let baseVal = (userChara && userChara.isEvolved && userChara.customValue) ? userChara.customValue : Number(charaData.value);
+            let finalVal = baseVal + (level * LV_BONUS_RATE);
+            let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type];
+            skills.forEach(type => { if(type === 'ALL') { stats.atk = finalVal; stats.time = finalVal; stats.exp = finalVal; } else { if(type === 'ATK') stats.atk = finalVal; if(type === 'TIME') stats.time = finalVal; if(type === 'EXP') stats.exp = finalVal; } });
+        }
+    }
+    if(gameState.itemLevels && rawData.shopItems) {
+        Object.keys(gameState.itemLevels).forEach(itemId => {
+            const item = rawData.shopItems.find(i => i.id === itemId); const level = gameState.itemLevels[itemId];
+            if(item && level > 0) { if(item.type === 'ATK') stats.atk += (Number(item.value) * level); if(item.type === 'TIME') stats.time += (Number(item.value) * level); if(item.type === 'EXP') stats.exp += (Number(item.value) * level); }
+        });
+    }
+    if (playData.activeOaths && playData.activeOaths.includes('weak')) stats.atk *= 0.5;
+    return stats;
+}
+
+function getDisplayName(char, inv) {
+    if (!inv) return char.name; let name = char.name; const currentR = inv.currentRarity || char.rarity;
+    if (getRarityIndex(currentR) > getRarityIndex(char.rarity)) name += '<span class="name-deco-evo">✨️</span>';
+    if (inv.reincarnationCount && inv.reincarnationCount > 0) name += '<span class="name-deco-reborn">🪽</span>';
+    return name;
+}
+
+function nextTypingQuestion() {
+    if (!isGameActive) return;
+    if (playData.qIndex >= playData.questions.length) {
+        playData.questions.sort(() => Math.random() - 0.5);
+        playData.qIndex = 0;
+    }
+    playData.typingTarget = playData.questions[playData.qIndex];
+    playData.typingIndex = 0;
+    playData.typingMissed = false;
+    if (typeof renderTypingUI === 'function') renderTypingUI();
+    startTimer();
+}
+
+function nextQuestion() {
+    if(!isGameActive) return;
+    if(playData.qIndex >= playData.questions.length) { playData.questions.sort(()=>Math.random()-0.5); playData.qIndex = 0; }
+    const q = playData.questions[playData.qIndex]; playData.currentQ = q;
+    const qBox = document.getElementById('ui-question'); if(qBox) qBox.innerText = q.q;
+    const choices = [...q.choices].sort(() => Math.random() - 0.5);
+    const div = document.getElementById('ui-choices'); if(div) {
+        div.innerHTML = '';
+        choices.forEach(c => { const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = c; btn.onclick = () => judge(String(c) === String(q.a), btn); div.appendChild(btn); });
+    }
+    startTimer();
+}
+
+function startTimer() { if(gameState.timer) clearInterval(gameState.timer); if(!isGameActive) return; gameState.timeLeft = gameState.maxTime; const bar = document.getElementById('ui-timer'); gameState.timer = setInterval(() => { if(isPaused || !isGameActive) return; gameState.timeLeft -= 0.1; if(bar) bar.style.width = (gameState.timeLeft / gameState.maxTime * 100) + '%'; document.getElementById('ui-timer-text').innerText = Math.max(0, gameState.timeLeft).toFixed(1); if(gameState.timeLeft <= 0) { clearInterval(gameState.timer); judge(false, null); } }, 100); }
+
+function judge(isCorrect, btn) {
+    if(isPaused || !isGameActive) return; clearInterval(gameState.timer);
+    document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+    if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
+    
+    if(!isCorrect) {
+        if (typeof playSE === 'function') playSE('miss');
+        if (playData.currentQ && playData.currentQ.id) { if (!gameState.revengeList) gameState.revengeList = []; if (!gameState.revengeList.includes(playData.currentQ.id)) { gameState.revengeList.push(playData.currentQ.id); saveGame(); } }
+        document.querySelectorAll('.choice-btn').forEach(b => { if(String(b.innerText) === String(playData.currentQ?.a)) b.classList.add('btn-miss-answer'); });
+    }
+    
+    if (playData.currentQ && playData.currentQ.subject) { const subj = playData.currentQ.subject; if (!gameState.subjectStats[subj]) gameState.subjectStats[subj] = { correct: 0, total: 0 }; gameState.subjectStats[subj].total++; if (isCorrect) gameState.subjectStats[subj].correct++; }
+
+    if(isCorrect) {
+        if (typeof playSE === 'function') playSE('hit');
+        if (playData.isRevenge && playData.currentQ && playData.currentQ.id) { gameState.revengeList = gameState.revengeList.filter(id => String(id) !== String(playData.currentQ.id)); saveGame(); }
+        document.querySelectorAll('.choice-btn').forEach(b => { if(String(b.innerText) === String(playData.currentQ?.a)) b.classList.add('btn-miss-answer'); });
+        
+        let damage = 0;
+        if (playData.isRevenge) { damage = Math.ceil(gameState.maxHP / playData.questions.length); } 
+        else {
+            const stats = getCharaStats(); const baseAtk = 100; const rawRatio = gameState.timeLeft / gameState.maxTime; const timeFactor = 0.2 + (rawRatio * 0.8);
+            const statFactor = stats.atk + ((stats.time - 1) * 0.5); const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
+            damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
+        }
+        gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; if (typeof showCutIn === 'function') showCutIn("-" + damage);
+        gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1; gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
+        if ((gameState.maxTime - gameState.timeLeft) <= 1.0) { gameState.stats.achieved_speed = true; saveGame(); }
+        const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); }
+        updateMissionProgress('correct', 1); updateMissionProgress('maxCombo', gameState.combo); if (typeof updateUI === 'function') updateUI();
+        
+        if(gameState.enemyHP <= 0) { const enemyBox = document.querySelector('.enemy-visual-box'); if(enemyBox) { enemyBox.classList.add('anim-paused'); enemyBox.classList.add('fade-out'); } setTimeout(() => isGameActive && finishGame(true), 1200); } else { playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); }
+    } else {
+        gameState.lives--; gameState.combo = 0; if (typeof showCutIn === 'function') showCutIn("MISS..."); if (typeof updateUI === 'function') updateUI();
+        if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); }
+    }
+}
