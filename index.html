@@ -22,7 +22,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 7.1.1</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 7.2.0</div>
     
     <div class="menu-btn-container">
         <button class="menu-btn" onclick="openUnitSelection()">▶ クエスト</button>
@@ -142,7 +142,7 @@
 </div>
 
 <div id="result-overlay" class="overlay hidden"><div class="modal"><h2 id="res-title">QUEST CLEAR!</h2><div id="res-icon" style="font-size: 4em;"></div><p>獲得スコア: <span id="res-score">0</span></p><div id="res-details" style="background:#f4f4f4; padding:12px; border-radius:10px; margin:10px 0; color:#333; font-size:0.95em;"></div><div id="res-drop" class="result-drop-box">入手アイテム: なし</div><div style="background:#eee; padding:15px; border-radius:10px; margin:10px 0;">獲得XP<br><span id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em;">+0</span></div><div id="res-rank" style="font-size:1.1em; font-weight:bold; color:#2c3e50; margin-bottom:10px;"></div><button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button></div></div>
-<div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+3000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
+<div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+30000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
 <div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
 <div id="gacha-overlay" class="overlay hidden">
     <div class="modal" style="max-width:500px;">
@@ -331,10 +331,12 @@
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#3498db; margin-top:0;">📋 更新履歴</h2>
         <div class="version-list" style="text-align:left; max-height:300px; overflow-y:auto;">
-            <h4>Ver 7.1.1</h4>
+            <h4>Ver 7.2.0</h4>
             <ul>
-                <li>UIとパフォーマンスの向上</li>
-                <li>バグ修正・バランス調整</li>
+                <li>報酬EXPの大幅増額（インフレ調整）</li>
+                <li>新規デイリーミッション追加</li>
+                <li>新規やりこみ称号追加</li>
+                <li>パフォーマンスと安定性の向上</li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeVersionHistory()">閉じる</button>
