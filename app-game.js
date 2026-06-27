@@ -38,6 +38,7 @@ function resumeGame() { isPaused = false; document.getElementById('pause-overlay
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
     isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
+    gameState.timeLeft = 0;
     
     document.getElementById('calc-layout')?.classList.add('hidden');
     document.getElementById('ui-calc-answer')?.classList.add('hidden');
@@ -87,7 +88,13 @@ function startCountdown() {
 function startTimer() { 
     if(gameState.timer) clearInterval(gameState.timer); 
     if(!isGameActive) return; 
-    gameState.timeLeft = gameState.maxTime; 
+    
+    if (!playData.isSurvival) {
+        gameState.timeLeft = gameState.maxTime; 
+    } else if (!gameState.timeLeft || gameState.timeLeft <= 0) {
+        gameState.timeLeft = gameState.maxTime;
+    }
+    
     const bar = document.getElementById('ui-timer'); 
     gameState.timer = setInterval(() => { 
         if(isPaused || !isGameActive) return; 
@@ -186,7 +193,7 @@ function judge(isCorrect, btn) {
             gameState.score += 1; 
             gameState.timeLeft = Math.min(gameState.maxTime, gameState.timeLeft + 5.0); 
             const uienemyName = document.getElementById('ui-enemy-name'); 
-            if(uienemyName) uienemyName.innerText = "WAVE: " + (gameState.score + 1);
+            if(uienemyName) uienemyName.innerText = "WAVE: " + gameState.score;
             showCutIn("+5.0s");
         } else if (playData.isRevenge) { 
             damage = Math.ceil(gameState.maxHP / playData.questions.length); 
