@@ -110,16 +110,16 @@
     <div class="battle-area">
         <div class="enemy-visual-box"><div class="enemy-visual" id="ui-enemy-icon">👾</div></div>
         <div class="enemy-stats-row"><div id="ui-enemy-name">BOSS</div><div class="enemy-hp-frame"><div id="ui-hp" class="enemy-hp-fill"></div><div id="ui-hp-text">1000 / 1000</div></div></div>
-        <div id="ui-question" class="question-box" style="width: 90%; max-width: 600px; padding: 8px 12px; height: 90px; min-height: 72px; max-height: 90px; font-size: 1.2em; line-height: 1.35; white-space: normal; overflow-wrap: break-word;">READY?</div>
+        <div id="ui-question" class="question-box" style="white-space: normal; overflow-wrap: break-word;">READY?</div>
         
         <div id="ui-typing-area" class="typing-area hidden">
             <div id="ui-typing-jp" class="typing-japanese">日本語</div>
             <div id="ui-typing-romaji" class="typing-romaji">ROMAJI</div>
         </div>
         <div id="ui-calc-progress" class="calc-progress hidden" style="margin:15px 0; color:#fff; font-size:0.95em; text-align:center;"></div>
-        <div id="calc-layout" class="calc-layout hidden" style="display:flex; flex-wrap:nowrap; justify-content:center; align-items:stretch; gap:12px; width:min(100%,760px); max-width:760px; margin:0 auto;">
-            <div id="ui-calc-answer" class="calc-answer" style="margin:0; padding:15px; border-radius:10px; background:#2c3e50; color:#fff; font-size:1.8em; letter-spacing:0.1em; text-align:center; min-height:80px; display:flex; align-items:center; justify-content:center; flex:1 1 160px; min-width:160px; max-width:320px; box-sizing:border-box;">---</div>
-            <div id="calc-keypad" class="calc-keypad hidden" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; width:100%; max-width:260px; margin:0; flex:0 0 260px;">
+        <div id="calc-layout" class="calc-layout hidden">
+            <div id="ui-calc-answer" class="calc-answer" style="padding:15px; border-radius:10px; background:#2c3e50; color:#fff; font-size:1.8em; letter-spacing:0.1em; text-align:center; min-height:80px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">---</div>
+            <div id="calc-keypad" class="calc-keypad hidden">
                 <button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('7')">7</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('8')">8</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('9')">9</button>
                 <button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('4')">4</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('5')">5</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('6')">6</button>
                 <button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('1')">1</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('2')">2</button><button class="menu-btn" style="background:#34495e;" onclick="handleCalcButton('3')">3</button>
