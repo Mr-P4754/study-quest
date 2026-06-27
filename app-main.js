@@ -13,53 +13,67 @@ const LV_BONUS_RATE = 0.01;
 const EXP_REQ = 100;
 const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200, 'UR': 500 };
 const SELL_PRICES = { 'N': 250, 'R': 500, 'SR': 1000, 'SSR': 2000, 'UR': 5000 };
-const LOGIN_BONUS_EXP = 3000;
+
+// ログインボーナス大幅アップ
+const LOGIN_BONUS_EXP = 30000;
 const MAX_ITEM_LEVEL = 10;
 const MASTER_COUNT = 10;
 
+// 称号EXP大幅アップ & 新規追加
 const TITLES = [
-    { id:'t01', name:'三日坊主卒業', req:'loginDays>=3', val:3, reward:5000, desc:'通算3日プレイ' },
-    { id:'t02', name:'一週間の奇跡', req:'loginDays>=7', val:7, reward:10000, desc:'通算7日プレイ' },
-    { id:'t03', name:'習慣化の達人', req:'loginDays>=14', val:14, reward:20000, desc:'通算14日プレイ' },
-    { id:'t04', name:'月間MVP', req:'loginDays>=30', val:30, reward:50000, desc:'通算30日プレイ' },
-    { id:'t05', name:'季節を超えて', req:'loginDays>=100', val:100, reward:200000, desc:'通算100日プレイ' },
-    { id:'t06', name:'伝説の常連', req:'loginDays>=365', val:365, reward:1000000, desc:'通算365日プレイ' },
-    { id:'t07', name:'ビギナー', req:'totalKill>=5', val:5, reward:5000, desc:'累計5体撃破' },
-    { id:'t08', name:'エース', req:'totalKill>=20', val:20, reward:15000, desc:'累計20体撃破' },
-    { id:'t09', name:'ベテラン', req:'totalKill>=50', val:50, reward:40000, desc:'累計50体撃破' },
-    { id:'t10', name:'ヒーロー', req:'totalKill>=100', val:100, reward:100000, desc:'累計100体撃破' },
-    { id:'t11', name:'破壊神', req:'totalKill>=500', val:500, reward:500000, desc:'累計500体撃破' },
-    { id:'t12', name:'知識の芽生え', req:'totalCorrect>=50', val:50, reward:5000, desc:'累計50問正解' },
-    { id:'t13', name:'知識の探求者', req:'totalCorrect>=200', val:200, reward:20000, desc:'累計200問正解' },
-    { id:'t14', name:'知の巨人', req:'totalCorrect>=500', val:500, reward:50000, desc:'累計500問正解' },
-    { id:'t15', name:'歩く百科事典', req:'totalCorrect>=1000', val:1000, reward:100000, desc:'累計1000問正解' },
-    { id:'t16', name:'全知全能', req:'totalCorrect>=5000', val:5000, reward:1000000, desc:'累計5000問正解' },
-    { id:'t17', name:'集中モード', req:'maxCombo>=20', val:20, reward:10000, desc:'1プレイ20コンボ' },
-    { id:'t18', name:'ゾーン突入', req:'maxCombo>=40', val:40, reward:30000, desc:'1プレイ40コンボ' },
+    { id:'t01', name:'三日坊主卒業', req:'loginDays>=3', val:3, reward:30000, desc:'通算3日プレイ' },
+    { id:'t02', name:'一週間の奇跡', req:'loginDays>=7', val:7, reward:50000, desc:'通算7日プレイ' },
+    { id:'t03', name:'習慣化の達人', req:'loginDays>=14', val:14, reward:100000, desc:'通算14日プレイ' },
+    { id:'t04', name:'月間MVP', req:'loginDays>=30', val:30, reward:300000, desc:'通算30日プレイ' },
+    { id:'t05', name:'季節を超えて', req:'loginDays>=100', val:100, reward:1000000, desc:'通算100日プレイ' },
+    { id:'t06', name:'伝説の常連', req:'loginDays>=365', val:365, reward:5000000, desc:'通算365日プレイ' },
+    { id:'t07', name:'ビギナー', req:'totalKill>=5', val:5, reward:30000, desc:'累計5体撃破' },
+    { id:'t08', name:'エース', req:'totalKill>=20', val:20, reward:50000, desc:'累計20体撃破' },
+    { id:'t09', name:'ベテラン', req:'totalKill>=50', val:50, reward:100000, desc:'累計50体撃破' },
+    { id:'t10', name:'ヒーロー', req:'totalKill>=100', val:100, reward:300000, desc:'累計100体撃破' },
+    { id:'t11', name:'破壊神', req:'totalKill>=500', val:500, reward:1000000, desc:'累計500体撃破' },
+    { id:'t12', name:'知識の芽生え', req:'totalCorrect>=50', val:50, reward:30000, desc:'累計50問正解' },
+    { id:'t13', name:'知識の探求者', req:'totalCorrect>=200', val:200, reward:50000, desc:'累計200問正解' },
+    { id:'t14', name:'知の巨人', req:'totalCorrect>=500', val:500, reward:100000, desc:'累計500問正解' },
+    { id:'t15', name:'歩く百科事典', req:'totalCorrect>=1000', val:1000, reward:300000, desc:'累計1000問正解' },
+    { id:'t16', name:'全知全能', req:'totalCorrect>=5000', val:5000, reward:5000000, desc:'累計5000問正解' },
+    { id:'t17', name:'集中モード', req:'maxCombo>=20', val:20, reward:30000, desc:'1プレイ20コンボ' },
+    { id:'t18', name:'ゾーン突入', req:'maxCombo>=40', val:40, reward:50000, desc:'1プレイ40コンボ' },
     { id:'t19', name:'神の領域', req:'maxCombo>=60', val:60, reward:100000, desc:'1プレイ60コンボ' },
-    { id:'t20', name:'完全無欠', req:'perfect', val:1, reward:20000, desc:'HP満タンでクリア' },
-    { id:'t21', name:'スピードスター', req:'speed', val:1, reward:5000, desc:'残り9秒以上で正解' },
-    { id:'t22', name:'コレクター', req:'collection>=5', val:5, reward:10000, desc:'図鑑5種収集' },
-    { id:'t23', name:'マニア', req:'collection>=15', val:15, reward:30000, desc:'図鑑15種収集' },
-    { id:'t24', name:'博物館館長', req:'collection>=30', val:30, reward:100000, desc:'図鑑30種収集' },
-    { id:'t25', name:'アイテム愛好家', req:'itemMax', val:1, reward:50000, desc:'アイテムLv.MAX' },
-    { id:'t26', name:'小金持ち', req:'xp>=100000', val:100000, reward:10000, desc:'所持EXP 10万達成' },
+    { id:'t20', name:'完全無欠', req:'perfect', val:1, reward:50000, desc:'HP満タンでクリア' },
+    { id:'t21', name:'スピードスター', req:'speed', val:1, reward:50000, desc:'残り9秒以上で正解' },
+    { id:'t22', name:'コレクター', req:'collection>=5', val:5, reward:30000, desc:'図鑑5種収集' },
+    { id:'t23', name:'マニア', req:'collection>=15', val:15, reward:100000, desc:'図鑑15種収集' },
+    { id:'t24', name:'博物館館長', req:'collection>=30', val:30, reward:300000, desc:'図鑑30種収集' },
+    { id:'t25', name:'アイテム愛好家', req:'itemMax', val:1, reward:100000, desc:'アイテムLv.MAX' },
+    { id:'t26', name:'小金持ち', req:'xp>=100000', val:100000, reward:30000, desc:'所持EXP 10万達成' },
     { id:'t27', name:'大富豪', req:'xp>=1000000', val:1000000, reward:100000, desc:'所持EXP 100万達成' },
-    { id:'t28', name:'億万長者', req:'xp>=10000000', val:10000000, reward:1000000, desc:'所持EXP 1000万達成' },
-    { id:'t29', name:'奇跡の出会い', req:'ssr', val:1, reward:50000, desc:'SSR入手' },
-    { id:'t30', name:'限界突破', req:'lvMax', val:1, reward:50000, desc:'キャラLv.20到達' }
+    { id:'t28', name:'億万長者', req:'xp>=10000000', val:10000000, reward:500000, desc:'所持EXP 1000万達成' },
+    { id:'t29', name:'奇跡の出会い', req:'ssr', val:1, reward:100000, desc:'SSR入手' },
+    { id:'t30', name:'限界突破', req:'lvMax', val:1, reward:100000, desc:'キャラLv.20到達' },
+    { id:'t31', name:'未知との遭遇', req:'randomClear', val:1, reward:30000, desc:'ランダムモードクリア' },
+    { id:'t32', name:'自ら縛る者', req:'oathClear', val:1, reward:30000, desc:'誓約付きクリア' },
+    { id:'t33', name:'限界のその先へ', req:'evolved', val:1, reward:100000, desc:'キャラを進化させる' },
+    { id:'t34', name:'愛着の証', req:'mastered', val:1, reward:100000, desc:'キャラをマスター(10個)にする' },
+    { id:'t35', name:'神引きの右腕', req:'ur', val:1, reward:150000, desc:'UR入手' },
+    { id:'t36', name:'輪廻転生', req:'reborn', val:1, reward:300000, desc:'URキャラを転生させる' },
+    { id:'t37', name:'計算の神様', req:'calcA', val:1, reward:50000, desc:'計算クエストでランクA以上' }
 ];
 
+// ミッションEXP大幅アップ & 新規追加
 const MISSIONS = [
-    { id: 'play', target: 1, reward: 500, title: "本日の挑戦", desc: "クエストを1回プレイ" },
-    { id: 'kill', target: 1, reward: 1000, title: "ボス撃破！", desc: "ボスを1体倒す" },
-    { id: 'correct', target: 10, reward: 1000, title: "修行の成果", desc: "合計10問正解する" },
-    { id: 'maxCombo', target: 5, reward: 1000, title: "コンボマスター", desc: "5コンボ以上達成" },
-    { id: 'enhance', target: 1, reward: 500, title: "装備のメンテナンス", desc: "キャラを1回強化" }
+    { id: 'play', target: 1, reward: 5000, title: "本日の挑戦", desc: "クエストを1回プレイ" },
+    { id: 'kill', target: 1, reward: 10000, title: "ボス撃破！", desc: "ボスを1体倒す" },
+    { id: 'correct', target: 10, reward: 10000, title: "修行の成果", desc: "合計10問正解する" },
+    { id: 'maxCombo', target: 5, reward: 10000, title: "コンボマスター", desc: "5コンボ以上達成" },
+    { id: 'enhance', target: 1, reward: 5000, title: "装備のメンテナンス", desc: "キャラを1回強化" },
+    { id: 'typing', target: 1, reward: 5000, title: "指先の体操", desc: "タイピングを1回プレイ" },
+    { id: 'calc', target: 1, reward: 5000, title: "脳の準備運動", desc: "計算クエストを1回プレイ" },
+    { id: 'gacha', target: 1, reward: 5000, title: "本日の運試し", desc: "ガチャを1回引く" },
+    { id: 'shop', target: 1, reward: 5000, title: "購買意欲", desc: "ショップでアイテム購入/交換" }
 ];
-const MISSION_ALL_CLEAR = 3000;
+const MISSION_ALL_CLEAR = 60000;
 
-// rawData 初期化 (エラー防止)
 let rawData = { questions: [], characters: [], bosses: [], shopItems: [], typing: [], randomBosses: [], config: [], gifts: [] };
 let playData = { questions: [], qIndex: 0, currentBoss: null, isRevenge: false, activeOaths: [], isRandom: false, isTyping: false, typingTarget: null, typingIndex: 0, typingMissed: false, isCalculation: false, calcType: null, calcMode: null, calcQuestions: [], calcQIndex: 0, calcInput: '', calcCorrect: 0, calcElapsed: 0, calcTimeLeft: 0, calcCountTarget: 0 };
 let countdownTimer = null;
@@ -67,7 +81,7 @@ let countdownTimer = null;
 let gameState = { 
     score: 0, combo: 0, lives: 3, enemyHP: 100, maxHP: 100, timer: null, timeLeft: 0, maxTime: 10, 
     xp: 0, equipped: '1', itemLevels: {}, charaInventory: {},
-    stats: { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0, achieved_perfect: false, achieved_speed: false },
+    stats: { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0, achieved_perfect: false, achieved_speed: false, achieved_random: false, achieved_oath: false, achieved_evolve: false, achieved_reborn: false, achieved_calcA: false },
     subjectStats: {},
     unlockedTitles: [],
     claimedGifts: [], 
@@ -77,7 +91,7 @@ let gameState = {
     calcRecords: {}
 };
 
-let dailyMissions = { date: "", progress: { play: 0, kill: 0, correct: 0, maxCombo: 0, enhance: 0 }, claimed: { play: false, kill: false, correct: false, maxCombo: false, enhance: false, allClear: false } };
+let dailyMissions = { date: "", progress: { play: 0, kill: 0, correct: 0, maxCombo: 0, enhance: 0, typing: 0, calc: 0, gacha: 0, shop: 0 }, claimed: { play: false, kill: false, correct: false, maxCombo: false, enhance: false, typing: false, calc: false, gacha: false, shop: false, allClear: false } };
 let currentUserId = ""; 
 let viewingCharaId = null, isGameActive = false, isPaused = false;
 
@@ -154,7 +168,7 @@ function loadSaveData() {
         if (Object.keys(gameState.charaInventory).length === 0) gameState.charaInventory = { "1": { level: 1, count: 1, exp: 0 } };
     }
     
-    gameState.stats = safeParse('sq_stats', { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0, achieved_perfect: false, achieved_speed: false });
+    gameState.stats = safeParse('sq_stats', { totalPlay:0, totalKill:0, totalCorrect:0, maxCombo:0, loginDays:0, achieved_perfect: false, achieved_speed: false, achieved_random: false, achieved_oath: false, achieved_evolve: false, achieved_reborn: false, achieved_calcA: false });
     gameState.subjectStats = safeParse('sq_subject_stats', {});
     gameState.unlockedTitles = safeParse('sq_titles', []);
     gameState.claimedGifts = safeParse('sq_claimed_gifts', []);
@@ -171,7 +185,7 @@ function loadSaveData() {
         xpBookLarge: Number(loadedInv.xpBookLarge) || 0
     };
     
-    try { dailyMissions = safeParse('sq_missions', { date:"", progress:{ play:0, kill:0, correct:0, maxCombo:0, enhance:0 }, claimed:{ play:false, kill:false, correct:false, maxCombo:false, enhance:false, allClear:false } }); } catch(e){}
+    try { dailyMissions = safeParse('sq_missions', { date:"", progress:{ play:0, kill:0, correct:0, maxCombo:0, enhance:0, typing:0, calc:0, gacha:0, shop:0 }, claimed:{ play:false, kill:false, correct:false, maxCombo:false, enhance:false, typing:false, calc:false, gacha:false, shop:false, allClear:false } }); } catch(e){}
 }
 
 function saveGame() {
@@ -190,13 +204,17 @@ function saveGame() {
 }
 
 function checkTitles() {
-    let count = 0; let collectionCount = 0; let hasSSR = false; let hasLvMax = false;
+    let count = 0; let collectionCount = 0; 
+    let hasSSR = false; let hasUR = false; let hasLvMax = false; let hasMastered = false;
+    
     if(gameState.charaInventory && rawData.characters && rawData.characters.length > 0) {
         collectionCount = Object.keys(gameState.charaInventory).length;
         Object.keys(gameState.charaInventory).forEach(id => {
             const c = rawData.characters.find(x => x.id === id); const inv = gameState.charaInventory[id];
             if(c && c.rarity === 'SSR') hasSSR = true;
+            if(c && c.rarity === 'UR') hasUR = true;
             if(inv && inv.level >= 20) hasLvMax = true;
+            if(inv && inv.count >= MASTER_COUNT) hasMastered = true;
         });
     }
     let hasItemMax = false;
@@ -208,8 +226,15 @@ function checkTitles() {
         if (t.req === 'perfect' && gameState.stats.achieved_perfect) cleared = true;
         else if (t.req === 'speed' && gameState.stats.achieved_speed) cleared = true;
         else if (t.req === 'ssr' && hasSSR) cleared = true;
+        else if (t.req === 'ur' && hasUR) cleared = true;
         else if (t.req === 'lvMax' && hasLvMax) cleared = true;
         else if (t.req === 'itemMax' && hasItemMax) cleared = true;
+        else if (t.req === 'randomClear' && gameState.stats.achieved_random) cleared = true;
+        else if (t.req === 'oathClear' && gameState.stats.achieved_oath) cleared = true;
+        else if (t.req === 'evolved' && gameState.stats.achieved_evolve) cleared = true;
+        else if (t.req === 'mastered' && hasMastered) cleared = true;
+        else if (t.req === 'reborn' && gameState.stats.achieved_reborn) cleared = true;
+        else if (t.req === 'calcA' && gameState.stats.achieved_calcA) cleared = true;
         else if (t.req.includes('collection')) { if (collectionCount >= t.val) cleared = true; }
         else if (t.req.includes('xp')) { if (gameState.xp >= t.val) cleared = true; }
         else { 
@@ -235,7 +260,20 @@ function closeTitles() { document.getElementById('titles-overlay').classList.add
 
 function renderTitles() {
     const list = document.getElementById('titles-list'); if(!list) return; list.innerHTML = '';
-    let collectionCount = 0; if(gameState.charaInventory) collectionCount = Object.keys(gameState.charaInventory).length;
+    let collectionCount = 0; 
+    let hasSSR = false; let hasUR = false; let hasLvMax = false; let hasMastered = false;
+    
+    if(gameState.charaInventory) {
+        collectionCount = Object.keys(gameState.charaInventory).length;
+        Object.keys(gameState.charaInventory).forEach(id => {
+            const c = rawData.characters ? rawData.characters.find(x => x.id === id) : null;
+            const inv = gameState.charaInventory[id];
+            if(c && c.rarity === 'SSR') hasSSR = true;
+            if(c && c.rarity === 'UR') hasUR = true;
+            if(inv && inv.level >= 20) hasLvMax = true;
+            if(inv && inv.count >= MASTER_COUNT) hasMastered = true;
+        });
+    }
 
     TITLES.forEach(t => {
         const isClaimed = gameState.unlockedTitles.includes(t.id); let isUnlocked = false;
@@ -243,11 +281,18 @@ function renderTitles() {
         else {
             if (t.req.includes('collection') && collectionCount >= t.val) isUnlocked = true;
             else if (t.req.includes('xp') && gameState.xp >= t.val) isUnlocked = true;
-            else if (t.req === 'ssr' && rawData.characters && Object.keys(gameState.charaInventory).some(id => rawData.characters.find(c=>c.id==id)?.rarity=='SSR')) isUnlocked = true;
-            else if (t.req === 'lvMax' && Object.values(gameState.charaInventory).some(inv => inv.level >= 20)) isUnlocked = true;
+            else if (t.req === 'ssr' && hasSSR) isUnlocked = true;
+            else if (t.req === 'ur' && hasUR) isUnlocked = true;
+            else if (t.req === 'lvMax' && hasLvMax) isUnlocked = true;
             else if (t.req === 'itemMax' && Object.values(gameState.itemLevels).some(lv => lv >= MAX_ITEM_LEVEL)) isUnlocked = true;
             else if (t.req === 'perfect' && gameState.stats.achieved_perfect) isUnlocked = true;
             else if (t.req === 'speed' && gameState.stats.achieved_speed) isUnlocked = true;
+            else if (t.req === 'randomClear' && gameState.stats.achieved_random) isUnlocked = true;
+            else if (t.req === 'oathClear' && gameState.stats.achieved_oath) isUnlocked = true;
+            else if (t.req === 'evolved' && gameState.stats.achieved_evolve) isUnlocked = true;
+            else if (t.req === 'mastered' && hasMastered) isUnlocked = true;
+            else if (t.req === 'reborn' && gameState.stats.achieved_reborn) isUnlocked = true;
+            else if (t.req === 'calcA' && gameState.stats.achieved_calcA) isUnlocked = true;
             else { 
                 const match = t.req.match(/^[a-zA-Z]+/);
                 if(match) {
