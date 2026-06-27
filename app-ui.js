@@ -91,7 +91,27 @@ function goToOathMenuSurvivalCheck() {
 }
 
 let tempOaths = [];
-function openOathMenu() { tempOaths = []; document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected')); document.getElementById('oath-overlay')?.classList.remove('hidden'); }
+function openOathMenu() { 
+    tempOaths = []; 
+    document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected')); 
+    
+    const title = document.querySelector('#oath-overlay h2');
+    const desc = document.querySelector('#oath-overlay p');
+    const weakOption = document.getElementById('oath-weak');
+    
+    if (oathOrigin === 'survival') {
+        if (title) title.innerText = "😈 特訓の誓約";
+        if (desc) desc.innerHTML = 'より過酷な特訓に挑む。<br>（獲得特訓EXP <span style="color:#e67e22; font-weight:bold;">2倍/3倍</span>）';
+        if (weakOption) weakOption.style.display = 'none';
+    } else {
+        if (title) title.innerText = "😈 誓約の儀";
+        if (desc) desc.innerHTML = '自らにハンデを課し、高みを目指せ。<br>（報酬EXP <span style="color:#e67e22; font-weight:bold;">1.5〜2.0倍</span>）';
+        if (weakOption) weakOption.style.display = 'flex';
+    }
+    
+    document.getElementById('oath-overlay')?.classList.remove('hidden'); 
+}
+
 function closeOathMenu() { document.getElementById('oath-overlay')?.classList.add('hidden'); }
 function toggleOath(type) { const el = document.getElementById('oath-' + type); if (tempOaths.includes(type)) { tempOaths = tempOaths.filter(t => t !== type); if(el) el.classList.remove('selected'); } else { tempOaths.push(type); if(el) el.classList.add('selected'); } }
 
@@ -206,8 +226,11 @@ function startSurvivalGame() {
 
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
-    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "WAVE: 1";
+    
+    // WAVE表示を0からスタートさせる
+    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "WAVE: 0";
     if(enemyIcon) enemyIcon.innerHTML = boss.icon; 
+    
     const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
     const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
     
