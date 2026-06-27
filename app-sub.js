@@ -617,6 +617,10 @@ function startOathGame() {
     if(qList.length === 0) return alert("問題がありません");
     let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
     if(!boss) boss = { name: "試練の魔人", hp: 1500, icon: "👿" };
+    
+    // 【修正箇所】選択されたカスタムHPを誓約モードでも適用する
+    if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
+    
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = [...tempOaths]; playData.isRandom = false; playData.context = { grade: g, subject: s, unit: u };
     
@@ -915,8 +919,28 @@ function handleTypingInput(e) {
 
 function openUnitSelection() { const unitTitle = document.getElementById('unit-select-title'); if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } document.getElementById('unit-select-overlay')?.classList.remove('hidden'); }
 function closeUnitSelection() { document.getElementById('unit-select-overlay')?.classList.add('hidden'); }
-function startNormalGameCheck() { const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value; const hp = document.getElementById('boss-hp-select')?.value; if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); playData.selectedBossHp = Number(hp); closeUnitSelection(); startGame(); }
-function goToOathMenuCheck() { const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value; if(!g || !s || !u) return alert("全ての項目を選択してください"); closeUnitSelection(); openOathMenu(); }
+
+// 【修正箇所】ボスHPを playData に格納する
+function startNormalGameCheck() { 
+    const g = document.getElementById('grade-select')?.value; 
+    const s = document.getElementById('subject-select')?.value; 
+    const u = document.getElementById('unit-select')?.value; 
+    const hp = document.getElementById('boss-hp-select')?.value; 
+    if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
+    playData.selectedBossHp = Number(hp); 
+    closeUnitSelection(); startGame(); 
+}
+
+// 【修正箇所】誓約モードへ行く前にもボスHPを取得し playData に格納する
+function goToOathMenuCheck() { 
+    const g = document.getElementById('grade-select')?.value; 
+    const s = document.getElementById('subject-select')?.value; 
+    const u = document.getElementById('unit-select')?.value; 
+    const hp = document.getElementById('boss-hp-select')?.value; 
+    if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
+    playData.selectedBossHp = Number(hp); 
+    closeUnitSelection(); openOathMenu(); 
+}
 
 function checkAdminGifts() { 
     if (!rawData.gifts || rawData.gifts.length === 0) { updateGiftButtonState(); return; }
