@@ -250,3 +250,15 @@ function claimAllClear() {
     gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); 
     alert(MISSION_ALL_CLEAR+"EXP獲得"); 
 }
+
+// ==========================================
+// 初期化エントリーポイント
+// ==========================================
+window.onload = async () => {
+    initUserId();
+    loadSaveData();
+    checkMissionDate();
+    await fetchData();
+    initTitle();
+    checkLoginBonus();
+};
