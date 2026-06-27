@@ -88,6 +88,12 @@ function finishGame(isClear) {
             else if (correct >= 70 && accuracy >= 70) calcRank = 'C'; 
             else calcRank = 'D';
         }
+        
+        // 称号フラグ
+        if (calcRank === 'S' || calcRank === 'A') {
+            gameState.stats.achieved_calcA = true;
+        }
+
         addCalcRecord({ correct, time: duration, date: new Date().toLocaleString('ja-JP') });
         if (correct > 0) {
             const basePage = calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1;
@@ -103,6 +109,7 @@ function finishGame(isClear) {
             dropInfo = { count: pageCount, icon: '📕📘', isCalc: true };
         }
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
+        updateMissionProgress('calc', 1);
     } else {
         if(isClear) {
             playSE('win');
@@ -156,11 +163,19 @@ function finishGame(isClear) {
             if (playData.activeOaths && playData.activeOaths.includes('backwater')) requiredLives = 1;
             if (gameState.lives >= requiredLives) { gameState.stats.achieved_perfect = true; }
             if (playData.isRevenge) gameState.revengeList = [];
+            
+            // 称号フラグ
+            if (playData.isRandom) gameState.stats.achieved_random = true;
+            if (playData.activeOaths && playData.activeOaths.length > 0) gameState.stats.achieved_oath = true;
         }
+
+        if (playData.isTyping) updateMissionProgress('typing', 1);
+        else updateMissionProgress('play', 1);
+        if (isClear && !playData.isTyping) updateMissionProgress('kill', 1); 
     }
 
     saveGame(); 
-    updateMissionProgress('play',1); if(isClear && !playData.isCalculation) updateMissionProgress('kill',1); 
+    
     const resTitle = document.getElementById('res-title'); if(resTitle) { resTitle.innerText=isClear?"QUEST CLEAR!":"GAME OVER"; resTitle.style.color=isClear?"#f1c40f":"#bdc3c7"; }
     const resIcon = document.getElementById('res-icon'); if(resIcon) resIcon.innerText=isClear?"🎉":"💔"; 
     
@@ -241,7 +256,7 @@ function checkLoginBonus() {
     } 
 }
 function closeLoginBonus() { document.getElementById('login-bonus-overlay')?.classList.add('hidden'); }
-function checkMissionDate() { const d=new Date().toLocaleDateString('ja-JP'); dailyMissions=JSON.parse(localStorage.getItem('sq_missions')||'{"date":"","progress":{},"claimed":{}}'); if(dailyMissions.date!==d){ dailyMissions={date:d,progress:{play:0,kill:0,correct:0,maxCombo:0,enhance:0},claimed:{}}; saveGame(); } updateMissionBadge(); }
+function checkMissionDate() { const d=new Date().toLocaleDateString('ja-JP'); dailyMissions=JSON.parse(localStorage.getItem('sq_missions')||'{"date":"","progress":{},"claimed":{}}'); if(dailyMissions.date!==d){ dailyMissions={date:d,progress:{play:0,kill:0,correct:0,maxCombo:0,enhance:0,typing:0,calc:0,gacha:0,shop:0},claimed:{}}; saveGame(); } updateMissionBadge(); }
 function updateMissionProgress(t,v) { if(t==='maxCombo') dailyMissions.progress[t]=Math.max(dailyMissions.progress[t]||0,v); else dailyMissions.progress[t]=(dailyMissions.progress[t]||0)+v; saveGame(); updateMissionBadge(); }
 function updateMissionBadge() { let c=0; MISSIONS.forEach(m=>{ if((dailyMissions.progress[m.id]||0)>=m.target && !dailyMissions.claimed[m.id]) c++; }); document.getElementById('mission-badge')?.classList.toggle('hidden', c===0); }
 
@@ -277,6 +292,7 @@ function rollGacha(count) {
         if (!gameState.charaInventory[hit.id]) { gameState.charaInventory[hit.id] = { level: 0, count: 0, exp: 0 }; results.push({ char: hit, isNew: true }); } 
         else { gameState.charaInventory[hit.id].count++; results.push({ char: hit, isNew: false }); }
     }
+    updateMissionProgress('gacha', 1);
     saveGame(); renderZukan(); updateTitleInfo(); checkTitles(); showGachaResults(results);
 }
 
@@ -295,6 +311,8 @@ async function rollGuaranteedTenGacha(guaranteedRarity, cost) {
     let guaranteedTargets = []; if (guaranteedRarity === 'UR') { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'UR'); } else { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'SSR' || c.rarity === 'UR'); }
     if (guaranteedTargets.length === 0) guaranteedTargets = rawData.characters;
     const finalHit = guaranteedTargets[Math.floor(Math.random() * guaranteedTargets.length)]; addResult(finalHit);
+    
+    updateMissionProgress('gacha', 1);
     saveGame(); renderZukan(); updateTitleInfo(); checkTitles(); playSE('win'); showGachaResults(results);
 }
 
@@ -494,9 +512,9 @@ function renderShop() {
         });
     }
 }
-function exchangeBook(bookId, cost) { if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; gameState.inventory.redPages -= cost; gameState.inventory.bluePages -= cost; gameState.inventory[bookId]++; saveGame(); renderShop(); playSE('win'); }
+function exchangeBook(bookId, cost) { if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; gameState.inventory.redPages -= cost; gameState.inventory.bluePages -= cost; gameState.inventory[bookId]++; updateMissionProgress('shop', 1); saveGame(); renderShop(); playSE('win'); }
 function closeShop() { document.getElementById('shop-overlay')?.classList.add('hidden'); }
-function buyItem(id,p) { if (!gameState.itemLevels) gameState.itemLevels = {}; if((gameState.itemLevels[id]||0)>=10)return; if(gameState.xp<p)return alert("XP不足"); gameState.xp-=p; gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; saveGame(); openShop(); updateTitleInfo(); checkTitles(); }
+function buyItem(id,p) { if (!gameState.itemLevels) gameState.itemLevels = {}; if((gameState.itemLevels[id]||0)>=10)return; if(gameState.xp<p)return alert("XP不足"); gameState.xp-=p; gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; updateMissionProgress('shop', 1); saveGame(); openShop(); updateTitleInfo(); checkTitles(); }
 
 function openVersionHistory() { document.getElementById('version-overlay')?.classList.remove('hidden'); }
 function closeVersionHistory() { document.getElementById('version-overlay')?.classList.add('hidden'); }
@@ -944,11 +962,14 @@ async function executeEvolution() {
     o.isEvolved = true;
     o.customValue = (o.customValue || Number(c.value)) + 0.5;
     
+    gameState.stats.achieved_evolve = true; // 新規称号フラグ
+    
     saveGame(); 
     playSE('win'); 
     alert("限界突破・進化しました！");
     openCharaDetail(viewingCharaId); 
     updateTitleInfo();
+    checkTitles();
 }
 
 async function executeReincarnation() {
@@ -979,9 +1000,12 @@ async function executeReincarnation() {
         o.skills = ['ALL'];
     }
     
+    gameState.stats.achieved_reborn = true; // 新規称号フラグ
+    
     saveGame(); 
     playSE('win'); 
     alert("転生に成功しました！新たな力を得ました。");
     openCharaDetail(viewingCharaId); 
     updateTitleInfo();
+    checkTitles();
 }
