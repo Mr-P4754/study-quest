@@ -587,7 +587,7 @@ async function executeBulkEnhance() {
 }
 
 /* ------------------------------------------
- * ショップ・ガチャ
+ * ショップ・アイテム
  * ------------------------------------------ */
 let currentShopTab = 'buy'; 
 function openShop() { document.getElementById('shop-overlay')?.classList.remove('hidden'); renderShop(); }
@@ -617,3 +617,117 @@ function openVersionHistory() { document.getElementById('version-overlay')?.clas
 function closeVersionHistory() { document.getElementById('version-overlay')?.classList.add('hidden'); }
 function openHowToPlay() { document.getElementById('howto-overlay')?.classList.remove('hidden'); }
 function closeHowToPlay() { document.getElementById('howto-overlay')?.classList.add('hidden'); }
+
+
+/* ------------------------------------------
+ * ガチャシステム（追加）
+ * ------------------------------------------ */
+function openGacha() { 
+    document.getElementById('gacha-overlay')?.classList.remove('hidden'); 
+    document.getElementById('gacha-xp').innerText = gameState.xp;
+    renderZukan(); 
+}
+
+function closeGacha() { 
+    document.getElementById('gacha-overlay')?.classList.add('hidden'); 
+}
+
+async function rollGacha(times) {
+    const cost = times === 10 ? 30000 : 3000;
+    if (gameState.xp < cost) return alert("XPが足りません！");
+    if (!(await showConfirm(`${cost} XPを消費してガチャを${times}回引きますか？`))) return;
+    gameState.xp -= cost;
+    executeGacha(times, null);
+}
+
+async function rollGuaranteedTenGacha(rarity, cost) {
+    if (gameState.xp < cost) return alert("XPが足りません！");
+    if (!(await showConfirm(`${cost} XPを消費して${rarity}確定10連ガチャを引きますか？`))) return;
+    gameState.xp -= cost;
+    executeGacha(10, rarity);
+}
+
+function executeGacha(times, guaranteedRarity) {
+    if (!rawData.characters || rawData.characters.length === 0) return alert("キャラデータがありません");
+    const pool = { 'N': [], 'R': [], 'SR': [], 'SSR': [], 'UR': [] };
+    rawData.characters.forEach(c => { if(pool[c.rarity]) pool[c.rarity].push(c); });
+    
+    const getRandChar = (targetRarity) => {
+        let rPool = pool[targetRarity];
+        if (!rPool || rPool.length === 0) {
+            const available = Object.keys(pool).filter(k => pool[k].length > 0);
+            rPool = pool[available[available.length - 1]];
+        }
+        return rPool[Math.floor(Math.random() * rPool.length)];
+    };
+
+    const drawSingle = (isGuaranteed) => {
+        if (isGuaranteed && guaranteedRarity) return getRandChar(guaranteedRarity);
+        const rand = Math.random();
+        if (rand < 0.01) return getRandChar('UR');
+        if (rand < 0.05) return getRandChar('SSR');
+        if (rand < 0.20) return getRandChar('SR');
+        if (rand < 0.50) return getRandChar('R');
+        return getRandChar('N');
+    };
+
+    const results = [];
+    for (let i = 0; i < times; i++) {
+        const isGuaranteed = (times === 10 && i === 9 && guaranteedRarity);
+        const c = drawSingle(isGuaranteed);
+        results.push(c);
+        
+        if (!gameState.charaInventory[c.id]) {
+            gameState.charaInventory[c.id] = { level: 1, count: 1, exp: 0, currentRarity: c.rarity };
+        } else {
+            gameState.charaInventory[c.id].count++;
+        }
+    }
+    
+    playSE('win');
+    if(typeof updateMissionProgress === 'function') updateMissionProgress('gacha', 1);
+    saveGame();
+    showGachaResult(results);
+}
+
+function showGachaResult(results) {
+    const container = document.getElementById('gr-container');
+    if (!container) return;
+    container.innerHTML = `<h3 style="color:#8e44ad; margin-top:0;">ガチャ結果</h3><div class="gr-grid"></div>`;
+    const grid = container.querySelector('.gr-grid');
+    
+    results.forEach(c => {
+        let visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="gr-mini-img">` : `<div style="font-size:2em;margin:10px 0;">📦</div>`;
+        grid.innerHTML += `<div class="gr-mini-card"><div class="rarity-${c.rarity}" style="font-weight:bold;">${c.rarity}</div>${visual}<div style="font-size:0.7em;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;">${c.name}</div></div>`;
+    });
+    
+    const xpSpan = document.getElementById('gacha-xp');
+    if(xpSpan) xpSpan.innerText = gameState.xp;
+    
+    document.getElementById('gacha-result-overlay')?.classList.remove('hidden');
+    if(typeof updateTitleInfo === 'function') updateTitleInfo();
+    renderZukan();
+    if(typeof checkTitles === 'function') checkTitles();
+}
+
+function closeGachaResult() {
+    document.getElementById('gacha-result-overlay')?.classList.add('hidden');
+}
+
+/* ------------------------------------------
+ * タイピングUI更新（追加）
+ * ------------------------------------------ */
+function renderTypingUI() {
+    if (!playData.typingTarget) return;
+    const jpBox = document.getElementById('ui-typing-jp');
+    const romajiBox = document.getElementById('ui-typing-romaji');
+    if(jpBox) jpBox.innerText = playData.typingTarget.japanese;
+    if(romajiBox) {
+        const targetStr = playData.typingTarget.romaji;
+        const idx = playData.typingIndex;
+        const done = targetStr.substring(0, idx);
+        const cur = targetStr.substring(idx, idx + 1);
+        const rest = targetStr.substring(idx + 1);
+        romajiBox.innerHTML = `<span class="typing-char-done">${done}</span><span class="typing-char-current">${cur || ''}</span><span class="typing-char-rest">${rest}</span>`;
+    }
+}
