@@ -1,16 +1,19 @@
 function showCutIn(t) { const d = document.createElement('div'); d.className='cutin'; d.innerText=t; if(String(t).includes('MISS')) { d.style.color='#bdc3c7'; d.style.webkitTextStroke='2px #2c3e50'; } document.body.appendChild(d); setTimeout(()=>d.remove(), 1500); }
 function updateUI() { 
-    document.getElementById('ui-life').innerText = '❤️'.repeat(Math.max(0, gameState.lives)); 
-    document.getElementById('ui-score').innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
-    document.getElementById('ui-combo').innerText = playData.isCalculation ? playData.calcCorrect : gameState.combo; 
-    document.getElementById('ui-hp').style.width = (gameState.enemyHP/gameState.maxHP*100)+'%'; 
-    document.getElementById('ui-hp-text').innerText = `${gameState.enemyHP}/${gameState.maxHP}`; 
+    const uiLife = document.getElementById('ui-life'); if(uiLife) uiLife.innerText = '❤️'.repeat(Math.max(0, gameState.lives)); 
+    const uiScore = document.getElementById('ui-score'); if(uiScore) uiScore.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
+    const uiCombo = document.getElementById('ui-combo'); if(uiCombo) uiCombo.innerText = playData.isCalculation ? playData.calcCorrect : gameState.combo; 
+    const uiHp = document.getElementById('ui-hp'); if(uiHp) uiHp.style.width = (gameState.enemyHP/gameState.maxHP*100)+'%'; 
+    const uiHpText = document.getElementById('ui-hp-text'); if(uiHpText) uiHpText.innerText = `${gameState.enemyHP}/${gameState.maxHP}`; 
 }
 
 function togglePause() { 
-    isPaused = !isPaused; document.getElementById('pause-overlay').classList.toggle('hidden', !isPaused);
+    isPaused = !isPaused; 
+    const overlay = document.getElementById('pause-overlay');
+    if(overlay) overlay.classList.toggle('hidden', !isPaused);
     if(isPaused) {
         const infoBox = document.getElementById('pause-chara-info');
+        if(!infoBox) return;
         const charaId = gameState.equipped;
         const chara = rawData.characters ? rawData.characters.find(c => c.id == charaId) : null;
         if(chara) {
@@ -26,25 +29,25 @@ function togglePause() {
     }
 }
 
-function resumeGame() { isPaused = false; document.getElementById('pause-overlay').classList.add('hidden'); }
+function resumeGame() { isPaused = false; document.getElementById('pause-overlay')?.classList.add('hidden'); }
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
     isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
     
-    document.getElementById('calc-layout').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden');
-    document.getElementById('calc-keypad').classList.add('hidden');
-    document.getElementById('ui-calc-progress').classList.add('hidden');
-    document.getElementById('ui-choices').classList.remove('hidden');
-    document.getElementById('ui-typing-area').classList.add('hidden');
-    document.querySelector('.enemy-stats-row').style.display = '';
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
 
     const qBox = document.getElementById('ui-question');
     if (qBox) { qBox.style.removeProperty('height'); qBox.style.removeProperty('min-height'); }
 
-    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
-    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling) uiComboSpan.previousSibling.nodeValue = "COMBO ";
-    const resScoreSpan = document.getElementById('res-score'); if(resScoreSpan && resScoreSpan.previousSibling) resScoreSpan.previousSibling.nodeValue = "獲得スコア: ";
+    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
+    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "COMBO ";
+    const resScoreSpan = document.getElementById('res-score'); if(resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "獲得スコア: ";
     
     if (playData.isCalculation) { startCalcGame(); }
     else if (playData.isTyping) { startTypingGame(); }
@@ -88,13 +91,12 @@ function finishGame(isClear) {
         addCalcRecord({ correct, time: duration, date: new Date().toLocaleString('ja-JP') });
         if (correct > 0) {
             const basePage = calcRank === 'S' ? 5 : calcRank === 'A' ? 4 : calcRank === 'B' ? 3 : calcRank === 'C' ? 2 : 1;
-            const pageCount = basePage * 10; // 基本量の10倍
+            const pageCount = basePage * 10; 
             
             if (!gameState.inventory) gameState.inventory = {};
             if (!gameState.inventory.bluePages) gameState.inventory.bluePages = 0;
             if (!gameState.inventory.redPages) gameState.inventory.redPages = 0;
             
-            // 赤と青の両方を加算
             gameState.inventory.bluePages += pageCount;
             gameState.inventory.redPages += pageCount;
             
@@ -107,8 +109,8 @@ function finishGame(isClear) {
             const eqInv = gameState.charaInventory[gameState.equipped];
             if (eqInv) {
                 eqInv.exp = (Number(eqInv.exp) || 0) + 1;
-                const cMaster = rawData.characters.find(c => c.id == gameState.equipped);
-                const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
+                const cMaster = rawData.characters ? rawData.characters.find(c => c.id == gameState.equipped) : null;
+                const maxL = RARITY_CAPS[eqInv.currentRarity || (cMaster ? cMaster.rarity : 'N')] || 10;
                 if (eqInv.exp >= EXP_REQ && eqInv.level < maxL) { eqInv.exp -= EXP_REQ; eqInv.level++; }
             }
             if (!playData.isRevenge) {
@@ -152,34 +154,34 @@ function finishGame(isClear) {
             gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
             let requiredLives = 3;
             if (playData.activeOaths && playData.activeOaths.includes('backwater')) requiredLives = 1;
-            if (gameState.lives >= requiredLives) { gameState.stats.achieved_perfect = true; saveGame(); }
+            if (gameState.lives >= requiredLives) { gameState.stats.achieved_perfect = true; }
             if (playData.isRevenge) gameState.revengeList = [];
         }
     }
 
     saveGame(); 
     updateMissionProgress('play',1); if(isClear && !playData.isCalculation) updateMissionProgress('kill',1); 
-    document.getElementById('res-title').innerText=isClear?"QUEST CLEAR!":"GAME OVER"; 
-    document.getElementById('res-icon').innerText=isClear?"🎉":"💔"; 
-    document.getElementById('res-title').style.color=isClear?"#f1c40f":"#bdc3c7"; 
+    const resTitle = document.getElementById('res-title'); if(resTitle) { resTitle.innerText=isClear?"QUEST CLEAR!":"GAME OVER"; resTitle.style.color=isClear?"#f1c40f":"#bdc3c7"; }
+    const resIcon = document.getElementById('res-icon'); if(resIcon) resIcon.innerText=isClear?"🎉":"💔"; 
     
     const resScoreSpan = document.getElementById('res-score');
-    if (resScoreSpan && resScoreSpan.previousSibling) {
+    if (resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) {
         resScoreSpan.previousSibling.nodeValue = playData.isCalculation ? "総問題数: " : "獲得スコア: ";
     }
-    document.getElementById('res-score').innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
+    if(resScoreSpan) resScoreSpan.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
     
-    const dropText = dropInfo.count > 0 ? `<div style="font-size:0.9em;">${dropInfo.icon} × ${dropInfo.count}</div>` : `<div style="font-size:0.9em; color:#7f8c8d;">入手なし</div>`;
     const dropHtml = dropInfo.count > 0 ? `<span>${dropInfo.icon}</span> ${dropInfo.count} 個` : 'なし';
-    document.getElementById('res-drop').innerHTML = `入手アイテム: ${dropHtml}`;
+    const resDrop = document.getElementById('res-drop'); if(resDrop) resDrop.innerHTML = `入手アイテム: ${dropHtml}`;
     
+    const resXp = document.getElementById('res-xp');
+    const resDetails = document.getElementById('res-details');
     if (playData.isCalculation) {
         const duration = playData.calcMode === '3min' ? (180 - playData.calcTimeLeft).toFixed(1) : playData.calcElapsed.toFixed(1);
         const totalQ = playData.calcQIndex;
         const accuracy = totalQ > 0 ? ((playData.calcCorrect / totalQ) * 100).toFixed(1) : 0;
         
-        document.getElementById('res-xp').innerHTML = `ランク: <span class="rank-${calcRank}" style="font-size:1.2em;">${calcRank}</span>`;
-        document.getElementById('res-details').innerHTML = `
+        if(resXp) resXp.innerHTML = `ランク: <span class="rank-${calcRank}" style="font-size:1.2em;">${calcRank}</span>`;
+        if(resDetails) resDetails.innerHTML = `
             <div style="font-size: 0.85em; line-height: 1.6; text-align: left; display: inline-block;">
                 <div>🎯 <b>正解数</b> : ${playData.calcCorrect} 問</div>
                 <div>📊 <b>正解率</b> : ${accuracy} %</div>
@@ -187,35 +189,34 @@ function finishGame(isClear) {
             </div>
         `;
         
-        // --- 修正: 赤と青の両方を確定で表示 ---
-        if (dropInfo.count > 0) {
-            document.getElementById('res-drop').innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
+        if (dropInfo.count > 0 && resDrop) {
+            resDrop.innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
         }
         
     } else if (isCampaign && isClear) {
-        document.getElementById('res-xp').innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
-        document.getElementById('res-details').innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
+        if(resXp) resXp.innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
+        if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     } else {
-        document.getElementById('res-xp').innerHTML = "+" + earned;
-        document.getElementById('res-details').innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
+        if(resXp) resXp.innerHTML = "+" + earned;
+        if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     }
     
-    document.getElementById('game-screen').classList.add('hidden'); document.getElementById('result-overlay').classList.remove('hidden'); checkTitles();
+    document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); checkTitles();
 }
 
 function backToTitle() { 
-    document.getElementById('result-overlay').classList.add('hidden'); document.getElementById('game-screen').classList.add('hidden'); document.getElementById('title-screen').classList.remove('hidden'); document.getElementById('pause-overlay').classList.add('hidden'); 
+    document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
     if (countdownTimer) clearInterval(countdownTimer);
     clearInterval(gameState.timer); 
     isGameActive = false; isPaused = false; 
     document.removeEventListener('keydown', handleTypingInput);
-    document.getElementById('ui-choices').classList.remove('hidden'); document.getElementById('ui-typing-area').classList.add('hidden'); document.getElementById('ui-question').classList.remove('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden'); document.getElementById('ui-typing-area')?.classList.add('hidden'); document.getElementById('ui-question')?.classList.remove('hidden');
     
-    document.getElementById('calc-layout').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden');
-    document.getElementById('calc-keypad').classList.add('hidden');
-    document.getElementById('ui-calc-progress').classList.add('hidden');
-    document.querySelector('.enemy-stats-row').style.display = '';
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
 
     const qBox = document.getElementById('ui-question');
     if (qBox) {
@@ -223,9 +224,9 @@ function backToTitle() {
         qBox.style.removeProperty('min-height');
     }
 
-    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
-    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling) uiComboSpan.previousSibling.nodeValue = "COMBO ";
-    const resScoreSpan = document.getElementById('res-score'); if(resScoreSpan && resScoreSpan.previousSibling) resScoreSpan.previousSibling.nodeValue = "獲得スコア: ";
+    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
+    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "COMBO ";
+    const resScoreSpan = document.getElementById('res-score'); if(resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "獲得スコア: ";
 
     playData.isTyping = false; playData.isCalculation = false;
     stopBGM(); updateTitleInfo(); updateMissionBadge(); checkTitles();
@@ -236,17 +237,17 @@ function checkLoginBonus() {
     if(localStorage.getItem('sq_last_login')!==d){ 
         gameState.xp+=LOGIN_BONUS_EXP; localStorage.setItem('sq_last_login',d); 
         gameState.stats.loginDays = (gameState.stats.loginDays || 0) + 1;
-        saveGame(); document.getElementById('login-bonus-overlay').classList.remove('hidden'); updateTitleInfo(); checkTitles();
+        saveGame(); document.getElementById('login-bonus-overlay')?.classList.remove('hidden'); updateTitleInfo(); checkTitles();
     } 
 }
-function closeLoginBonus() { document.getElementById('login-bonus-overlay').classList.add('hidden'); }
+function closeLoginBonus() { document.getElementById('login-bonus-overlay')?.classList.add('hidden'); }
 function checkMissionDate() { const d=new Date().toLocaleDateString('ja-JP'); dailyMissions=JSON.parse(localStorage.getItem('sq_missions')||'{"date":"","progress":{},"claimed":{}}'); if(dailyMissions.date!==d){ dailyMissions={date:d,progress:{play:0,kill:0,correct:0,maxCombo:0,enhance:0},claimed:{}}; saveGame(); } updateMissionBadge(); }
 function updateMissionProgress(t,v) { if(t==='maxCombo') dailyMissions.progress[t]=Math.max(dailyMissions.progress[t]||0,v); else dailyMissions.progress[t]=(dailyMissions.progress[t]||0)+v; saveGame(); updateMissionBadge(); }
-function updateMissionBadge() { let c=0; MISSIONS.forEach(m=>{ if((dailyMissions.progress[m.id]||0)>=m.target && !dailyMissions.claimed[m.id]) c++; }); document.getElementById('mission-badge').classList.toggle('hidden', c===0); }
+function updateMissionBadge() { let c=0; MISSIONS.forEach(m=>{ if((dailyMissions.progress[m.id]||0)>=m.target && !dailyMissions.claimed[m.id]) c++; }); document.getElementById('mission-badge')?.classList.toggle('hidden', c===0); }
 
-function openMissions() { document.getElementById('mission-overlay').classList.remove('hidden'); renderMissions(); }
-function closeMissions() { document.getElementById('mission-overlay').classList.add('hidden'); }
-function renderMissions() { const l=document.getElementById('mission-list'); l.innerHTML=''; let all=true; MISSIONS.forEach(m=>{ const p=dailyMissions.progress[m.id]||0; const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; if(!fin)all=false; l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; }); 
+function openMissions() { document.getElementById('mission-overlay')?.classList.remove('hidden'); renderMissions(); }
+function closeMissions() { document.getElementById('mission-overlay')?.classList.add('hidden'); }
+function renderMissions() { const l=document.getElementById('mission-list'); if(!l) return; l.innerHTML=''; let all=true; MISSIONS.forEach(m=>{ const p=dailyMissions.progress[m.id]||0; const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; if(!fin)all=false; l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; }); 
     const ac=document.getElementById('mission-all-clear'); if(all){ 
         const isClaimed = dailyMissions.claimed.allClear;
         let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
@@ -259,12 +260,13 @@ function renderMissions() { const l=document.getElementById('mission-list'); l.i
 function claimMission(id,r) { if(dailyMissions.claimed[id])return; dailyMissions.claimed[id]=true; gameState.xp+=r; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(r+"EXP獲得"); }
 function claimAllClear() { if(dailyMissions.claimed.allClear)return; dailyMissions.claimed.allClear=true; gameState.xp+=MISSION_ALL_CLEAR; saveGame(); renderMissions(); updateTitleInfo(); updateMissionBadge(); alert(MISSION_ALL_CLEAR+"EXP獲得"); }
 
-function openGacha() { document.getElementById('gacha-overlay').classList.remove('hidden'); document.getElementById('gacha-xp').innerText=gameState.xp; renderZukan(); }
-function closeGacha() { document.getElementById('gacha-overlay').classList.add('hidden'); updateTitleInfo(); }
+function openGacha() { document.getElementById('gacha-overlay')?.classList.remove('hidden'); const gXp = document.getElementById('gacha-xp'); if(gXp) gXp.innerText=gameState.xp; renderZukan(); }
+function closeGacha() { document.getElementById('gacha-overlay')?.classList.add('hidden'); updateTitleInfo(); }
 
 function rollGacha(count) {
     const cost = 3000 * count;
     if (gameState.xp < cost) return alert("EXPが足りません！\n必要: " + cost + " EXP");
+    if (!rawData.characters || rawData.characters.length === 0) return alert("キャラクターデータがありません。");
     gameState.xp -= cost; let results = [];
     for (let i = 0; i < count; i++) {
         let rand = Math.random(), rarity = 'N';
@@ -280,6 +282,7 @@ function rollGacha(count) {
 
 async function rollGuaranteedTenGacha(guaranteedRarity, cost) {
     if (gameState.xp < cost) return alert("XPが足りません！\n必要: " + cost + " EXP");
+    if (!rawData.characters || rawData.characters.length === 0) return alert("キャラクターデータがありません。");
     if (!(await showConfirm(`【確認】\n${cost} EXPを消費して、\n${guaranteedRarity}以上確定10連スカウトを行いますか？`))) return;
     gameState.xp -= cost; let results = [];
     const addResult = (char) => { if (!gameState.charaInventory[char.id]) { gameState.charaInventory[char.id] = { level: 0, count: 0, exp: 0 }; results.push({ char: char, isNew: true }); } else { gameState.charaInventory[char.id].count++; results.push({ char: char, isNew: false }); } };
@@ -289,14 +292,14 @@ async function rollGuaranteedTenGacha(guaranteedRarity, cost) {
         let targets = rawData.characters.filter(c => c.rarity === r); if (targets.length === 0) targets = rawData.characters; 
         const hit = targets[Math.floor(Math.random() * targets.length)]; addResult(hit);
     }
-    let guaranteedTargets = []; if (guaranteedRarity === 'UR') { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'UR'); } else { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'SSR'); }
+    let guaranteedTargets = []; if (guaranteedRarity === 'UR') { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'UR'); } else { guaranteedTargets = rawData.characters.filter(c => c.rarity === 'SSR' || c.rarity === 'UR'); }
     if (guaranteedTargets.length === 0) guaranteedTargets = rawData.characters;
     const finalHit = guaranteedTargets[Math.floor(Math.random() * guaranteedTargets.length)]; addResult(finalHit);
     saveGame(); renderZukan(); updateTitleInfo(); checkTitles(); playSE('win'); showGachaResults(results);
 }
 
 function showGachaResults(results) {
-    const container = document.getElementById('gr-container');
+    const container = document.getElementById('gr-container'); if(!container) return;
     if(results.length === 1) {
         const r = results[0]; let visual = (r.char.imageUrl && r.char.imageUrl.startsWith('http')) ? `<img src="${r.char.imageUrl}" style="width:120px;height:120px;">` : `<div style="font-size:80px;">📦</div>`;
         container.innerHTML = `<div class="gacha-result-card">${r.isNew?'<div class="gr-new">NEW!</div>':''}<div class="gr-rarity rarity-${r.char.rarity}">★ ${r.char.rarity}</div>${visual}<div style="font-weight:bold;font-size:1.5em;">${r.char.name}</div><div style="color:#7f8c8d;">${r.isNew?'新規入手':'在庫(素材)+1'}</div></div>`; 
@@ -305,21 +308,21 @@ function showGachaResults(results) {
         results.forEach(r => { let visual = (r.char.imageUrl && r.char.imageUrl.startsWith('http')) ? `<img src="${r.char.imageUrl}" class="gr-mini-img">` : `<div style="font-size:30px;">📦</div>`; html += `<div class="gr-mini-card">${r.isNew?'<div class="gr-mini-new">NEW</div>':''}<div class="rarity-${r.char.rarity}" style="font-size:0.8em;">${r.char.rarity}</div>${visual}<div style="font-size:0.7em;font-weight:bold;">${r.char.name}</div></div>`; }); 
         container.innerHTML = html + '</div>'; 
     }
-    document.getElementById('gacha-overlay').classList.add('hidden'); document.getElementById('gacha-result-overlay').classList.remove('hidden');
+    document.getElementById('gacha-overlay')?.classList.add('hidden'); document.getElementById('gacha-result-overlay')?.classList.remove('hidden');
 }
-function closeGachaResult() { document.getElementById('gacha-result-overlay').classList.add('hidden'); document.getElementById('gacha-overlay').classList.remove('hidden'); document.getElementById('gacha-xp').innerText = gameState.xp; renderZukan(); }
+function closeGachaResult() { document.getElementById('gacha-result-overlay')?.classList.add('hidden'); document.getElementById('gacha-overlay')?.classList.remove('hidden'); const gXp = document.getElementById('gacha-xp'); if(gXp) gXp.innerText = gameState.xp; renderZukan(); }
 
 let zukanSortMode = 'default';
 function changeZukanSort() { const sel = document.getElementById('zukan-sort-select'); if(sel) zukanSortMode = sel.value; renderZukan(); }
 
 function renderZukan() { 
-    const g=document.getElementById('zukan-grid'); g.innerHTML=''; 
+    const g=document.getElementById('zukan-grid'); if(!g) return; g.innerHTML=''; 
     if(!rawData.characters) return;
     let list = [...rawData.characters];
     list.sort((a, b) => {
         const invA = gameState.charaInventory[a.id]; const invB = gameState.charaInventory[b.id];
         if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') { const rOrder = { 'UR':5, 'SSR':4, 'SR':3, 'R':2, 'N':1 }; const valA = rOrder[a.rarity] || 0; const valB = rOrder[b.rarity] || 0; return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB; }
-        if (zukanSortMode === 'type') { return a.type.localeCompare(b.type); }
+        if (zukanSortMode === 'type') { return (a.type || "").localeCompare(b.type || ""); }
         if (zukanSortMode === 'level') { const lvA = invA ? invA.level : -1; const lvB = invB ? invB.level : -1; if (lvA !== lvB) return lvB - lvA; }
         if (zukanSortMode === 'stock') { const cntA = invA ? invA.count : -1; const cntB = invB ? invB.count : -1; if (cntA !== cntB) return cntB - cntA; }
         return 0;
@@ -341,40 +344,53 @@ function renderZukan() {
 }
 
 function openCharaDetail(id) { 
-    viewingCharaId=id; const c=rawData.characters.find(x=>x.id==id); const o=gameState.charaInventory[id]; if(!c||!o)return; 
+    viewingCharaId=id; const c = rawData.characters ? rawData.characters.find(x=>x.id==id) : null; const o=gameState.charaInventory[id]; if(!c||!o)return; 
     const currentR = o.currentRarity || c.rarity; const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
     const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
-    document.getElementById('cd-name').innerHTML = getDisplayName(c, o);
-    document.getElementById('cd-rarity').innerText = currentR; document.getElementById('cd-rarity').className = "rarity-" + currentR; 
+    
+    const cdName = document.getElementById('cd-name'); if(cdName) cdName.innerHTML = getDisplayName(c, o);
+    const cdRarity = document.getElementById('cd-rarity'); if(cdRarity) { cdRarity.innerText = currentR; cdRarity.className = "rarity-" + currentR; }
     const maxLv = RARITY_CAPS[currentR] || 10;
-    document.getElementById('cd-lv').innerText = 'Lv.' + o.level + ' / ' + maxLv;
+    const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + o.level + ' / ' + maxLv;
+    
     let skillHtml = ''; currentSkills.forEach(s => { skillHtml += `<span class="skill-tag ${s}">${s}</span>`; });
-    document.getElementById('cd-type').innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
-    let val = baseVal + (o.level * LV_BONUS_RATE); document.getElementById('cd-val').innerText='x'+val.toFixed(2); 
-    document.getElementById('cd-stock').innerText=o.count + "個"; document.getElementById('cd-desc').innerText = c.desc || "";
+    const cdType = document.getElementById('cd-type'); if(cdType) cdType.innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
+    
+    let val = baseVal + (o.level * LV_BONUS_RATE); const cdVal = document.getElementById('cd-val'); if(cdVal) cdVal.innerText='x'+val.toFixed(2); 
+    const cdStock = document.getElementById('cd-stock'); if(cdStock) cdStock.innerText=o.count + "個"; 
+    const cdDesc = document.getElementById('cd-desc'); if(cdDesc) cdDesc.innerText = c.desc || "";
     
     const detailBtnRow = document.querySelector('.detail-btn-row');
-    if (document.querySelector('.item-use-area')) document.querySelector('.item-use-area').remove();
-    detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${(gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${(gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${(gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
-    
-    document.getElementById('cd-exp-text').innerText = o.exp + ' / ' + EXP_REQ; document.getElementById('cd-exp-bar').style.width = (o.exp / EXP_REQ * 100) + '%';
-    if(c.imageUrl.startsWith('http')) document.getElementById('cd-img').src=c.imageUrl; else document.getElementById('cd-img').src=''; 
-    document.getElementById('chara-detail-overlay').classList.remove('hidden'); 
-    
-    const evoContainer = document.getElementById('evo-container'); evoContainer.innerHTML = ''; evoContainer.classList.add('hidden');
-    if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
-        const cost = EVO_COST_XP[currentR]; const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; btn.style.borderBottom = '5px solid #d35400'; btn.style.marginBottom = '10px'; btn.style.height = '60px'; 
-        btn.innerHTML = `🌟 限界突破・進化！<br><span style="font-size:0.75em">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeEvolution; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+    if(detailBtnRow) {
+        if (document.querySelector('.item-use-area')) document.querySelector('.item-use-area').remove();
+        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${(gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${(gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${(gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
     }
-    if (currentR === 'UR' && c.rarity !== 'UR') {
-        const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; btn.style.borderBottom = '5px solid #5b2c6f'; btn.style.marginBottom = '10px'; btn.style.height = '60px';
-        btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ スキル継承</span>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+    
+    const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = o.exp + ' / ' + EXP_REQ; 
+    const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = (o.exp / EXP_REQ * 100) + '%';
+    const cdImg = document.getElementById('cd-img');
+    if(cdImg) {
+        if(c.imageUrl && c.imageUrl.startsWith('http')) cdImg.src=c.imageUrl; else cdImg.src=''; 
+    }
+    document.getElementById('chara-detail-overlay')?.classList.remove('hidden'); 
+    
+    const evoContainer = document.getElementById('evo-container'); 
+    if(evoContainer) {
+        evoContainer.innerHTML = ''; evoContainer.classList.add('hidden');
+        if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
+            const cost = EVO_COST_XP[currentR]; const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; btn.style.borderBottom = '5px solid #d35400'; btn.style.marginBottom = '10px'; btn.style.height = '60px'; 
+            btn.innerHTML = `🌟 限界突破・進化！<br><span style="font-size:0.75em">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeEvolution; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+        }
+        if (currentR === 'UR' && c.rarity !== 'UR') {
+            const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; btn.style.borderBottom = '5px solid #5b2c6f'; btn.style.marginBottom = '10px'; btn.style.height = '60px';
+            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ スキル継承</span>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+        }
     }
 }
 
-function closeCharaDetail() { document.getElementById('chara-detail-overlay').classList.add('hidden'); renderZukan(); }
+function closeCharaDetail() { document.getElementById('chara-detail-overlay')?.classList.add('hidden'); renderZukan(); }
 function equipCurrentChara() { gameState.equipped=viewingCharaId; saveGame(); alert("装備しました"); closeCharaDetail(); renderZukan(); updateTitleInfo(); }
-async function sellCharaStock() { const o=gameState.charaInventory[viewingCharaId]; if (o.count > 0 && !(await showConfirm("売却しますか？"))) return; if(o.count>0){ o.count--; gameState.xp+=200; saveGame(); openCharaDetail(viewingCharaId); } }
+async function sellCharaStock() { const o=gameState.charaInventory[viewingCharaId]; if (o && o.count > 0 && !(await showConfirm("売却しますか？"))) return; if(o && o.count>0){ o.count--; gameState.xp+=200; saveGame(); openCharaDetail(viewingCharaId); } }
 
 async function useExpItem(itemId, gain) {
     if ((gameState.inventory[itemId] || 0) <= 0) return;
@@ -383,8 +399,10 @@ async function useExpItem(itemId, gain) {
     if (!(await showConfirm(`【確認】\n${itemName} を使用して、経験値を +${gain} しますか？`))) return;
 
     const inv = gameState.charaInventory[viewingCharaId];
-    const master = rawData.characters.find(c => c.id == viewingCharaId);
-    const maxL = RARITY_CAPS[inv.currentRarity || master.rarity] || 10;
+    const master = rawData.characters ? rawData.characters.find(c => c.id == viewingCharaId) : null;
+    if(!inv) return;
+    
+    const maxL = RARITY_CAPS[inv.currentRarity || (master ? master.rarity : 'N')] || 10;
     
     if (inv.level >= maxL) return alert("Lv.MAXです");
 
@@ -401,11 +419,12 @@ async function useExpItem(itemId, gain) {
 }
 
 let selectedMaterials = {};
-function openEnhanceMenu() { selectedMaterials = {}; document.getElementById('material-select-overlay').classList.remove('hidden'); document.getElementById('chara-detail-overlay').classList.add('hidden'); renderEnhanceList(); }
-function closeEnhanceMenu() { document.getElementById('material-select-overlay').classList.add('hidden'); openCharaDetail(viewingCharaId); }
+function openEnhanceMenu() { selectedMaterials = {}; document.getElementById('material-select-overlay')?.classList.remove('hidden'); document.getElementById('chara-detail-overlay')?.classList.add('hidden'); renderEnhanceList(); }
+function closeEnhanceMenu() { document.getElementById('material-select-overlay')?.classList.add('hidden'); openCharaDetail(viewingCharaId); }
 
 function renderEnhanceList() {
-    const list = document.getElementById('material-list'); list.innerHTML = ''; let totalGain = 0;
+    const list = document.getElementById('material-list'); if(!list) return; list.innerHTML = ''; let totalGain = 0;
+    if(!rawData.characters) return;
     rawData.characters.forEach(c => {
         if (c.id === viewingCharaId) return; const inv = gameState.charaInventory[c.id]; if (!inv || inv.count <= 0) return;
         const selectCount = selectedMaterials[c.id] || 0; const expVal = MAT_EXP[c.rarity] || 25; if(selectCount > 0) totalGain += (expVal * selectCount);
@@ -419,38 +438,42 @@ function renderEnhanceList() {
 function toggleMaterial(id, maxCount) { if (!selectedMaterials[id]) selectedMaterials[id] = 0; selectedMaterials[id]++; if (selectedMaterials[id] > maxCount) { selectedMaterials[id] = 0; } renderEnhanceList(); }
 
 function updateEnhancePreview(gainExp) {
-    document.getElementById('enhance-total-exp').innerText = gainExp;
-    const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters.find(x => x.id === viewingCharaId); if (!t || !chara) return;
+    const enhanceTotal = document.getElementById('enhance-total-exp'); if(enhanceTotal) enhanceTotal.innerText = gainExp;
+    const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null; if (!t || !chara) return;
     const currentR = t.currentRarity || chara.rarity; const maxLv = RARITY_CAPS[currentR] || 10;
     let simExp = t.exp + gainExp; let simLv = t.level;
     while (simExp >= EXP_REQ) { if (simLv >= maxLv) { simExp = 0; break; } simExp -= EXP_REQ; simLv++; }
     const preview = document.getElementById('enhance-lv-preview');
+    if(!preview) return;
     if (simLv > t.level) { preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`; preview.style.color = '#e67e22'; } else { preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`; preview.style.color = '#7f8c8d'; }
 }
 
 async function executeBulkEnhance() {
     const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0); if (totalSelected === 0) return alert("素材を選択してください");
-    let totalGain = 0; Object.keys(selectedMaterials).forEach(id => { const count = selectedMaterials[id]; if (count > 0) { const matChar = rawData.characters.find(c => c.id === id); const expVal = MAT_EXP[matChar.rarity] || 25; totalGain += (expVal * count); } });
+    let totalGain = 0; Object.keys(selectedMaterials).forEach(id => { const count = selectedMaterials[id]; if (count > 0 && rawData.characters) { const matChar = rawData.characters.find(c => c.id === id); if(matChar) { const expVal = MAT_EXP[matChar.rarity] || 25; totalGain += (expVal * count); } } });
     if (!(await showConfirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`))) return;
     Object.keys(selectedMaterials).forEach(id => { const count = selectedMaterials[id]; if (gameState.charaInventory[id]) { gameState.charaInventory[id].count -= count; if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0; } });
-    const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters.find(x => x.id === viewingCharaId);
-    const currentR = t.currentRarity || chara.rarity; const maxLv = RARITY_CAPS[currentR] || 10;
+    const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
+    const currentR = t.currentRarity || (chara ? chara.rarity : 'N'); const maxLv = RARITY_CAPS[currentR] || 10;
     t.exp = (Number(t.exp) || 0) + totalGain; let lvUpCount = 0;
     while (t.exp >= EXP_REQ) { if (t.level >= maxLv) { t.exp = 0; break; } t.exp -= EXP_REQ; t.level++; lvUpCount++; }
     updateMissionProgress('enhance', 1); checkTitles(); saveGame();
     alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
     selectedMaterials = {}; renderEnhanceList(); updateEnhancePreview(0);
     if(chara) {
-        document.getElementById('cd-lv').innerText = 'Lv.' + t.level + ' / ' + maxLv; document.getElementById('cd-exp-text').innerText = t.exp + ' / ' + EXP_REQ; document.getElementById('cd-exp-bar').style.width = (t.exp / EXP_REQ * 100) + '%';
-        const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value); document.getElementById('cd-val').innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
+        const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + t.level + ' / ' + maxLv; 
+        const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = t.exp + ' / ' + EXP_REQ; 
+        const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = (t.exp / EXP_REQ * 100) + '%';
+        const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value); 
+        const cdVal = document.getElementById('cd-val'); if(cdVal) cdVal.innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
     }
 }
 
-function openShop() { document.getElementById('shop-overlay').classList.remove('hidden'); renderShop(); }
+function openShop() { document.getElementById('shop-overlay')?.classList.remove('hidden'); renderShop(); }
 let currentShopTab = 'buy'; 
 function renderShop() {
-    document.getElementById('shop-xp').innerText = gameState.xp;
-    const l=document.getElementById('shop-list'); 
+    const shopXp = document.getElementById('shop-xp'); if(shopXp) shopXp.innerText = gameState.xp;
+    const l=document.getElementById('shop-list'); if(!l) return;
     l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="currentShopTab='buy'; renderShop();">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="currentShopTab='exchange'; renderShop();">アイテム交換</div></div>`; 
     
     if(currentShopTab === 'buy') {
@@ -472,63 +495,81 @@ function renderShop() {
     }
 }
 function exchangeBook(bookId, cost) { if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; gameState.inventory.redPages -= cost; gameState.inventory.bluePages -= cost; gameState.inventory[bookId]++; saveGame(); renderShop(); playSE('win'); }
-function closeShop() { document.getElementById('shop-overlay').classList.add('hidden'); }
+function closeShop() { document.getElementById('shop-overlay')?.classList.add('hidden'); }
 function buyItem(id,p) { if (!gameState.itemLevels) gameState.itemLevels = {}; if((gameState.itemLevels[id]||0)>=10)return; if(gameState.xp<p)return alert("XP不足"); gameState.xp-=p; gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; saveGame(); openShop(); updateTitleInfo(); checkTitles(); }
 
-function openVersionHistory() { document.getElementById('version-overlay').classList.remove('hidden'); }
-function closeVersionHistory() { document.getElementById('version-overlay').classList.add('hidden'); }
-function openHowToPlay() { document.getElementById('howto-overlay').classList.remove('hidden'); }
-function closeHowToPlay() { document.getElementById('howto-overlay').classList.add('hidden'); }
+function openVersionHistory() { document.getElementById('version-overlay')?.classList.remove('hidden'); }
+function closeVersionHistory() { document.getElementById('version-overlay')?.classList.add('hidden'); }
+function openHowToPlay() { document.getElementById('howto-overlay')?.classList.remove('hidden'); }
+function closeHowToPlay() { document.getElementById('howto-overlay')?.classList.add('hidden'); }
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let isMuted = true;
-function toggleMute() { isMuted = !isMuted; const btn = document.getElementById('btn-mute'); if(isMuted) { btn.innerText = "🔇 音量: OFF"; btn.style.background = "#95a5a6"; btn.style.borderColor = "#7f8c8d"; stopBGM(); } else { btn.innerText = "🔊 音量: ON"; btn.style.background = "#34495e"; btn.style.borderColor = "#2c3e50"; playSE('hit'); if(isGameActive) playBGM(); } }
+function toggleMute() { 
+    isMuted = !isMuted; const btn = document.getElementById('btn-mute'); 
+    if(isMuted) { 
+        if(btn) { btn.innerText = "🔇 音量: OFF"; btn.style.background = "#95a5a6"; btn.style.borderColor = "#7f8c8d"; }
+        stopBGM(); 
+    } else { 
+        if(btn) { btn.innerText = "🔊 音量: ON"; btn.style.background = "#34495e"; btn.style.borderColor = "#2c3e50"; }
+        playSE('hit'); if(isGameActive) playBGM(); 
+    } 
+}
 function playSE(type) {
     if(isMuted) return;
-    if(audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
-    if (type === 'type_hit') { osc.type = 'triangle'; osc.frequency.setValueAtTime(1500, now); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08); osc.start(now); osc.stop(now + 0.08); }
-    else if (type === 'type_miss') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(50, now + 0.15); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0.001, now + 0.15); osc.start(now); osc.stop(now + 0.15); }
-    else if (type === 'hit') { osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); } 
-    else if (type === 'miss') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
-    else if (type === 'win') { osc.type = 'square'; gainNode.gain.value = 0.1; [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { const t = now + i * 0.1; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'square'; o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1); o.start(t); o.stop(t + 0.1); }); }
-    else if (type === 'lose') { osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(50, now + 1.0); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 1.0); osc.start(now); osc.stop(now + 1.0); }
-    else if (type === 'count') { osc.type = 'triangle'; osc.frequency.setValueAtTime(440, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
-    else if (type === 'start') { osc.type = 'square'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(1760, now + 0.3); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+    if(audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(e => console.warn('AudioContext resume was blocked', e));
+    }
+    try {
+        const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
+        if (type === 'type_hit') { osc.type = 'triangle'; osc.frequency.setValueAtTime(1500, now); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.08); osc.start(now); osc.stop(now + 0.08); }
+        else if (type === 'type_miss') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(50, now + 0.15); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0.001, now + 0.15); osc.start(now); osc.stop(now + 0.15); }
+        else if (type === 'hit') { osc.type = 'sine'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); } 
+        else if (type === 'miss') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+        else if (type === 'win') { osc.type = 'square'; gainNode.gain.value = 0.1; [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { const t = now + i * 0.1; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = 'square'; o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.1); o.start(t); o.stop(t + 0.1); }); }
+        else if (type === 'lose') { osc.type = 'triangle'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(50, now + 1.0); gainNode.gain.setValueAtTime(0.3, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 1.0); osc.start(now); osc.stop(now + 1.0); }
+        else if (type === 'count') { osc.type = 'triangle'; osc.frequency.setValueAtTime(440, now); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
+        else if (type === 'start') { osc.type = 'square'; osc.frequency.setValueAtTime(880, now); osc.frequency.exponentialRampToValueAtTime(1760, now + 0.3); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+    } catch(e) {}
 }
 
 const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
 let bgmOscillators = []; let bgmTimeout = null;
 function playBGM() {
-    if (isMuted) return; stopBGM(); if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (isMuted) return; stopBGM(); 
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(e => console.warn('BGM resume blocked', e));
+    }
     const mml = BGM_MML.replace(/\s+/g, '').toUpperCase(); let index = 0; let nextTime = audioCtx.currentTime + 0.1; let octave = 4; let defaultLen = 4; let tempo = 120;
     const scheduleNote = () => {
         if (!isGameActive) return;
-        while (nextTime < audioCtx.currentTime + 2.0 && index < mml.length) {
-            let char = mml[index++];
-            if (char === 'T') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { tempo = num; index += String(num).length; } } 
-            else if (char === 'L') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { defaultLen = num; index += String(num).length; } } 
-            else if (char === 'O') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { octave = num; index += String(num).length; } } 
-            else if (char === '>') octave++; else if (char === '<') octave--;
-            else if (char === 'R') { let len = defaultLen; let num = parseInt(mml.slice(index)); if (!isNaN(num)) { len = num; index += String(num).length; } nextTime += (60 / tempo) * (4 / len); } 
-            else if ("CDEFGAB".includes(char)) {
-                let note = char; if (mml[index] === '#' || mml[index] === '+') { note += '#'; index++; } else if (mml[index] === '-') { note += '-'; index++; }
-                let len = defaultLen; let num = parseInt(mml.slice(index)); if (!isNaN(num)) { len = num; index += String(num).length; }
-                const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]; let keyIndex = notes.indexOf(note.replace('-', '')); if (keyIndex === -1) keyIndex = 0;
-                const freq = 440 * Math.pow(2, (octave - 4) + (keyIndex - 9) / 12);
-                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'square'; osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
-                const duration = (60 / tempo) * (4 / len); osc.start(nextTime); osc.stop(nextTime + duration - 0.05); gain.gain.setValueAtTime(0.05, nextTime); gain.gain.linearRampToValueAtTime(0.02, nextTime + duration - 0.05); gain.gain.setValueAtTime(0, nextTime + duration);
-                bgmOscillators.push(osc); nextTime += duration;
+        try {
+            while (nextTime < audioCtx.currentTime + 2.0 && index < mml.length) {
+                let char = mml[index++];
+                if (char === 'T') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { tempo = num; index += String(num).length; } } 
+                else if (char === 'L') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { defaultLen = num; index += String(num).length; } } 
+                else if (char === 'O') { let num = parseInt(mml.slice(index)); if (!isNaN(num)) { octave = num; index += String(num).length; } } 
+                else if (char === '>') octave++; else if (char === '<') octave--;
+                else if (char === 'R') { let len = defaultLen; let num = parseInt(mml.slice(index)); if (!isNaN(num)) { len = num; index += String(num).length; } nextTime += (60 / tempo) * (4 / len); } 
+                else if ("CDEFGAB".includes(char)) {
+                    let note = char; if (mml[index] === '#' || mml[index] === '+') { note += '#'; index++; } else if (mml[index] === '-') { note += '-'; index++; }
+                    let len = defaultLen; let num = parseInt(mml.slice(index)); if (!isNaN(num)) { len = num; index += String(num).length; }
+                    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]; let keyIndex = notes.indexOf(note.replace('-', '')); if (keyIndex === -1) keyIndex = 0;
+                    const freq = 440 * Math.pow(2, (octave - 4) + (keyIndex - 9) / 12);
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'square'; osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
+                    const duration = (60 / tempo) * (4 / len); osc.start(nextTime); osc.stop(nextTime + duration - 0.05); gain.gain.setValueAtTime(0.05, nextTime); gain.gain.linearRampToValueAtTime(0.02, nextTime + duration - 0.05); gain.gain.setValueAtTime(0, nextTime + duration);
+                    bgmOscillators.push(osc); nextTime += duration;
+                }
             }
-        }
+        } catch(e) {}
         if (index >= mml.length) index = 0; if (isGameActive && !isMuted) bgmTimeout = setTimeout(scheduleNote, 500);
     };
     scheduleNote();
 }
 function stopBGM() { if (bgmTimeout) clearTimeout(bgmTimeout); bgmOscillators.forEach(osc => { try { osc.stop(); } catch(e){} }); bgmOscillators = []; }
 
-function openRecord() { document.getElementById('record-overlay').classList.remove('hidden'); renderRecord(); }
-function closeRecord() { document.getElementById('record-overlay').classList.add('hidden'); }
+function openRecord() { document.getElementById('record-overlay')?.classList.remove('hidden'); renderRecord(); }
+function closeRecord() { document.getElementById('record-overlay')?.classList.add('hidden'); }
 function drawRadarChart(labels, data) {
     const canvas = document.getElementById('radar-chart'); if (!canvas) return; const ctx = canvas.getContext('2d');
     const w = canvas.width; const h = canvas.height; const cx = w / 2; const cy = h / 2; const radius = w / 2 - 40;
@@ -548,89 +589,97 @@ function drawRadarChart(labels, data) {
 }
 
 let tempOaths = [];
-function openOathMenu() { tempOaths = []; document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected')); document.getElementById('oath-overlay').classList.remove('hidden'); }
-function closeOathMenu() { document.getElementById('oath-overlay').classList.add('hidden'); }
-function toggleOath(type) { const el = document.getElementById('oath-' + type); if (tempOaths.includes(type)) { tempOaths = tempOaths.filter(t => t !== type); el.classList.remove('selected'); } else { tempOaths.push(type); el.classList.add('selected'); } }
+function openOathMenu() { tempOaths = []; document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected')); document.getElementById('oath-overlay')?.classList.remove('hidden'); }
+function closeOathMenu() { document.getElementById('oath-overlay')?.classList.add('hidden'); }
+function toggleOath(type) { const el = document.getElementById('oath-' + type); if (tempOaths.includes(type)) { tempOaths = tempOaths.filter(t => t !== type); if(el) el.classList.remove('selected'); } else { tempOaths.push(type); if(el) el.classList.add('selected'); } }
 function startOathGame() {
     if (tempOaths.length === 0) return alert("誓約を1つ以上選択してください");
-    const g = document.getElementById('grade-select').value; const s = document.getElementById('subject-select').value; const u = document.getElementById('unit-select').value;
-    let qList = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
+    const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value;
+    let qList = rawData.questions ? rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u) : [];
     if(qList.length === 0) return alert("問題がありません");
     let boss = rawData.bosses ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
     if(!boss) boss = { name: "試練の魔人", hp: 1500, icon: "👿" };
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = [...tempOaths]; playData.isRandom = false; playData.context = { grade: g, subject: s, unit: u };
+    
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = playData.activeOaths.includes('backwater') ? 1 : 3;
     gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; 
     let timeMulti = playData.activeOaths.includes('rapid') ? 0.5 : 1.0; gameState.maxTime = 10 * charaStats.time * timeMulti;
     isGameActive = false; isPaused = false;
-    document.getElementById('oath-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('oath-overlay')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.remove('hidden');
     
-    document.getElementById('calc-layout').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden');
-    document.getElementById('calc-keypad').classList.add('hidden');
-    document.getElementById('ui-calc-progress').classList.add('hidden');
-    document.getElementById('ui-choices').classList.remove('hidden');
-    document.getElementById('ui-typing-area').classList.add('hidden');
-    document.querySelector('.enemy-stats-row').style.display = '';
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
 
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-    enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
-    document.getElementById('ui-enemy-name').innerText = "【誓約】" + boss.name;
-    if(boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon; }
-    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "【誓約】" + boss.name;
+    if(enemyIcon) {
+        if(boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon; }
+    }
+    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
     updateUI(); startCountdown();
 }
 
 function openRandomMenu() {
     if(!rawData.questions) return;
     const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g=>g);
-    const sel = document.getElementById('random-grade-select'); sel.innerHTML = '<option value="">学年を選択...</option>';
+    const sel = document.getElementById('random-grade-select'); if(!sel) return; sel.innerHTML = '<option value="">学年を選択...</option>';
     grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-    document.getElementById('random-overlay').classList.remove('hidden');
+    document.getElementById('random-overlay')?.classList.remove('hidden');
 }
-function closeRandomMenu() { document.getElementById('random-overlay').classList.add('hidden'); }
+function closeRandomMenu() { document.getElementById('random-overlay')?.classList.add('hidden'); }
 function startRandomGame() {
-    const g = document.getElementById('random-grade-select').value; if(!g) return alert("学年を選択してください");
-    const qList = rawData.questions.filter(q => q.grade == g); if(qList.length === 0) return alert("問題が見つかりません");
+    const g = document.getElementById('random-grade-select')?.value; if(!g) return alert("学年を選択してください");
+    const qList = rawData.questions ? rawData.questions.filter(q => q.grade == g) : []; if(qList.length === 0) return alert("問題が見つかりません");
     let possibleBosses = []; if (rawData.randomBosses) { possibleBosses = rawData.randomBosses.filter(b => b.grade == g || b.grade == '全学年'); }
     let boss; if (possibleBosses.length > 0) { const b = possibleBosses[Math.floor(Math.random() * possibleBosses.length)]; boss = { name: b.name, hp: Number(b.hp) || 3000, icon: b.icon }; } else { boss = { name: "迷宮のヌシ", hp: 3000, icon: "🐲" }; }
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = true;
+    
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; gameState.maxTime = 10 * charaStats.time;
     isGameActive = false; isPaused = false;
-    document.getElementById('random-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('random-overlay')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.remove('hidden');
     
-    document.getElementById('calc-layout').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden');
-    document.getElementById('calc-keypad').classList.add('hidden');
-    document.getElementById('ui-calc-progress').classList.add('hidden');
-    document.getElementById('ui-choices').classList.remove('hidden');
-    document.getElementById('ui-typing-area').classList.add('hidden');
-    document.querySelector('.enemy-stats-row').style.display = '';
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
 
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-    enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
-    document.getElementById('ui-enemy-name').innerText = "【迷宮】" + boss.name;
-    if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
-    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "【迷宮】" + boss.name;
+    if(enemyIcon) {
+        if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
+    }
+    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
     updateUI(); startCountdown();
 }
 
 function openTypingMenu() {
     if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データ(typingシート)が見つかりません");
     const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g=>g);
-    const sel = document.getElementById('typing-grade-select'); sel.innerHTML = '<option value="">学年を選択...</option>';
+    const sel = document.getElementById('typing-grade-select'); if(!sel) return; sel.innerHTML = '<option value="">学年を選択...</option>';
     grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-    document.getElementById('typing-menu-overlay').classList.remove('hidden');
+    document.getElementById('typing-menu-overlay')?.classList.remove('hidden');
 }
-function closeTypingMenu() { document.getElementById('typing-menu-overlay').classList.add('hidden'); }
-function openCalcMenu() { document.getElementById('calc-overlay').classList.remove('hidden'); }
-function closeCalcMenu() { document.getElementById('calc-overlay').classList.add('hidden'); }
+function closeTypingMenu() { document.getElementById('typing-menu-overlay')?.classList.add('hidden'); }
+function openCalcMenu() { document.getElementById('calc-overlay')?.classList.remove('hidden'); }
+function closeCalcMenu() { document.getElementById('calc-overlay')?.classList.add('hidden'); }
 function startTypingGame() {
-    const g = document.getElementById('typing-grade-select').value; 
+    const g = document.getElementById('typing-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
     if (!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
     const qList = rawData.typing.filter(t => t.grade == g); 
@@ -652,32 +701,37 @@ function startTypingGame() {
     gameState.score = 0; gameState.combo = 0; gameState.lives = 5; gameState.enemyHP = Number(boss.hp) || 3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time; 
     isGameActive = false; isPaused = false;
     
-    document.getElementById('typing-menu-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('typing-menu-overlay')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.remove('hidden');
     
-    document.getElementById('ui-choices').classList.add('hidden'); 
-    document.getElementById('ui-typing-area').classList.remove('hidden'); 
-    document.getElementById('ui-question').classList.add('hidden');
-    document.getElementById('ui-calc-answer').classList.add('hidden'); 
-    document.getElementById('calc-keypad').classList.add('hidden'); 
-    document.getElementById('calc-layout').classList.add('hidden'); 
-    document.getElementById('ui-calc-progress').classList.add('hidden');
-    document.querySelector('.enemy-stats-row').style.display = '';
+    document.getElementById('ui-choices')?.classList.add('hidden'); 
+    document.getElementById('ui-typing-area')?.classList.remove('hidden'); 
+    document.getElementById('ui-question')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden'); 
+    document.getElementById('calc-keypad')?.classList.add('hidden'); 
+    document.getElementById('calc-layout')?.classList.add('hidden'); 
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
 
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-    enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
     
-    document.getElementById('ui-enemy-name').innerText = boss.name;
-    if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
+    const uiEnemyName = document.getElementById('ui-enemy-name'); if(uiEnemyName) uiEnemyName.innerText = boss.name;
+    if(enemyIcon) {
+        if(boss.icon && boss.icon.startsWith('http')) { enemyIcon.innerHTML = `<img src="${boss.icon}">`; } else { enemyIcon.innerHTML = boss.icon || "👾"; }
+    }
 
     document.removeEventListener('keydown', handleTypingInput); document.addEventListener('keydown', handleTypingInput);
-    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = gameState.maxTime.toFixed(1);
-    document.getElementById('ui-typing-jp').innerText = "READY..."; document.getElementById('ui-typing-romaji').innerHTML = "";
+    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+    
+    const uiTypingJp = document.getElementById('ui-typing-jp'); if(uiTypingJp) uiTypingJp.innerText = "READY..."; 
+    const uiTypingRomaji = document.getElementById('ui-typing-romaji'); if(uiTypingRomaji) uiTypingRomaji.innerHTML = "";
 
     updateUI(); startCountdown();
 }
 
 function startCalcGame() {
-    const type = document.getElementById('calc-type-select').value; const mode = document.getElementById('calc-mode-select').value;
+    const type = document.getElementById('calc-type-select')?.value; const mode = document.getElementById('calc-mode-select')?.value;
     if (!type || !mode) return alert("問題形式とモードを選択してください");
     const hand = document.querySelector('input[name="calc-hand"]:checked')?.value || 'right';
     playData.isCalculation = true; playData.isTyping = false; playData.calcType = type; playData.calcMode = mode; playData.calcQIndex = 0; playData.calcCorrect = 0; playData.calcInput = ''; playData.calcElapsed = 0; playData.calcTimeLeft = mode === '3min' ? 180 : 0; playData.calcCountTarget = mode === '100q' ? 100 : 0; playData.calcQuestions = []; playData.currentQ = null; playData.isRevenge = false; playData.activeOaths = []; playData.isRandom = false; playData.context = null; playData.handPreference = hand;
@@ -685,16 +739,20 @@ function startCalcGame() {
     gameState.score = 0; gameState.combo = 0; gameState.lives = 0; gameState.enemyHP = 0; gameState.maxHP = 1; gameState.maxTime = playData.calcTimeLeft || 1;
     isGameActive = false; isPaused = false;
 
-    document.getElementById('calc-overlay').classList.add('hidden'); document.getElementById('title-screen').classList.add('hidden'); document.getElementById('game-screen').classList.remove('hidden'); document.getElementById('ui-choices').classList.add('hidden'); document.getElementById('ui-typing-area').classList.add('hidden'); document.getElementById('ui-question').classList.remove('hidden'); document.getElementById('ui-calc-answer').classList.remove('hidden'); document.getElementById('calc-keypad').classList.remove('hidden'); document.getElementById('calc-layout').classList.remove('hidden'); document.getElementById('ui-calc-progress').classList.add('hidden'); document.querySelector('.enemy-stats-row').style.display = 'none';
+    document.getElementById('calc-overlay')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.remove('hidden'); document.getElementById('ui-choices')?.classList.add('hidden'); document.getElementById('ui-typing-area')?.classList.add('hidden'); document.getElementById('ui-question')?.classList.remove('hidden'); document.getElementById('ui-calc-answer')?.classList.remove('hidden'); document.getElementById('calc-keypad')?.classList.remove('hidden'); document.getElementById('calc-layout')?.classList.remove('hidden'); document.getElementById('ui-calc-progress')?.classList.add('hidden'); 
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = 'none';
 
     const calcLayout = document.getElementById('calc-layout'); if (calcLayout) { calcLayout.classList.remove('left-hand', 'right-hand'); calcLayout.classList.add(hand === 'left' ? 'left-hand' : 'right-hand'); }
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
-    enemyBox.classList.remove('anim-paused', 'fade-out'); enemyIcon.classList.remove('shake-anim');
-    document.getElementById('ui-enemy-name').innerText = '計算クエスト'; enemyIcon.innerHTML = '🧮';
-    document.getElementById('ui-timer').style.width = '100%'; document.getElementById('ui-timer-text').innerText = playData.calcMode === '3min' ? '180.0' : '0.0';
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = '計算クエスト'; 
+    if(enemyIcon) enemyIcon.innerHTML = '🧮';
     
-    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling) uiScoreSpan.previousSibling.nodeValue = "問題数 ";
-    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling) uiComboSpan.previousSibling.nodeValue = "正解数 ";
+    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = playData.calcMode === '3min' ? '180.0' : '0.0';
+    
+    const uiScoreSpan = document.getElementById('ui-score'); if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "問題数 ";
+    const uiComboSpan = document.getElementById('ui-combo'); if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "正解数 ";
 
     const qBox = document.getElementById('ui-question');
     if (qBox) {
@@ -718,14 +776,14 @@ function generateCalcQuestion(type) {
     return { q, answer, type: actualType };
 }
 
-function renderCalcInput() { document.getElementById('ui-calc-answer').innerText = playData.calcInput || '---'; }
+function renderCalcInput() { const ans = document.getElementById('ui-calc-answer'); if(ans) ans.innerText = playData.calcInput || '---'; }
 
 function renderCalcProgress() {
     const progress = playData.calcMode === '100q' ? `${playData.calcQIndex}/${playData.calcCountTarget} 問` : `${playData.calcCorrect} 正解`; 
     const timeText = playData.calcMode === '3min' ? `${Math.max(0, playData.calcTimeLeft).toFixed(1)}秒` : `${playData.calcElapsed.toFixed(1)}秒`;
-    document.getElementById('ui-calc-progress').innerText = `${progress} ／ ${timeText}`;
+    const uiCalcProg = document.getElementById('ui-calc-progress'); if(uiCalcProg) uiCalcProg.innerText = `${progress} ／ ${timeText}`;
     const bar = document.getElementById('ui-timer');
-    if (playData.calcMode === '100q' && playData.calcCountTarget > 0) { bar.style.width = Math.min(100, (playData.calcQIndex / playData.calcCountTarget) * 100) + '%'; } else if (playData.calcMode === '3min') { bar.style.width = Math.max(0, playData.calcTimeLeft / 180 * 100) + '%'; }
+    if (playData.calcMode === '100q' && playData.calcCountTarget > 0 && bar) { bar.style.width = Math.min(100, (playData.calcQIndex / playData.calcCountTarget) * 100) + '%'; } else if (playData.calcMode === '3min' && bar) { bar.style.width = Math.max(0, playData.calcTimeLeft / 180 * 100) + '%'; }
 }
 
 function handleCalcButton(value) {
@@ -737,18 +795,18 @@ function handleCalcButton(value) {
 function submitCalcAnswer() {
     if (!playData.currentQ || playData.calcInput === '') return;
     const userValue = parseInt(playData.calcInput, 10); const isCorrect = userValue === playData.currentQ.answer;
-    const answerBox = document.getElementById('ui-calc-answer'); answerBox.classList.remove('correct', 'wrong');
+    const answerBox = document.getElementById('ui-calc-answer'); if(answerBox) answerBox.classList.remove('correct', 'wrong');
     const enemyIcon = document.getElementById('ui-enemy-icon');
     if (isCorrect) {
-        playSE('hit'); playData.calcCorrect += 1; gameState.score += 1; answerBox.classList.add('correct');
+        playSE('hit'); playData.calcCorrect += 1; gameState.score += 1; if(answerBox) answerBox.classList.add('correct');
         if (enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } showCutIn('GOOD!');
-    } else { playSE('miss'); answerBox.classList.add('wrong'); showCutIn('MISS'); }
+    } else { playSE('miss'); if(answerBox) answerBox.classList.add('wrong'); showCutIn('MISS'); }
     
     playData.calcQIndex += 1; 
     playData.calcInput = ''; 
     renderCalcInput(); 
     updateUI();
-    setTimeout(() => answerBox.classList.remove('correct', 'wrong'), 420);
+    if(answerBox) setTimeout(() => answerBox.classList.remove('correct', 'wrong'), 420);
     
     if (playData.calcMode === '100q' && playData.calcQIndex >= playData.calcCountTarget) { finishGame(true); return; }
     nextCalcQuestion();
@@ -756,7 +814,9 @@ function submitCalcAnswer() {
 
 function nextCalcQuestion() {
     if (!playData.isCalculation) return;
-    playData.currentQ = generateCalcQuestion(playData.calcType); document.getElementById('ui-question').innerText = playData.currentQ.q; renderCalcInput(); renderCalcProgress();
+    playData.currentQ = generateCalcQuestion(playData.calcType); 
+    const uiQ = document.getElementById('ui-question'); if(uiQ) uiQ.innerText = playData.currentQ.q; 
+    renderCalcInput(); renderCalcProgress();
 }
 
 function addCalcRecord(entry) {
@@ -767,7 +827,7 @@ function addCalcRecord(entry) {
 }
 
 function renderRecord() {
-    const tbody = document.getElementById('grade-tbody'); tbody.innerHTML = ''; const subjects = Object.keys(gameState.subjectStats).sort();
+    const tbody = document.getElementById('grade-tbody'); if(!tbody) return; tbody.innerHTML = ''; const subjects = Object.keys(gameState.subjectStats).sort();
     if (subjects.length === 0) { tbody.innerHTML = '<tr><td colspan="3">データがありません。<br>クエストをプレイしてください。</td></tr>'; drawRadarChart([], []); }
     else {
         const labels = []; const dataPoints = [];
@@ -779,7 +839,7 @@ function renderRecord() {
         });
         drawRadarChart(labels, dataPoints);
     }
-    const recordList = document.getElementById('calc-record-list'); recordList.innerHTML = '';
+    const recordList = document.getElementById('calc-record-list'); if(!recordList) return; recordList.innerHTML = '';
     const keys = Object.keys(gameState.calcRecords || {});
     if (keys.length === 0) { recordList.innerHTML = '<div>計算クエストの記録はありません。</div>'; return; }
     keys.forEach(key => {
@@ -792,10 +852,11 @@ function renderRecord() {
 }
 
 function renderTypingUI() {
+    if(!playData.typingTarget) return;
     const q = playData.typingTarget; const idx = playData.typingIndex; const str = q.romaji;
-    document.getElementById('ui-typing-jp').innerText = q.japanese;
+    const uiTypingJp = document.getElementById('ui-typing-jp'); if(uiTypingJp) uiTypingJp.innerText = q.japanese;
     let html = ''; for(let i=0; i<str.length; i++) { if(i < idx) html += `<span class="typing-char-done">${str[i]}</span>`; else if(i === idx) html += `<span class="typing-char-current">${str[i]}</span>`; else html += `<span class="typing-char-rest">${str[i]}</span>`; }
-    document.getElementById('ui-typing-romaji').innerHTML = html;
+    const uiTypingRomaji = document.getElementById('ui-typing-romaji'); if(uiTypingRomaji) uiTypingRomaji.innerHTML = html;
 }
 
 function handleTypingInput(e) {
@@ -806,7 +867,7 @@ function handleTypingInput(e) {
         if (e.key === 'Enter') { submitCalcAnswer(); return; }
         if (e.key.toLowerCase() === 'c') { playData.calcInput = ''; renderCalcInput(); return; } return;
     }
-    if(!playData.isTyping) return; if(e.key.length > 1) return;
+    if(!playData.isTyping || !playData.typingTarget) return; if(e.key.length > 1) return;
     const inputKey = e.key.toLowerCase(); let targetStr = playData.typingTarget.romaji; let idx = playData.typingIndex;
     let isMatch = (inputKey === targetStr[idx]);
     if (!isMatch) {
@@ -828,16 +889,16 @@ function handleTypingInput(e) {
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
-            const enemyIcon = document.getElementById('ui-enemy-icon'); enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); updateUI();
+            const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
             if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
         }
-    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); if(gameState.lives <= 0) { finishGame(false); } }
+    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
 }
 
-function openUnitSelection() { document.getElementById('unit-select-title').innerText = "クエスト出発"; document.getElementById('unit-select-title').style.color = "#2c3e50"; document.getElementById('unit-select-overlay').classList.remove('hidden'); }
-function closeUnitSelection() { document.getElementById('unit-select-overlay').classList.add('hidden'); }
-function startNormalGameCheck() { const g = document.getElementById('grade-select').value; const s = document.getElementById('subject-select').value; const u = document.getElementById('unit-select').value; const hp = document.getElementById('boss-hp-select').value; if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); playData.selectedBossHp = Number(hp); closeUnitSelection(); startGame(); }
-function goToOathMenuCheck() { const g = document.getElementById('grade-select').value; const s = document.getElementById('subject-select').value; const u = document.getElementById('unit-select').value; if(!g || !s || !u) return alert("全ての項目を選択してください"); closeUnitSelection(); openOathMenu(); }
+function openUnitSelection() { const unitTitle = document.getElementById('unit-select-title'); if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } document.getElementById('unit-select-overlay')?.classList.remove('hidden'); }
+function closeUnitSelection() { document.getElementById('unit-select-overlay')?.classList.add('hidden'); }
+function startNormalGameCheck() { const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value; const hp = document.getElementById('boss-hp-select')?.value; if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); playData.selectedBossHp = Number(hp); closeUnitSelection(); startGame(); }
+function goToOathMenuCheck() { const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value; if(!g || !s || !u) return alert("全ての項目を選択してください"); closeUnitSelection(); openOathMenu(); }
 
 function checkAdminGifts() { 
     if (!rawData.gifts || rawData.gifts.length === 0) { updateGiftButtonState(); return; }
@@ -847,21 +908,21 @@ function checkAdminGifts() {
 function openGiftMenu(giftsToShow = null) {
     if (!giftsToShow) { if (!rawData.gifts) return; giftsToShow = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); }
     if (giftsToShow.length === 0) { alert("受け取るプレゼントはありません。"); updateGiftButtonState(); return; }
-    const list = document.getElementById('gift-list'); list.innerHTML = '';
+    const list = document.getElementById('gift-list'); if(!list) return; list.innerHTML = '';
     giftsToShow.forEach(g => { const id = g.id || g['ID'] || 'unknown'; const title = g.title || g['タイトル'] || 'No Title'; const msg = g.message || g['メッセージ'] || 'No Message'; const exp = g.exp || g['EXP'] || 0; list.innerHTML += `<div class="gift-item" data-id="${id}" data-exp="${exp}"><div class="gift-header"><span class="gift-title">${title}</span><span class="gift-exp">+${exp} XP</span></div><div class="gift-msg">${msg}</div></div>`; });
-    document.getElementById('gift-overlay').classList.remove('hidden');
+    document.getElementById('gift-overlay')?.classList.remove('hidden');
 }
-function closeGiftMenu() { document.getElementById('gift-overlay').classList.add('hidden'); }
+function closeGiftMenu() { document.getElementById('gift-overlay')?.classList.add('hidden'); }
 function receiveAllGifts() {
     const items = document.querySelectorAll('.gift-item'); if (items.length === 0) return; let totalExp = 0; let count = 0;
     items.forEach(item => { const id = item.getAttribute('data-id'); const expVal = item.getAttribute('data-exp'); const exp = parseInt(expVal, 10); if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) { gameState.claimedGifts.push(id); if (!isNaN(exp)) totalExp += exp; count++; } });
     if (count > 0) { gameState.xp += totalExp; saveGame(); updateTitleInfo(); playSE('win'); alert(`🎁 ギフトを${count}件受け取りました！\n合計: +${totalExp} XP`); closeGiftMenu(); checkTitles(); updateGiftButtonState(); } else { closeGiftMenu(); }
 }
-function updateGiftButtonState() { if (!rawData.gifts) return; const unclaimed = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); const btn = document.getElementById('btn-gift'); const badge = document.getElementById('gift-badge'); if (unclaimed.length > 0) { btn.disabled = false; btn.style.opacity = "1.0"; btn.style.filter = "none"; badge.innerText = unclaimed.length; badge.classList.remove('hidden'); } else { btn.disabled = true; btn.style.opacity = "0.7"; badge.classList.add('hidden'); } }
+function updateGiftButtonState() { if (!rawData.gifts) return; const unclaimed = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); const btn = document.getElementById('btn-gift'); const badge = document.getElementById('gift-badge'); if (unclaimed.length > 0 && btn && badge) { btn.disabled = false; btn.style.opacity = "1.0"; btn.style.filter = "none"; badge.innerText = unclaimed.length; badge.classList.remove('hidden'); } else if(btn && badge) { btn.disabled = true; btn.style.opacity = "0.7"; badge.classList.add('hidden'); } }
 
 async function executeEvolution() {
     const o = gameState.charaInventory[viewingCharaId];
-    const c = rawData.characters.find(x => x.id == viewingCharaId);
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
     if(!o || !c) return;
     const currentR = o.currentRarity || c.rarity;
     const maxLv = RARITY_CAPS[currentR] || 10;
@@ -892,7 +953,7 @@ async function executeEvolution() {
 
 async function executeReincarnation() {
     const o = gameState.charaInventory[viewingCharaId];
-    const c = rawData.characters.find(x => x.id == viewingCharaId);
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
     if(!o || !c) return;
     
     const currentR = o.currentRarity || c.rarity;
