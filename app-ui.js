@@ -1,5 +1,5 @@
 // ==========================================
-// app-ui.js (UI制御・メニュー・育成・ショップ・ガチャ)
+// app-ui.js (完全版)
 // ==========================================
 
 /* ------------------------------------------
@@ -52,8 +52,19 @@ function renderRecord() {
 }
 
 /* ------------------------------------------
+ * クラウドセーブUI
+ * ------------------------------------------ */
+function openSyncMenu() { 
+    document.getElementById('sync-overlay')?.classList.remove('hidden'); 
+    document.getElementById('my-user-id').innerText = currentUserId || "エラー"; 
+}
+function closeSyncMenu() { document.getElementById('sync-overlay')?.classList.add('hidden'); }
+
+/* ------------------------------------------
  * 各種モードのメニュー表示・切り替え
  * ------------------------------------------ */
+let oathOrigin = 'normal';
+
 function openUnitSelection() { const unitTitle = document.getElementById('unit-select-title'); if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } document.getElementById('unit-select-overlay')?.classList.remove('hidden'); }
 function closeUnitSelection() { document.getElementById('unit-select-overlay')?.classList.add('hidden'); }
 function startNormalGameCheck() { 
@@ -62,7 +73,7 @@ function startNormalGameCheck() {
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
-    playData.selectedBossHp = Number(hp); closeUnitSelection(); startGame(); 
+    playData.selectedBossHp = Number(hp); closeUnitSelection(); oathOrigin = 'normal'; startGame(); 
 }
 function goToOathMenuCheck() { 
     const g = document.getElementById('grade-select')?.value; 
@@ -70,7 +81,13 @@ function goToOathMenuCheck() {
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
-    playData.selectedBossHp = Number(hp); closeUnitSelection(); openOathMenu(); 
+    playData.selectedBossHp = Number(hp); closeUnitSelection(); oathOrigin = 'normal'; openOathMenu(); 
+}
+
+function goToOathMenuSurvivalCheck() {
+    const g = document.getElementById('survival-grade-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    closeSurvivalMenu(); oathOrigin = 'survival'; openOathMenu();
 }
 
 let tempOaths = [];
@@ -107,22 +124,97 @@ function openSurvivalMenu() {
         sel.innerHTML = '<option value="">学年を選択...</option>';
         grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     }
-    document.getElementById('survival-overlay')?.classList.remove('hidden');
+    
+    const survivalOverlay = document.getElementById('survival-overlay');
+    if (survivalOverlay && !survivalOverlay.dataset.patched) {
+        const modal = survivalOverlay.querySelector('.modal');
+        const startBtn = modal.querySelector('button[onclick="startSurvivalGame()"]');
+        if (startBtn) {
+            const btnContainer = document.createElement('div');
+            btnContainer.style.display = 'grid';
+            btnContainer.style.gridTemplateColumns = '1fr 1fr';
+            btnContainer.style.gap = '10px';
+            
+            startBtn.parentNode.insertBefore(btnContainer, startBtn);
+            startBtn.onclick = () => { oathOrigin='normal'; startSurvivalGame(); };
+            btnContainer.appendChild(startBtn);
+            
+            const oathBtn = document.createElement('button');
+            oathBtn.className = 'menu-btn oath';
+            oathBtn.style.background = '#8e44ad';
+            oathBtn.style.borderColor = '#6c3483';
+            oathBtn.innerText = '😈 誓約へ';
+            oathBtn.onclick = goToOathMenuSurvivalCheck;
+            btnContainer.appendChild(oathBtn);
+            
+            survivalOverlay.dataset.patched = 'true';
+        }
+    }
+    survivalOverlay?.classList.remove('hidden');
 }
 function closeSurvivalMenu() { document.getElementById('survival-overlay')?.classList.add('hidden'); }
 
-/* ------------------------------------------
- * クラウドセーブUI
- * ------------------------------------------ */
-function openSyncMenu() { 
-    document.getElementById('sync-overlay')?.classList.remove('hidden'); 
-    document.getElementById('my-user-id').innerText = currentUserId || "エラー"; 
-}
-function closeSyncMenu() { document.getElementById('sync-overlay')?.classList.add('hidden'); }
 
 /* ------------------------------------------
  * 各種モードのゲーム開始 (Start Functions)
  * ------------------------------------------ */
+function startSurvivalGame() {
+    const g = document.getElementById('survival-grade-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    
+    let qList = rawData.questions.filter(q => q.grade == g);
+    if(qList.length === 0) return alert("問題がありません");
+    
+    let boss = { name: "エンドレス特訓", hp: 999999, icon: "🔥" };
+    
+    playData.questions = qList.sort(() => Math.random() - 0.5); 
+    playData.qIndex = 0; 
+    playData.currentBoss = boss;
+    playData.isRevenge = false; 
+    playData.activeOaths = oathOrigin === 'survival' ? [...tempOaths] : []; 
+    playData.isRandom = false; 
+    playData.isTyping = false; 
+    playData.isCalculation = false; 
+    playData.isSurvival = true; 
+    playData.context = null;
+    
+    const charaStats = getCharaStats();
+    gameState.score = 0; 
+    gameState.combo = 0; 
+    gameState.lives = playData.activeOaths.includes('backwater') ? 1 : 3; 
+    gameState.enemyHP = boss.hp; 
+    gameState.maxHP = boss.hp; 
+    
+    let timeMulti = playData.activeOaths.includes('rapid') ? 0.5 : 1.0; 
+    gameState.maxTime = 10 * charaStats.time * timeMulti;
+    isGameActive = false; isPaused = false;
+    
+    document.getElementById('survival-overlay')?.classList.add('hidden');
+    document.getElementById('oath-overlay')?.classList.add('hidden'); 
+    document.getElementById('title-screen')?.classList.add('hidden'); 
+    document.getElementById('game-screen')?.classList.remove('hidden'); 
+    
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = 'none';
+
+    const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "WAVE: 1";
+    if(enemyIcon) enemyIcon.innerHTML = boss.icon; 
+    const timerBar = document.getElementById('ui-timer'); if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+    
+    oathOrigin = 'normal';
+    updateUI(); startCountdown();
+}
+
 function startGame() {
     const gSelect = document.getElementById('grade-select'); const sSelect = document.getElementById('subject-select'); const uSelect = document.getElementById('unit-select'); if(!gSelect || !sSelect || !uSelect) return;
     const g = gSelect.value, s = sSelect.value, u = uSelect.value;
@@ -196,6 +288,8 @@ function startRevengeMode() {
 
 function startOathGame() {
     if (tempOaths.length === 0) return alert("誓約を1つ以上選択してください");
+    if (oathOrigin === 'survival') return startSurvivalGame();
+    
     const g = document.getElementById('grade-select')?.value; const s = document.getElementById('subject-select')?.value; const u = document.getElementById('unit-select')?.value;
     let qList = rawData.questions ? rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u) : [];
     if(qList.length === 0) return alert("問題がありません");
