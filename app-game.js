@@ -346,6 +346,23 @@ function finishGame(isClear) {
     let calcRank = null;
     let earned = 0;
     let isCampaign = false;
+
+    // リザルト下部のテキスト初期化（確実に"獲得XP"に戻す）
+    const resXpSpan = document.getElementById('res-xp');
+    if (resXpSpan && resXpSpan.parentNode) {
+        const parentDiv = resXpSpan.parentNode;
+        for (let i = 0; i < parentDiv.childNodes.length; i++) {
+            if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE) {
+                let text = parentDiv.childNodes[i].nodeValue;
+                if (text.includes("獲得XP") || text.includes("成長結果") || text.includes("最終評価")) {
+                    parentDiv.childNodes[i].nodeValue = "獲得XP";
+                    break;
+                }
+            }
+        }
+    }
+    const resDrop = document.getElementById('res-drop'); 
+    if(resDrop) resDrop.style.display = 'block';
     
     // サバイバルモード処理
     if (playData.isSurvival) {
@@ -364,18 +381,21 @@ function finishGame(isClear) {
         if (eqInv && cMaster) {
             const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
             let startLv = eqInv.level;
+            let startExp = Number(eqInv.exp) || 0;
             let startStock = eqInv.count;
             
-            eqInv.exp = (Number(eqInv.exp) || 0) + earnedExp;
+            eqInv.exp = startExp + earnedExp;
             while (eqInv.exp >= EXP_REQ) {
                 eqInv.exp -= EXP_REQ;
                 if (eqInv.level < maxL) { eqInv.level++; } 
                 else { eqInv.count++; }
             }
             
-            if (eqInv.level > startLv) growthResultText = `Lv.${startLv} ➞ <span style="color:#e67e22;">Lv.${eqInv.level}</span>`;
-            else if (eqInv.count > startStock) growthResultText = `ストック <span style="color:#e67e22;">+${eqInv.count - startStock}</span>`;
-            else growthResultText = `EXP +${earnedExp}`;
+            if (eqInv.level >= maxL && eqInv.count > startStock) {
+                growthResultText = `<div style="font-size:0.4em; color:#7f8c8d;">Lv.MAX　ストック ${startStock}</div><div style="color:#bdc3c7; font-size:0.4em; margin:5px 0;">↓</div><div style="font-size:0.5em; color:#e67e22;">Lv.MAX　ストック ${eqInv.count}</div>`;
+            } else {
+                growthResultText = `<div style="font-size:0.45em; color:#7f8c8d; line-height:1.2;">Lv.${startLv}　${startExp}EXP</div><div style="color:#bdc3c7; font-size:0.4em; margin:2px 0;">↓</div><div style="font-size:0.5em; color:#e67e22; line-height:1.2;">Lv.${eqInv.level}　${eqInv.exp}EXP</div>`;
+            }
         }
         
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
@@ -389,11 +409,27 @@ function finishGame(isClear) {
         if (resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "到達WAVE: ";
         if(resScoreSpan) resScoreSpan.innerText = correctCount; 
         
-        const resDrop = document.getElementById('res-drop'); if(resDrop) resDrop.innerHTML = `獲得特訓EXP: <span style="font-weight:bold; color:#e67e22; font-size:1.2em;">+${earnedExp}</span>`;
-        
-        const resXp = document.getElementById('res-xp'); if(resXp) resXp.innerHTML = "成長結果";
         const resDetails = document.getElementById('res-details');
-        if(resDetails) resDetails.innerHTML = `<div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">${growthResultText}</div>`;
+        if(resDetails) {
+            resDetails.innerHTML = `<div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">特訓EXP +${earnedExp}</div>`;
+            resDetails.style.display = 'block';
+        }
+        
+        if(resDrop) resDrop.style.display = 'none';
+        
+        if (resXpSpan && resXpSpan.parentNode) {
+            const parentDiv = resXpSpan.parentNode;
+            for (let i = 0; i < parentDiv.childNodes.length; i++) {
+                if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE && parentDiv.childNodes[i].nodeValue.includes("獲得XP")) {
+                    parentDiv.childNodes[i].nodeValue = "成長結果";
+                    break;
+                }
+            }
+        }
+        if(resXpSpan) {
+            resXpSpan.style.lineHeight = "1.1";
+            resXpSpan.innerHTML = growthResultText;
+        }
         
         document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); 
         if (typeof checkTitles === 'function') checkTitles();
@@ -438,6 +474,16 @@ function finishGame(isClear) {
         }
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
         if (typeof updateMissionProgress === 'function') updateMissionProgress('calc', 1);
+        
+        if (resXpSpan && resXpSpan.parentNode) {
+            const parentDiv = resXpSpan.parentNode;
+            for (let i = 0; i < parentDiv.childNodes.length; i++) {
+                if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE && parentDiv.childNodes[i].nodeValue.includes("獲得XP")) {
+                    parentDiv.childNodes[i].nodeValue = "最終評価";
+                    break;
+                }
+            }
+        }
     } else {
         if(isClear) {
             playSE('win');
