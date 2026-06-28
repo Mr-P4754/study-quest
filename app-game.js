@@ -1,5 +1,5 @@
 // ==========================================
-// app-game.js (ゲーム進行・サバイバル追加・判定)
+// app-game.js (ゲーム進行・サバイバル追加・判定・リザルト調整版)
 // ==========================================
 
 function showCutIn(t) { const d = document.createElement('div'); d.className='cutin'; d.innerText=t; if(String(t).includes('MISS')) { d.style.color='#bdc3c7'; d.style.webkitTextStroke='2px #2c3e50'; } document.body.appendChild(d); setTimeout(()=>d.remove(), 1500); }
@@ -347,22 +347,12 @@ function finishGame(isClear) {
     let earned = 0;
     let isCampaign = false;
 
-    // リザルト下部のテキスト初期化（確実に"獲得XP"に戻す）
+    // リザルトUIのテキスト初期化 (index.htmlで定義したIDを利用)
+    const resXpLabel = document.getElementById('res-xp-label');
     const resXpSpan = document.getElementById('res-xp');
-    if (resXpSpan && resXpSpan.parentNode) {
-        const parentDiv = resXpSpan.parentNode;
-        for (let i = 0; i < parentDiv.childNodes.length; i++) {
-            if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE) {
-                let text = parentDiv.childNodes[i].nodeValue;
-                if (text.includes("獲得XP") || text.includes("成長結果") || text.includes("最終評価")) {
-                    parentDiv.childNodes[i].nodeValue = "獲得XP";
-                    break;
-                }
-            }
-        }
-    }
-    const resDrop = document.getElementById('res-drop'); 
-    if(resDrop) resDrop.style.display = 'block';
+    const resDrop = document.getElementById('res-drop');
+    if (resXpLabel) resXpLabel.innerText = "獲得XP";
+    if (resDrop) resDrop.style.display = 'block';
     
     // サバイバルモード処理
     if (playData.isSurvival) {
@@ -415,17 +405,9 @@ function finishGame(isClear) {
             resDetails.style.display = 'block';
         }
         
-        if(resDrop) resDrop.style.display = 'none';
+        if (resDrop) resDrop.style.display = 'none';
+        if (resXpLabel) resXpLabel.innerText = "成長結果";
         
-        if (resXpSpan && resXpSpan.parentNode) {
-            const parentDiv = resXpSpan.parentNode;
-            for (let i = 0; i < parentDiv.childNodes.length; i++) {
-                if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE && parentDiv.childNodes[i].nodeValue.includes("獲得XP")) {
-                    parentDiv.childNodes[i].nodeValue = "成長結果";
-                    break;
-                }
-            }
-        }
         if(resXpSpan) {
             resXpSpan.style.lineHeight = "1.1";
             resXpSpan.innerHTML = growthResultText;
@@ -475,15 +457,8 @@ function finishGame(isClear) {
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
         if (typeof updateMissionProgress === 'function') updateMissionProgress('calc', 1);
         
-        if (resXpSpan && resXpSpan.parentNode) {
-            const parentDiv = resXpSpan.parentNode;
-            for (let i = 0; i < parentDiv.childNodes.length; i++) {
-                if (parentDiv.childNodes[i].nodeType === Node.TEXT_NODE && parentDiv.childNodes[i].nodeValue.includes("獲得XP")) {
-                    parentDiv.childNodes[i].nodeValue = "最終評価";
-                    break;
-                }
-            }
-        }
+        if (resXpLabel) resXpLabel.innerText = "最終評価";
+
     } else {
         if(isClear) {
             playSE('win');
@@ -561,33 +536,34 @@ function finishGame(isClear) {
     if(resScoreSpan) resScoreSpan.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
     
     const dropHtml = dropInfo.count > 0 ? `<span>${dropInfo.icon}</span> ${dropInfo.count} 個` : 'なし';
-    const resDrop = document.getElementById('res-drop'); if(resDrop) resDrop.innerHTML = `入手アイテム: ${dropHtml}`;
+    if(resDrop) resDrop.innerHTML = `入手アイテム: ${dropHtml}`;
     
-    const resXp = document.getElementById('res-xp');
     const resDetails = document.getElementById('res-details');
-    if (playData.isCalculation) {
-        const duration = playData.calcMode === '3min' ? (180 - playData.calcTimeLeft).toFixed(1) : playData.calcElapsed.toFixed(1);
-        const totalQ = playData.calcQIndex;
-        const accuracy = totalQ > 0 ? ((playData.calcCorrect / totalQ) * 100).toFixed(1) : 0;
-        
-        if(resXp) resXp.innerHTML = `ランク: <span class="rank-${calcRank}" style="font-size:1.2em;">${calcRank}</span>`;
-        if(resDetails) resDetails.innerHTML = `
-            <div style="font-size: 0.85em; line-height: 1.6; text-align: left; display: inline-block;">
-                <div>🎯 <b>正解数</b> : ${playData.calcCorrect} 問</div>
-                <div>📊 <b>正解率</b> : ${accuracy} %</div>
-                <div>⏱️ <b>タイム</b> : ${duration} 秒</div>
-            </div>
-        `;
-        
-        if (dropInfo.count > 0 && resDrop) {
-            resDrop.innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
+    if (!playData.isSurvival) {
+        if (playData.isCalculation) {
+            const duration = playData.calcMode === '3min' ? (180 - playData.calcTimeLeft).toFixed(1) : playData.calcElapsed.toFixed(1);
+            const totalQ = playData.calcQIndex;
+            const accuracy = totalQ > 0 ? ((playData.calcCorrect / totalQ) * 100).toFixed(1) : 0;
+            
+            if(resXpSpan) resXpSpan.innerHTML = `ランク: <span class="rank-${calcRank}" style="font-size:1.2em;">${calcRank}</span>`;
+            if(resDetails) resDetails.innerHTML = `
+                <div style="font-size: 0.85em; line-height: 1.6; text-align: left; display: inline-block;">
+                    <div>🎯 <b>正解数</b> : ${playData.calcCorrect} 問</div>
+                    <div>📊 <b>正解率</b> : ${accuracy} %</div>
+                    <div>⏱️ <b>タイム</b> : ${duration} 秒</div>
+                </div>
+            `;
+            
+            if (dropInfo.count > 0 && resDrop) {
+                resDrop.innerHTML = `入手アイテム: <span style="font-size:1.2em;">📕</span> × ${dropInfo.count} ／ <span style="font-size:1.2em;">📘</span> × ${dropInfo.count}`; 
+            }
+        } else if (isCampaign && isClear) {
+            if(resXpSpan) resXpSpan.innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
+            if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
+        } else {
+            if(resXpSpan) resXpSpan.innerHTML = "+" + earned;
+            if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
         }
-    } else if (isCampaign && isClear) {
-        if(resXp) resXp.innerHTML = `<span style="font-size:0.5em; color:#e74c3c;">CAMPAIGN x3.0</span><br>+${earned}`;
-        if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
-    } else {
-        if(resXp) resXp.innerHTML = "+" + earned;
-        if(resDetails) resDetails.innerHTML = dropInfo.count > 0 ? `入手アイテム: ${dropInfo.icon} × ${dropInfo.count}` : 'リザルトを確認してください。';
     }
     
     document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); 
