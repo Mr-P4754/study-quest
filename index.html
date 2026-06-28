@@ -92,7 +92,10 @@
             <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
             <select id="survival-grade-select" class="select-box" style="width:100%; margin-top:5px; font-size:1.1em; padding:10px;"><option value="">学年を選択...</option></select>
         </div>
-        <button class="menu-btn" style="background:#e74c3c;" onclick="startSurvivalGame()">特訓開始</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="menu-btn" style="background:#e74c3c;" onclick="oathOrigin='normal'; startSurvivalGame()">特訓開始</button>
+            <button class="menu-btn oath" style="background:#8e44ad; border-color:#6c3483;" onclick="goToOathMenuSurvivalCheck()">😈 誓約へ</button>
+        </div>
         <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeSurvivalMenu()">やめる</button>
     </div>
 </div>
@@ -155,7 +158,22 @@
     </div>
 </div>
 
-<div id="result-overlay" class="overlay hidden"><div class="modal"><h2 id="res-title">QUEST CLEAR!</h2><div id="res-icon" style="font-size: 4em;"></div><p>獲得スコア: <span id="res-score">0</span></p><div id="res-details" style="background:#f4f4f4; padding:12px; border-radius:10px; margin:10px 0; color:#333; font-size:0.95em;"></div><div id="res-drop" class="result-drop-box">入手アイテム: なし</div><div style="background:#eee; padding:15px; border-radius:10px; margin:10px 0;">獲得XP<br><span id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em;">+0</span></div><div id="res-rank" style="font-size:1.1em; font-weight:bold; color:#2c3e50; margin-bottom:10px;"></div><button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button></div></div>
+<div id="result-overlay" class="overlay hidden">
+    <div class="modal">
+        <h2 id="res-title">QUEST CLEAR!</h2>
+        <div id="res-icon" style="font-size: 4em;"></div>
+        <p>獲得スコア: <span id="res-score">0</span></p>
+        <div id="res-details" style="background:#f4f4f4; padding:12px; border-radius:10px; margin:10px 0; color:#333; font-size:0.95em;"></div>
+        <div id="res-drop" class="result-drop-box">入手アイテム: なし</div>
+        <div style="background:#eee; padding:15px; border-radius:10px; margin:10px 0;">
+            <div id="res-xp-label" style="font-size:1.1em; font-weight:bold; color:#7f8c8d; margin-bottom:5px;">獲得XP</div>
+            <div id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em; line-height:1.2;">+0</div>
+        </div>
+        <div id="res-rank" style="font-size:1.1em; font-weight:bold; color:#2c3e50; margin-bottom:10px;"></div>
+        <button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button>
+    </div>
+</div>
+
 <div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+30000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
 <div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
 <div id="gacha-overlay" class="overlay hidden">
@@ -264,8 +282,8 @@
 
 <div id="oath-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:400px;">
-        <h2 style="color:#8e44ad; margin-top:0;">😈 誓約の儀</h2>
-        <p style="font-size:0.9em;">自らにハンデを課し、高みを目指せ。<br>（報酬EXP <span style="color:#e67e22; font-weight:bold;">1.5〜2.0倍</span>）</p>
+        <h2 id="oath-title" style="color:#8e44ad; margin-top:0;">😈 誓約の儀</h2>
+        <p id="oath-desc" style="font-size:0.9em;">自らにハンデを課し、高みを目指せ。<br>（報酬EXP <span style="color:#e67e22; font-weight:bold;">1.5〜2.0倍</span>）</p>
         <div class="oath-options">
             <div class="oath-option" id="oath-rapid" onclick="toggleOath('rapid')">
                 <div class="oath-icon">⏱️</div><div><div class="oath-name">迅速の誓約</div><div class="oath-desc">制限時間が半分になる</div></div>
