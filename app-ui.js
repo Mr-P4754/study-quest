@@ -1,5 +1,5 @@
 // ==========================================
-// app-ui.js (完全版)
+// app-ui.js (UI更新バグ修正・不要コード削除版)
 // ==========================================
 
 /* ------------------------------------------
@@ -144,33 +144,7 @@ function openSurvivalMenu() {
         sel.innerHTML = '<option value="">学年を選択...</option>';
         grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     }
-    
-    const survivalOverlay = document.getElementById('survival-overlay');
-    if (survivalOverlay && !survivalOverlay.dataset.patched) {
-        const modal = survivalOverlay.querySelector('.modal');
-        const startBtn = modal.querySelector('button[onclick="startSurvivalGame()"]');
-        if (startBtn) {
-            const btnContainer = document.createElement('div');
-            btnContainer.style.display = 'grid';
-            btnContainer.style.gridTemplateColumns = '1fr 1fr';
-            btnContainer.style.gap = '10px';
-            
-            startBtn.parentNode.insertBefore(btnContainer, startBtn);
-            startBtn.onclick = () => { oathOrigin='normal'; startSurvivalGame(); };
-            btnContainer.appendChild(startBtn);
-            
-            const oathBtn = document.createElement('button');
-            oathBtn.className = 'menu-btn oath';
-            oathBtn.style.background = '#8e44ad';
-            oathBtn.style.borderColor = '#6c3483';
-            oathBtn.innerText = '😈 誓約へ';
-            oathBtn.onclick = goToOathMenuSurvivalCheck;
-            btnContainer.appendChild(oathBtn);
-            
-            survivalOverlay.dataset.patched = 'true';
-        }
-    }
-    survivalOverlay?.classList.remove('hidden');
+    document.getElementById('survival-overlay')?.classList.remove('hidden');
 }
 function closeSurvivalMenu() { document.getElementById('survival-overlay')?.classList.add('hidden'); }
 
@@ -236,7 +210,7 @@ async function executeReincarnation() {
     if(!o || !c) return;
     
     const currentR = o.currentRarity || c.rarity;
-    const maxLv = RARITY_CAPS[currentR] || 30; // URの最大レベルは30
+    const maxLv = RARITY_CAPS[currentR] || 30; 
     
     if (currentR !== 'UR' || o.level < maxLv || o.count < EVO_STOCK_REQ) return;
     
@@ -328,12 +302,12 @@ function openCharaDetail(id) {
     if(evoContainer) {
         evoContainer.innerHTML = ''; evoContainer.classList.add('hidden');
         if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
-            const cost = EVO_COST_XP[currentR]; const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; btn.style.borderBottom = '5px solid #d35400'; btn.style.marginBottom = '10px'; btn.style.height = 'auto'; btn.style.minHeight = '60px'; btn.style.flexDirection = 'column'; btn.style.padding = '8px 5px';
-            btn.innerHTML = `<div>🌟 限界突破・進化！</div><div style="font-size:0.75em; font-weight:normal; opacity:0.9;">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</div>`; btn.onclick = executeEvolution; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+            const cost = EVO_COST_XP[currentR]; const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; btn.style.borderBottom = '5px solid #d35400'; btn.style.marginBottom = '10px'; btn.style.height = '60px'; 
+            btn.innerHTML = `🌟 限界突破・進化！<br><span style="font-size:0.75em">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeEvolution; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
         }
         if (currentR === 'UR' && o.level >= maxLv && o.count >= EVO_STOCK_REQ) {
-            const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; btn.style.borderBottom = '5px solid #5b2c6f'; btn.style.marginBottom = '10px'; btn.style.height = 'auto'; btn.style.minHeight = '60px'; btn.style.flexDirection = 'column'; btn.style.padding = '8px 5px';
-            btn.innerHTML = `<div>🪽 転生する</div><div style="font-size:0.75em; font-weight:normal; opacity:0.9;">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</div>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+            const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; btn.style.borderBottom = '5px solid #5b2c6f'; btn.style.marginBottom = '10px'; btn.style.height = '60px';
+            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
         }
     }
 }
@@ -409,13 +383,9 @@ async function executeBulkEnhance() {
     updateMissionProgress('enhance', 1); checkTitles(); saveGame();
     alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
     selectedMaterials = {}; renderEnhanceList(); updateEnhancePreview(0);
-    if(chara) {
-        const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + t.level + ' / ' + maxLv; 
-        const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = t.exp + ' / ' + EXP_REQ; 
-        const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = (t.exp / EXP_REQ * 100) + '%';
-        const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value); 
-        const cdVal = document.getElementById('cd-val'); if(cdVal) cdVal.innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
-    }
+    
+    // 即座に詳細画面を再描画し、進化・転生ボタンを反映させる
+    openCharaDetail(viewingCharaId);
 }
 
 /* ------------------------------------------
