@@ -533,13 +533,15 @@ async function executeReincarnation() {
     if(!o || !c) return;
     
     const currentR = o.currentRarity || c.rarity;
-    if (currentR !== 'UR' || c.rarity === 'UR') return;
+    const maxLv = RARITY_CAPS[currentR] || 30;
+    if (currentR !== 'UR' || o.level < maxLv || o.count < EVO_STOCK_REQ) return;
     
     if (gameState.xp < REBORN_COST_XP) return alert(`XPが足りません！\n必要: ${REBORN_COST_XP} XP`);
     
-    if (!(await showConfirm(`【転生確認】\n${REBORN_COST_XP} XP を消費して転生させますか？\n(レベルは1に戻り、新たなスキルを習得します)`))) return;
+    if (!(await showConfirm(`【転生確認】\n${REBORN_COST_XP} XP と素材${EVO_STOCK_REQ}個を消費して転生させますか？\n(レベルは1に戻り、新たなスキルを習得します)`))) return;
     
     gameState.xp -= REBORN_COST_XP;
+    o.count -= EVO_STOCK_REQ;
     o.level = 1;
     o.exp = 0;
     o.reincarnationCount = (o.reincarnationCount || 0) + 1;
@@ -625,9 +627,9 @@ function openCharaDetail(id) {
             const cost = EVO_COST_XP[currentR]; const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; btn.style.borderBottom = '5px solid #d35400'; btn.style.marginBottom = '10px'; btn.style.height = '60px'; 
             btn.innerHTML = `🌟 限界突破・進化！<br><span style="font-size:0.75em">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeEvolution; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
         }
-        if (currentR === 'UR' && c.rarity !== 'UR') {
+        if (currentR === 'UR' && o.level >= maxLv && o.count >= EVO_STOCK_REQ) {
             const btn = document.createElement('button'); btn.className = 'detail-btn'; btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; btn.style.borderBottom = '5px solid #5b2c6f'; btn.style.marginBottom = '10px'; btn.style.height = '60px';
-            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ スキル継承</span>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
+            btn.innerHTML = `🪽 転生する<br><span style="font-size:0.75em">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</span>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
         }
     }
 }
