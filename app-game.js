@@ -2,352 +2,6 @@
 // app-game.js (ゲーム進行・サバイバル追加・判定・リザルト調整版)
 // ==========================================
 
-let actionTimer = null;
-
-function initGameSession(mode) {
-    isGameActive = false;
-    isPaused = false;
-    clearInterval(gameState.timer);
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (actionTimer) clearTimeout(actionTimer);
-
-    document.removeEventListener('keydown', handleTypingInput);
-
-    // フラグリセット
-    playData.isSurvival = (mode === 'survival');
-    playData.isRandom = (mode === 'random');
-    playData.isTyping = (mode === 'typing');
-    playData.isCalculation = (mode === 'calc');
-    playData.isRevenge = (mode === 'revenge');
-    playData.activeOaths = [];
-
-    // 共通ステータス初期化
-    gameState.maxTime = 10;
-    gameState.score = 0;
-    gameState.combo = 0;
-    gameState.lives = 3;
-    gameState.timeLeft = gameState.maxTime;
-
-    // UIリセット
-    document.getElementById('title-screen')?.classList.add('hidden');
-    document.getElementById('result-overlay')?.classList.add('hidden');
-    document.getElementById('pause-overlay')?.classList.add('hidden');
-    document.getElementById('game-screen')?.classList.remove('hidden');
-    document.getElementById('ui-typing-area')?.classList.add('hidden');
-    document.getElementById('ui-choices')?.classList.remove('hidden');
-    document.getElementById('calc-layout')?.classList.add('hidden');
-    document.getElementById('ui-calc-progress')?.classList.add('hidden');
-    
-    // 敵のビジュアル状態リセット
-    const enemyBox = document.querySelector('.enemy-visual-box');
-    if (enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out');
-
-    const hpFrame = document.querySelector('.enemy-hp-frame');
-    if (hpFrame) hpFrame.style.display = '';
-    const enemyRow = document.querySelector('.enemy-stats-row');
-    if (enemyRow) enemyRow.style.display = '';
-    
-    const qBox = document.getElementById('ui-question');
-    if (qBox) { 
-        qBox.style.removeProperty('height'); 
-        qBox.style.removeProperty('min-height'); 
-        qBox.innerText = "READY..."; 
-    }
-
-    // スコア表示テキストリセット
-    const uiScoreSpan = document.getElementById('ui-score'); 
-    if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
-    const uiComboSpan = document.getElementById('ui-combo'); 
-    if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "COMBO ";
-}
-
-function startGame() {
-    const g = document.getElementById('grade-select')?.value;
-    const s = document.getElementById('subject-select')?.value;
-    const u = document.getElementById('unit-select')?.value;
-    const hp = document.getElementById('boss-hp-select')?.value;
-    
-    if(!g || !s || !u) return alert("クエスト情報が取得できません");
-    
-    playData.context = { grade: g, subject: s, unit: u };
-    playData.questions = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
-    if (!playData.questions || playData.questions.length === 0) return alert("該当する問題データがありません");
-    
-    playData.qIndex = 0;
-    playData.questions.sort(() => Math.random() - 0.5);
-
-    initGameSession('normal');
-
-    // ボス設定
-    const bossList = rawData.bosses.filter(b => b.grade == g && b.unit == u);
-    const boss = bossList.length > 0 ? bossList[Math.floor(Math.random() * bossList.length)] : { name: "謎の敵", hp: 3000, icon: "👾" };
-    playData.currentBoss = boss;
-    
-    gameState.maxHP = Number(hp) || boss.hp;
-    gameState.enemyHP = gameState.maxHP;
-    
-    document.getElementById('ui-enemy-name').innerText = boss.name;
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) {
-        if(boss.icon && boss.icon.startsWith('http')) iconEl.innerHTML = `<img src="${boss.icon}">`;
-        else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "👾"}</div>`;
-    }
-
-    updateUI();
-    startCountdown();
-}
-
-function startOathGame() {
-    if(tempOaths.length === 0) return alert("誓約が選択されていません");
-    playData.activeOaths = [...tempOaths];
-    closeOathMenu();
-
-    if (oathOrigin === 'survival') {
-        const g = document.getElementById('survival-grade-select')?.value;
-        if(!g) return;
-        playData.context = { grade: g, subject: 'サバイバル', unit: '特訓' };
-        playData.questions = rawData.questions.filter(q => q.grade == g);
-        if(!playData.questions || playData.questions.length === 0) return alert("問題データがありません");
-        
-        playData.qIndex = 0;
-        playData.questions.sort(() => Math.random() - 0.5);
-        
-        initGameSession('survival');
-        playData.activeOaths = [...tempOaths];
-        
-        if (playData.activeOaths.includes('backwater')) gameState.lives = 1;
-        if (playData.activeOaths.includes('rapid')) { gameState.maxTime = 5; gameState.timeLeft = 5; } else { gameState.maxTime = 10; gameState.timeLeft = 10; }
-        
-        gameState.maxHP = 999999;
-        gameState.enemyHP = 999999;
-        
-        document.getElementById('ui-enemy-name').innerText = "WAVE: 0";
-        const iconEl = document.getElementById('ui-enemy-icon');
-        if(iconEl) iconEl.innerHTML = "🔥";
-        const hpFrame = document.querySelector('.enemy-hp-frame');
-        if(hpFrame) hpFrame.style.display = 'none';
-        
-        updateUI();
-        startCountdown();
-        return;
-    }
-
-    // 通常誓約
-    const g = document.getElementById('grade-select')?.value;
-    const s = document.getElementById('subject-select')?.value;
-    const u = document.getElementById('unit-select')?.value;
-    const hp = document.getElementById('boss-hp-select')?.value;
-    
-    playData.context = { grade: g, subject: s, unit: u };
-    playData.questions = rawData.questions.filter(q => q.grade == g && q.subject == s && q.unit == u);
-    if (!playData.questions || playData.questions.length === 0) return alert("該当する問題データがありません");
-    
-    playData.qIndex = 0;
-    playData.questions.sort(() => Math.random() - 0.5);
-
-    initGameSession('normal');
-    playData.activeOaths = [...tempOaths];
-    
-    if (playData.activeOaths.includes('backwater')) gameState.lives = 1;
-    if (playData.activeOaths.includes('rapid')) { gameState.maxTime = 5; gameState.timeLeft = 5; } else { gameState.maxTime = 10; gameState.timeLeft = 10; }
-
-    const bossList = rawData.bosses.filter(b => b.grade == g && b.unit == u);
-    const boss = bossList.length > 0 ? bossList[Math.floor(Math.random() * bossList.length)] : { name: "謎の敵", hp: 3000, icon: "👾" };
-    playData.currentBoss = boss;
-    
-    gameState.maxHP = Number(hp) || boss.hp;
-    gameState.enemyHP = gameState.maxHP;
-    
-    document.getElementById('ui-enemy-name').innerText = "【誓約】" + boss.name;
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) {
-        if(boss.icon && boss.icon.startsWith('http')) iconEl.innerHTML = `<img src="${boss.icon}">`;
-        else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "👾"}</div>`;
-    }
-
-    updateUI();
-    startCountdown();
-}
-
-function startSurvivalGame() {
-    const g = document.getElementById('survival-grade-select')?.value;
-    if(!g) return alert("学年を選択してください");
-    closeSurvivalMenu();
-    
-    playData.context = { grade: g, subject: 'サバイバル', unit: '特訓' };
-    playData.questions = rawData.questions.filter(q => q.grade == g);
-    if (!playData.questions || playData.questions.length === 0) return alert("問題データがありません");
-    
-    playData.qIndex = 0;
-    playData.questions.sort(() => Math.random() - 0.5);
-
-    initGameSession('survival');
-    
-    gameState.maxHP = 999999;
-    gameState.enemyHP = 999999;
-    
-    document.getElementById('ui-enemy-name').innerText = "WAVE: 0";
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) iconEl.innerHTML = "🔥";
-    
-    const hpFrame = document.querySelector('.enemy-hp-frame');
-    if(hpFrame) hpFrame.style.display = 'none';
-
-    updateUI();
-    startCountdown();
-}
-
-function startRandomGame() {
-    const g = document.getElementById('random-grade-select')?.value;
-    if(!g) return alert("学年を選択してください");
-    closeRandomMenu();
-    
-    playData.context = { grade: g, subject: 'ランダム', unit: 'ランダム' };
-    playData.questions = rawData.questions.filter(q => q.grade == g);
-    if (!playData.questions || playData.questions.length === 0) return alert("問題データがありません");
-    
-    playData.qIndex = 0;
-    playData.questions.sort(() => Math.random() - 0.5);
-    
-    initGameSession('random');
-
-    let boss = { name: "謎の生命体", hp: 5000, icon: "❓" };
-    if (rawData.randomBosses && rawData.randomBosses.length > 0) {
-        boss = rawData.randomBosses[Math.floor(Math.random() * rawData.randomBosses.length)];
-    }
-    playData.currentBoss = boss;
-    
-    gameState.maxHP = boss.hp || 5000;
-    gameState.enemyHP = gameState.maxHP;
-    
-    document.getElementById('ui-enemy-name').innerText = boss.name;
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) {
-        if(boss.icon && boss.icon.startsWith('http')) iconEl.innerHTML = `<img src="${boss.icon}">`;
-        else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "❓"}</div>`;
-    }
-
-    updateUI();
-    startCountdown();
-}
-
-function startTypingGame() {
-    const g = document.getElementById('typing-grade-select')?.value;
-    if(!g) return alert("学年を選択してください");
-    closeTypingMenu();
-    
-    playData.context = { grade: g, subject: 'タイピング', unit: '特訓' };
-    playData.questions = rawData.typing.filter(t => t.grade == g);
-    if (!playData.questions || playData.questions.length === 0) return alert("タイピング問題データがありません");
-    
-    playData.qIndex = 0;
-    playData.questions.sort(() => Math.random() - 0.5);
-    
-    initGameSession('typing');
-    
-    document.getElementById('ui-choices')?.classList.add('hidden');
-    document.getElementById('ui-typing-area')?.classList.remove('hidden');
-
-    gameState.maxTime = 20;
-    gameState.timeLeft = 20;
-
-    gameState.maxHP = 3000;
-    gameState.enemyHP = 3000;
-    
-    document.getElementById('ui-enemy-name').innerText = "タイピング・マスター";
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) iconEl.innerHTML = "⌨️";
-
-    updateUI();
-    document.addEventListener('keydown', handleTypingInput);
-    startCountdown();
-}
-
-function startCalcGame() {
-    const type = document.getElementById('calc-type-select')?.value;
-    const mode = document.getElementById('calc-mode-select')?.value;
-    const hand = document.querySelector('input[name="calc-hand"]:checked')?.value || 'right';
-    
-    if(!type || !mode) return alert("形式とモードを選択してください");
-    closeCalcMenu();
-    
-    initGameSession('calc');
-    
-    playData.calcType = type;
-    playData.calcMode = mode;
-    playData.calcQIndex = 0;
-    playData.calcInput = '';
-    playData.calcCorrect = 0;
-    playData.calcElapsed = 0;
-    playData.calcTimeLeft = mode === '3min' ? 180 : 0;
-    playData.calcCountTarget = mode === '100q' ? 100 : 0;
-    
-    document.getElementById('ui-choices')?.classList.add('hidden');
-    document.getElementById('ui-typing-area')?.classList.add('hidden');
-    document.getElementById('ui-calc-progress')?.classList.remove('hidden');
-    document.getElementById('calc-layout')?.classList.remove('hidden');
-    document.getElementById('ui-calc-answer')?.classList.remove('hidden');
-    document.getElementById('calc-keypad')?.classList.remove('hidden');
-    
-    const qBox = document.getElementById('ui-question');
-    if (qBox) { qBox.style.height = 'auto'; qBox.style.minHeight = '72px'; }
-    
-    const layout = document.getElementById('calc-layout');
-    if (layout) { layout.className = `calc-layout ${hand}-hand`; }
-    
-    const enemyRow = document.querySelector('.enemy-stats-row');
-    if (enemyRow) enemyRow.style.display = 'none';
-
-    document.getElementById('ui-enemy-name').innerText = "計算ドリル";
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) iconEl.innerHTML = "🧮";
-    
-    const uiScoreSpan = document.getElementById('ui-score'); 
-    if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "解答数 ";
-    const uiComboSpan = document.getElementById('ui-combo'); 
-    if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "正解数 ";
-    
-    updateUI();
-    document.addEventListener('keydown', handleTypingInput);
-    startCountdown();
-}
-
-function startRevengeMode() {
-    if (!gameState.revengeList || gameState.revengeList.length === 0) return alert("リベンジ可能なボスがいません");
-    
-    const targetId = gameState.revengeList[Math.floor(Math.random() * gameState.revengeList.length)];
-    const targetQ = rawData.questions.find(q => String(q.id) === String(targetId));
-    if (!targetQ) {
-        gameState.revengeList = gameState.revengeList.filter(id => String(id) !== String(targetId));
-        saveGame();
-        updateTitleInfo();
-        return alert("問題データが見つかりませんでした");
-    }
-
-    initGameSession('revenge');
-    
-    playData.context = { grade: targetQ.grade, subject: targetQ.subject, unit: targetQ.unit };
-    playData.questions = [targetQ];
-    playData.qIndex = 0;
-    
-    const bossList = rawData.bosses.filter(b => b.grade == targetQ.grade && b.unit == targetQ.unit);
-    const boss = bossList.length > 0 ? bossList[Math.floor(Math.random() * bossList.length)] : { name: "復讐のボス", hp: 5000, icon: "💀" };
-    playData.currentBoss = boss;
-    
-    gameState.maxHP = boss.hp * 1.5; 
-    gameState.enemyHP = gameState.maxHP;
-    
-    document.getElementById('ui-enemy-name').innerText = "【強敵】" + boss.name;
-    const iconEl = document.getElementById('ui-enemy-icon');
-    if(iconEl) {
-        if(boss.icon && boss.icon.startsWith('http')) iconEl.innerHTML = `<img src="${boss.icon}">`;
-        else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "💀"}</div>`;
-    }
-
-    updateUI();
-    startCountdown();
-}
-
 function showCutIn(t) { const d = document.createElement('div'); d.className='cutin'; d.innerText=t; if(String(t).includes('MISS')) { d.style.color='#bdc3c7'; d.style.webkitTextStroke='2px #2c3e50'; } document.body.appendChild(d); setTimeout(()=>d.remove(), 1500); }
 
 function updateUI() { 
@@ -381,14 +35,9 @@ function togglePause() {
 }
 
 function resumeGame() { isPaused = false; document.getElementById('pause-overlay')?.classList.add('hidden'); }
-
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
-    isGameActive = false; 
-    clearInterval(gameState.timer); 
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (actionTimer) clearTimeout(actionTimer);
-    resumeGame(); 
+    isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
     gameState.timeLeft = 0;
     
     document.getElementById('calc-layout')?.classList.add('hidden');
@@ -414,7 +63,6 @@ async function retryGame() {
     else if (playData.isRevenge) { startRevengeMode(); }
     else { startGame(); }
 }
-
 async function backToTitleFromPause() { if (!(await showConfirm("戻りますか？"))) return; isGameActive=false; clearInterval(gameState.timer); backToTitle(); }
 
 function startCountdown() {
@@ -523,10 +171,7 @@ function nextQuestion() {
 }
 
 function judge(isCorrect, btn) {
-    if(isPaused || !isGameActive) return; 
-    clearInterval(gameState.timer);
-    if (actionTimer) clearTimeout(actionTimer);
-
+    if(isPaused || !isGameActive) return; clearInterval(gameState.timer);
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
     
@@ -569,18 +214,13 @@ function judge(isCorrect, btn) {
         
         if(!playData.isSurvival && gameState.enemyHP <= 0) { 
             const enemyBox = document.querySelector('.enemy-visual-box'); if(enemyBox) { enemyBox.classList.add('anim-paused'); enemyBox.classList.add('fade-out'); } 
-            actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 1200); 
+            setTimeout(() => isGameActive && finishGame(true), 1200); 
         } else { 
-            playData.qIndex++; 
-            actionTimer = setTimeout(() => { if (isGameActive) nextQuestion(); }, 1000); 
+            playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); 
         }
     } else {
         gameState.lives--; gameState.combo = 0; showCutIn("MISS..."); updateUI();
-        if(gameState.lives <= 0) { 
-            actionTimer = setTimeout(() => { if (isGameActive) finishGame(false); }, 1500); 
-        } else { 
-            actionTimer = setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); 
-        }
+        if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); }
     }
 }
 
@@ -623,25 +263,14 @@ function handleTypingInput(e) {
         playData.typingIndex++; playSE('type_hit'); if (typeof renderTypingUI === 'function') renderTypingUI();
         if(playData.typingIndex >= playData.typingTarget.romaji.length) {
             clearInterval(gameState.timer);
-            if (actionTimer) clearTimeout(actionTimer);
-
             const stats = getCharaStats(); const baseAtk = 100; const rawRatio = gameState.timeLeft / gameState.maxTime; const timeFactor = 0.2 + (rawRatio * 0.8);
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
             const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
-            
-            if(gameState.enemyHP <= 0) { 
-                actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 500); 
-            } else { 
-                playData.qIndex++; 
-                actionTimer = setTimeout(() => { if (isGameActive) nextTypingQuestion(); }, 200); 
-            }
+            if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
         }
-    } else { 
-        playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } 
-        if(gameState.lives <= 0) { finishGame(false); } 
-    }
+    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
 }
 
 function generateCalcQuestion(type) {
@@ -709,13 +338,7 @@ function addCalcRecord(entry) {
 // リザルト処理
 // ------------------------------------------
 function finishGame(isClear) { 
-    if (!isGameActive) return; // 多重実行ガード
-    isGameActive = false; 
-
-    clearInterval(gameState.timer); 
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (actionTimer) clearTimeout(actionTimer);
-
+    isGameActive=false; clearInterval(gameState.timer); 
     document.removeEventListener('keydown', handleTypingInput);
     stopBGM();
 
@@ -724,7 +347,7 @@ function finishGame(isClear) {
     let earned = 0;
     let isCampaign = false;
 
-    // リザルトUIのテキスト初期化
+    // リザルトUIのテキスト初期化 (index.htmlで定義したIDを利用)
     const resXpLabel = document.getElementById('res-xp-label');
     const resXpSpan = document.getElementById('res-xp');
     const resDrop = document.getElementById('res-drop');
@@ -948,13 +571,10 @@ function finishGame(isClear) {
 }
 
 function backToTitle() { 
-    isGameActive = false; isPaused = false; 
-
-    clearInterval(gameState.timer); 
-    if (countdownTimer) clearInterval(countdownTimer);
-    if (actionTimer) clearTimeout(actionTimer);
-
     document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
+    if (countdownTimer) clearInterval(countdownTimer);
+    clearInterval(gameState.timer); 
+    isGameActive = false; isPaused = false; 
     document.removeEventListener('keydown', handleTypingInput);
     document.getElementById('ui-choices')?.classList.remove('hidden'); document.getElementById('ui-typing-area')?.classList.add('hidden'); document.getElementById('ui-question')?.classList.remove('hidden');
     
