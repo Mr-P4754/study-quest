@@ -1,8 +1,8 @@
 // ==========================================
-// app-game.js (完全版：開始関数復元＆非同期タイマーバグ修正)
+// app-game.js (ゲーム進行・サバイバル追加・判定・リザルト調整版)
 // ==========================================
 
-let actionTimer = null; // 進行遅延用タイマーをグローバル管理
+let actionTimer = null;
 
 function initGameSession(mode) {
     isGameActive = false;
@@ -10,6 +10,8 @@ function initGameSession(mode) {
     clearInterval(gameState.timer);
     if (countdownTimer) clearInterval(countdownTimer);
     if (actionTimer) clearTimeout(actionTimer);
+
+    document.removeEventListener('keydown', handleTypingInput);
 
     // フラグリセット
     playData.isSurvival = (mode === 'survival');
@@ -20,6 +22,7 @@ function initGameSession(mode) {
     playData.activeOaths = [];
 
     // 共通ステータス初期化
+    gameState.maxTime = 10;
     gameState.score = 0;
     gameState.combo = 0;
     gameState.lives = 3;
@@ -43,16 +46,19 @@ function initGameSession(mode) {
     if (hpFrame) hpFrame.style.display = '';
     const enemyRow = document.querySelector('.enemy-stats-row');
     if (enemyRow) enemyRow.style.display = '';
+    
     const qBox = document.getElementById('ui-question');
-    if (qBox) { qBox.style.removeProperty('height'); qBox.style.removeProperty('min-height'); }
+    if (qBox) { 
+        qBox.style.removeProperty('height'); 
+        qBox.style.removeProperty('min-height'); 
+        qBox.innerText = "READY..."; 
+    }
 
     // スコア表示テキストリセット
     const uiScoreSpan = document.getElementById('ui-score'); 
     if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) uiScoreSpan.previousSibling.nodeValue = "SCORE ";
     const uiComboSpan = document.getElementById('ui-combo'); 
     if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "COMBO ";
-
-    updateUI();
 }
 
 function startGame() {
@@ -87,6 +93,7 @@ function startGame() {
         else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "👾"}</div>`;
     }
 
+    updateUI();
     startCountdown();
 }
 
@@ -120,6 +127,7 @@ function startOathGame() {
         const hpFrame = document.querySelector('.enemy-hp-frame');
         if(hpFrame) hpFrame.style.display = 'none';
         
+        updateUI();
         startCountdown();
         return;
     }
@@ -157,6 +165,7 @@ function startOathGame() {
         else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "👾"}</div>`;
     }
 
+    updateUI();
     startCountdown();
 }
 
@@ -184,6 +193,7 @@ function startSurvivalGame() {
     const hpFrame = document.querySelector('.enemy-hp-frame');
     if(hpFrame) hpFrame.style.display = 'none';
 
+    updateUI();
     startCountdown();
 }
 
@@ -217,6 +227,7 @@ function startRandomGame() {
         else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "❓"}</div>`;
     }
 
+    updateUI();
     startCountdown();
 }
 
@@ -247,6 +258,7 @@ function startTypingGame() {
     const iconEl = document.getElementById('ui-enemy-icon');
     if(iconEl) iconEl.innerHTML = "⌨️";
 
+    updateUI();
     document.addEventListener('keydown', handleTypingInput);
     startCountdown();
 }
@@ -295,6 +307,7 @@ function startCalcGame() {
     const uiComboSpan = document.getElementById('ui-combo'); 
     if(uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) uiComboSpan.previousSibling.nodeValue = "正解数 ";
     
+    updateUI();
     document.addEventListener('keydown', handleTypingInput);
     startCountdown();
 }
@@ -331,6 +344,7 @@ function startRevengeMode() {
         else iconEl.innerHTML = `<div style="font-size:1em;">${boss.icon || "💀"}</div>`;
     }
 
+    updateUI();
     startCountdown();
 }
 
