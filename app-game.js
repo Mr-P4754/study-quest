@@ -7,6 +7,7 @@ function initGameSession(mode) {
     isPaused = false;
     clearInterval(gameState.timer);
     if (countdownTimer) clearInterval(countdownTimer);
+    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
 
     // フラグリセット
     playData.isSurvival = (mode === 'survival');
@@ -32,6 +33,10 @@ function initGameSession(mode) {
     document.getElementById('calc-layout')?.classList.add('hidden');
     document.getElementById('ui-calc-progress')?.classList.add('hidden');
     
+    // 敵のビジュアル状態リセット
+    const enemyBox = document.querySelector('.enemy-visual-box');
+    if (enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out');
+
     const hpFrame = document.querySelector('.enemy-hp-frame');
     if (hpFrame) hpFrame.style.display = '';
     const enemyRow = document.querySelector('.enemy-stats-row');
@@ -362,7 +367,10 @@ function togglePause() {
 function resumeGame() { isPaused = false; document.getElementById('pause-overlay')?.classList.add('hidden'); }
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
-    isGameActive=false; clearInterval(gameState.timer); resumeGame(); 
+    isGameActive=false; 
+    clearInterval(gameState.timer); 
+    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
+    resumeGame(); 
     gameState.timeLeft = 0;
     
     document.getElementById('calc-layout')?.classList.add('hidden');
@@ -496,7 +504,8 @@ function nextQuestion() {
 }
 
 function judge(isCorrect, btn) {
-    if(isPaused || !isGameActive) return; clearInterval(gameState.timer);
+    if(isPaused || !isGameActive) return; 
+    clearInterval(gameState.timer);
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
     
@@ -539,13 +548,18 @@ function judge(isCorrect, btn) {
         
         if(!playData.isSurvival && gameState.enemyHP <= 0) { 
             const enemyBox = document.querySelector('.enemy-visual-box'); if(enemyBox) { enemyBox.classList.add('anim-paused'); enemyBox.classList.add('fade-out'); } 
-            setTimeout(() => isGameActive && finishGame(true), 1200); 
+            gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 1200); 
         } else { 
-            playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); 
+            playData.qIndex++; 
+            gameState.actionTimer = setTimeout(() => { if (isGameActive) nextQuestion(); }, 1000); 
         }
     } else {
         gameState.lives--; gameState.combo = 0; showCutIn("MISS..."); updateUI();
-        if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); }
+        if(gameState.lives <= 0) { 
+            gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(false); }, 1500); 
+        } else { 
+            gameState.actionTimer = setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); 
+        }
     }
 }
 
@@ -593,9 +607,17 @@ function handleTypingInput(e) {
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
             const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
-            if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
+            if(gameState.enemyHP <= 0) { 
+                gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 500); 
+            } else { 
+                playData.qIndex++; 
+                gameState.actionTimer = setTimeout(() => { if (isGameActive) nextTypingQuestion(); }, 200); 
+            }
         }
-    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
+    } else { 
+        playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } 
+        if(gameState.lives <= 0) { finishGame(false); } 
+    }
 }
 
 function generateCalcQuestion(type) {
@@ -663,7 +685,9 @@ function addCalcRecord(entry) {
 // リザルト処理
 // ------------------------------------------
 function finishGame(isClear) { 
-    isGameActive=false; clearInterval(gameState.timer); 
+    isGameActive=false; 
+    clearInterval(gameState.timer); 
+    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
     document.removeEventListener('keydown', handleTypingInput);
     stopBGM();
 
@@ -899,6 +923,7 @@ function backToTitle() {
     document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
     if (countdownTimer) clearInterval(countdownTimer);
     clearInterval(gameState.timer); 
+    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
     isGameActive = false; isPaused = false; 
     document.removeEventListener('keydown', handleTypingInput);
     document.getElementById('ui-choices')?.classList.remove('hidden'); document.getElementById('ui-typing-area')?.classList.add('hidden'); document.getElementById('ui-question')?.classList.remove('hidden');
