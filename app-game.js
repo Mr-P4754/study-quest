@@ -1,13 +1,15 @@
 // ==========================================
-// app-game.js (ゲーム進行・サバイバル追加・判定・リザルト調整版)
+// app-game.js (完全版：開始関数復元＆非同期タイマーバグ修正)
 // ==========================================
+
+let actionTimer = null; // 進行遅延用タイマーをグローバル管理
 
 function initGameSession(mode) {
     isGameActive = false;
     isPaused = false;
     clearInterval(gameState.timer);
     if (countdownTimer) clearInterval(countdownTimer);
-    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
+    if (actionTimer) clearTimeout(actionTimer);
 
     // フラグリセット
     playData.isSurvival = (mode === 'survival');
@@ -365,11 +367,13 @@ function togglePause() {
 }
 
 function resumeGame() { isPaused = false; document.getElementById('pause-overlay')?.classList.add('hidden'); }
+
 async function retryGame() { 
     if (!(await showConfirm("やり直しますか？"))) return; 
-    isGameActive=false; 
+    isGameActive = false; 
     clearInterval(gameState.timer); 
-    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    if (actionTimer) clearTimeout(actionTimer);
     resumeGame(); 
     gameState.timeLeft = 0;
     
@@ -396,6 +400,7 @@ async function retryGame() {
     else if (playData.isRevenge) { startRevengeMode(); }
     else { startGame(); }
 }
+
 async function backToTitleFromPause() { if (!(await showConfirm("戻りますか？"))) return; isGameActive=false; clearInterval(gameState.timer); backToTitle(); }
 
 function startCountdown() {
@@ -506,6 +511,8 @@ function nextQuestion() {
 function judge(isCorrect, btn) {
     if(isPaused || !isGameActive) return; 
     clearInterval(gameState.timer);
+    if (actionTimer) clearTimeout(actionTimer);
+
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
     
@@ -548,17 +555,17 @@ function judge(isCorrect, btn) {
         
         if(!playData.isSurvival && gameState.enemyHP <= 0) { 
             const enemyBox = document.querySelector('.enemy-visual-box'); if(enemyBox) { enemyBox.classList.add('anim-paused'); enemyBox.classList.add('fade-out'); } 
-            gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 1200); 
+            actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 1200); 
         } else { 
             playData.qIndex++; 
-            gameState.actionTimer = setTimeout(() => { if (isGameActive) nextQuestion(); }, 1000); 
+            actionTimer = setTimeout(() => { if (isGameActive) nextQuestion(); }, 1000); 
         }
     } else {
         gameState.lives--; gameState.combo = 0; showCutIn("MISS..."); updateUI();
         if(gameState.lives <= 0) { 
-            gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(false); }, 1500); 
+            actionTimer = setTimeout(() => { if (isGameActive) finishGame(false); }, 1500); 
         } else { 
-            gameState.actionTimer = setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); 
+            actionTimer = setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); 
         }
     }
 }
@@ -602,16 +609,19 @@ function handleTypingInput(e) {
         playData.typingIndex++; playSE('type_hit'); if (typeof renderTypingUI === 'function') renderTypingUI();
         if(playData.typingIndex >= playData.typingTarget.romaji.length) {
             clearInterval(gameState.timer);
+            if (actionTimer) clearTimeout(actionTimer);
+
             const stats = getCharaStats(); const baseAtk = 100; const rawRatio = gameState.timeLeft / gameState.maxTime; const timeFactor = 0.2 + (rawRatio * 0.8);
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
             const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
+            
             if(gameState.enemyHP <= 0) { 
-                gameState.actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 500); 
+                actionTimer = setTimeout(() => { if (isGameActive) finishGame(true); }, 500); 
             } else { 
                 playData.qIndex++; 
-                gameState.actionTimer = setTimeout(() => { if (isGameActive) nextTypingQuestion(); }, 200); 
+                actionTimer = setTimeout(() => { if (isGameActive) nextTypingQuestion(); }, 200); 
             }
         }
     } else { 
@@ -685,9 +695,13 @@ function addCalcRecord(entry) {
 // リザルト処理
 // ------------------------------------------
 function finishGame(isClear) { 
-    isGameActive=false; 
+    if (!isGameActive) return; // 多重実行ガード
+    isGameActive = false; 
+
     clearInterval(gameState.timer); 
-    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    if (actionTimer) clearTimeout(actionTimer);
+
     document.removeEventListener('keydown', handleTypingInput);
     stopBGM();
 
@@ -696,7 +710,7 @@ function finishGame(isClear) {
     let earned = 0;
     let isCampaign = false;
 
-    // リザルトUIのテキスト初期化 (index.htmlで定義したIDを利用)
+    // リザルトUIのテキスト初期化
     const resXpLabel = document.getElementById('res-xp-label');
     const resXpSpan = document.getElementById('res-xp');
     const resDrop = document.getElementById('res-drop');
@@ -920,11 +934,13 @@ function finishGame(isClear) {
 }
 
 function backToTitle() { 
-    document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
-    if (countdownTimer) clearInterval(countdownTimer);
-    clearInterval(gameState.timer); 
-    if (gameState.actionTimer) clearTimeout(gameState.actionTimer);
     isGameActive = false; isPaused = false; 
+
+    clearInterval(gameState.timer); 
+    if (countdownTimer) clearInterval(countdownTimer);
+    if (actionTimer) clearTimeout(actionTimer);
+
+    document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
     document.removeEventListener('keydown', handleTypingInput);
     document.getElementById('ui-choices')?.classList.remove('hidden'); document.getElementById('ui-typing-area')?.classList.add('hidden'); document.getElementById('ui-question')?.classList.remove('hidden');
     
