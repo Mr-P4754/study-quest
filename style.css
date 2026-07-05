@@ -19,7 +19,7 @@ button { cursor: pointer; font-family: inherit; user-select: none; -webkit-tap-h
 .shake-anim { animation: shake 0.4s ease-in-out; }
 .fade-out { opacity: 0 !important; transform: scale(0.8) !important; transition: all 1.0s ease-out; }
 .anim-paused { animation-play-state: paused !important; }
-.cutin { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5em; font-weight: 900; color: #f1c40f; -webkit-text-stroke: 3px #c0392b; text-shadow: 4px 4px 0 #000; pointer-events: none; z-index: 2000; animation: damageFloat 1.2s ease-out forwards; white-space: nowrap; }
+.cutin { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5em; font-weight: 900; color: #f1c40f; -webkit-text-stroke: 2px #c0392b; text-shadow: 3px 3px 0 #000; pointer-events: none; z-index: 2000; animation: damageFloat 1.2s ease-out forwards; white-space: nowrap; }
 
 .header { padding: 5px 10px; background: #34495e; border-bottom: 4px solid #2c3e50; display: flex; justify-content: space-between; align-items: center; height: 55px; box-shadow: 0 4px 0 rgba(0,0,0,0.2); z-index: 20; flex-shrink: 0; gap: 8px; width: 100%; }
 .life-container { font-size: 1.2em; color: #e74c3c; letter-spacing: 1px; flex-shrink: 0; }
@@ -118,7 +118,6 @@ button { cursor: pointer; font-family: inherit; user-select: none; -webkit-tap-h
 .shop-buy-btn:active { transform: translateY(4px); border-bottom: none; }
 .shop-buy-btn:disabled { background: #95a5a6; border-bottom: none; cursor: default; transform: none; }
 
-/* 強化素材リスト修正 */
 .material-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; max-height: 250px; overflow-y: auto; overflow-x: hidden; margin-top: 10px; border-top: 1px solid #eee; padding-top: 5px; width: 100%; }
 .mat-card { border: 1px solid #ccc; border-radius: 5px; padding: 5px; text-align: center; background: #fff; font-size: 0.7em; cursor: pointer; overflow: hidden; width: 100%; box-sizing: border-box; }
 .mat-card img { max-width: 100%; object-fit: contain; }
@@ -140,11 +139,7 @@ button { cursor: pointer; font-family: inherit; user-select: none; -webkit-tap-h
 .title-item.claimed .title-reward-btn { background: #27ae60; border: none; cursor: default; transform: none; animation: none; }
 
 .rarity-SSR { color: #f1c40f; text-shadow: 0 0 1px #000; font-weight: 900; } .rarity-SR { color: #e74c3c; font-weight: bold; } .rarity-R { color: #3498db; font-weight: bold; } .rarity-N { color: #7f8c8d; }
-
-/* 修正: inline-block を削除してブロック要素に戻すことで、画像との意図せぬ横並びを防止 */
 .rarity-UR { color: #e056fd; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 10px #e056fd; animation: pulseRed 1s infinite alternate; }
-
-/* 詳細画面のレアリティ表示のみ横幅を文字に合わせ、拡大時のオーバーフローを防止 */
 #cd-rarity { width: fit-content; margin-left: auto; margin-right: auto; }
 
 .char-card.mastered { border: 3px solid transparent; background-image: linear-gradient(#fff, #fff), linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff); background-origin: border-box; background-clip: content-box, border-box; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); transform: scale(1.02); }
@@ -155,12 +150,10 @@ button { cursor: pointer; font-family: inherit; user-select: none; -webkit-tap-h
 .gr-mini-card { background: #fff; border: 2px solid #ccc; border-radius: 8px; padding: 5px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; }
 .gr-mini-img { width: 60px; height: 60px; object-fit: contain; margin: 5px 0; }
 
-/* 画像に display: block; を追加し、絶対に他の要素と横並びにならないよう補強 */
 .detail-img { width: 100px; height: 100px; object-fit: contain; margin: 10px auto; background: #eee; border-radius: 10px; padding: 10px; border: 2px solid #ccc; display: block; }
 .detail-stat-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
 .detail-btn-row { display: flex; gap: 10px; margin-top: 20px; }
 
-/* ボタン修正（UR転生等のテキストはみ出し防止） */
 .detail-btn { width: 100%; max-width: 100%; height: 50px; padding: 5px; color: white; border: none; border-radius: 12px; font-weight: bold; transition: all 0.1s; position: relative; display: flex; align-items: center; justify-content: center; font-size: 0.95em; border-bottom: 5px solid #000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); box-sizing: border-box; overflow: hidden; }
 .detail-btn:active { transform: translateY(4px); box-shadow: none; border-bottom: none; }
 .detail-btn div { max-width: 100%; white-space: normal; overflow-wrap: break-word; text-align: center; }
