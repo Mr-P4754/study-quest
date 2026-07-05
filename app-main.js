@@ -13,7 +13,7 @@ function initTitle() {
         grades.forEach(g => gSelect.innerHTML += `<option value="${g}">${g}</option>`);
     }
     
-    // サバイバルなど、他の学年選択があれば初期化
+    // サバイバル用初期化
     const survSelect = document.getElementById('survival-grade-select');
     if(survSelect) {
         survSelect.innerHTML = '<option value="">学年を選択...</option>';
