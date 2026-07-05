@@ -1,15 +1,30 @@
 // ==========================================
-// app-game.js (ゲーム進行・サバイバル追加・判定・リザルト調整版)
+// app-game.js (ゲーム進行・バトルエンジン)
 // ==========================================
 
-function showCutIn(t) { const d = document.createElement('div'); d.className='cutin'; d.innerText=t; if(String(t).includes('MISS')) { d.style.color='#bdc3c7'; d.style.webkitTextStroke='2px #2c3e50'; } document.body.appendChild(d); setTimeout(()=>d.remove(), 1500); }
+function showCutIn(t) { 
+    const d = document.createElement('div'); 
+    d.className='cutin'; 
+    d.innerText=t; 
+    if(String(t).includes('MISS')) { 
+        d.style.color='#bdc3c7'; 
+        d.style.webkitTextStroke='2px #2c3e50'; 
+    } 
+    document.body.appendChild(d); 
+    setTimeout(()=>d.remove(), 1500); 
+}
 
 function updateUI() { 
-    const uiLife = document.getElementById('ui-life'); if(uiLife) uiLife.innerText = '❤️'.repeat(Math.max(0, gameState.lives)); 
-    const uiScore = document.getElementById('ui-score'); if(uiScore) uiScore.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
-    const uiCombo = document.getElementById('ui-combo'); if(uiCombo) uiCombo.innerText = playData.isCalculation ? playData.calcCorrect : gameState.combo; 
-    const uiHp = document.getElementById('ui-hp'); if(uiHp) uiHp.style.width = (gameState.enemyHP/gameState.maxHP*100)+'%'; 
-    const uiHpText = document.getElementById('ui-hp-text'); if(uiHpText) uiHpText.innerText = `${gameState.enemyHP}/${gameState.maxHP}`; 
+    const uiLife = document.getElementById('ui-life'); 
+    if(uiLife) uiLife.innerText = '❤️'.repeat(Math.max(0, gameState.lives)); 
+    const uiScore = document.getElementById('ui-score'); 
+    if(uiScore) uiScore.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
+    const uiCombo = document.getElementById('ui-combo'); 
+    if(uiCombo) uiCombo.innerText = playData.isCalculation ? playData.calcCorrect : gameState.combo; 
+    const uiHp = document.getElementById('ui-hp'); 
+    if(uiHp) uiHp.style.width = (gameState.maxHP > 0 ? (gameState.enemyHP/gameState.maxHP*100) : 0)+'%'; 
+    const uiHpText = document.getElementById('ui-hp-text'); 
+    if(uiHpText) uiHpText.innerText = `${gameState.enemyHP}/${gameState.maxHP}`; 
 }
 
 function togglePause() { 
@@ -61,6 +76,7 @@ async function retryGame() {
     else if (playData.isRandom) { startRandomGame(); }
     else if (playData.activeOaths && playData.activeOaths.length > 0) { startOathGame(); }
     else if (playData.isRevenge) { startRevengeMode(); }
+    else if (typeof rogueData !== 'undefined' && rogueData.active) { alert("探索モード中はリトライできません。"); resumeGame(); }
     else { startGame(); }
 }
 async function backToTitleFromPause() { if (!(await showConfirm("戻りますか？"))) return; isGameActive=false; clearInterval(gameState.timer); backToTitle(); }
@@ -144,6 +160,13 @@ function getCharaStats() {
         });
     }
     if (playData.activeOaths && playData.activeOaths.includes('weak') && !playData.isSurvival) stats.atk *= 0.5;
+
+    // ローグライクモードでのバフフック対応
+    if (typeof rogueData !== 'undefined' && rogueData.active) {
+        stats.atk *= rogueData.atkBuff;
+        stats.atk *= (1.0 + (rogueData.exploreLevel - 1) * 0.005);
+    }
+
     return stats;
 }
 
@@ -177,7 +200,10 @@ function judge(isCorrect, btn) {
     
     if(!isCorrect) {
         playSE('miss');
-        if (playData.currentQ && playData.currentQ.id && !playData.isSurvival) { if (!gameState.revengeList) gameState.revengeList = []; if (!gameState.revengeList.includes(playData.currentQ.id)) { gameState.revengeList.push(playData.currentQ.id); saveGame(); } }
+        if (playData.currentQ && playData.currentQ.id && !playData.isSurvival && !(typeof rogueData !== 'undefined' && rogueData.active)) { 
+            if (!gameState.revengeList) gameState.revengeList = []; 
+            if (!gameState.revengeList.includes(playData.currentQ.id)) { gameState.revengeList.push(playData.currentQ.id); saveGame(); } 
+        }
         document.querySelectorAll('.choice-btn').forEach(b => { if(String(b.innerText) === String(playData.currentQ?.a)) b.classList.add('btn-miss-answer'); });
     }
     
@@ -224,9 +250,6 @@ function judge(isCorrect, btn) {
     }
 }
 
-// ------------------------------------------
-// タイピング・計算モード
-// ------------------------------------------
 function nextTypingQuestion() {
     if (!isGameActive) return;
     if (playData.qIndex >= playData.questions.length) { playData.questions.sort(() => Math.random() - 0.5); playData.qIndex = 0; }
@@ -334,10 +357,75 @@ function addCalcRecord(entry) {
     gameState.calcRecords[key] = gameState.calcRecords[key].slice(0, 10);
 }
 
-// ------------------------------------------
-// リザルト処理
-// ------------------------------------------
 function finishGame(isClear) { 
+    // 【変更】ローグライク探索中なら専用の勝利/敗北処理へ分岐
+    if (typeof rogueData !== 'undefined' && rogueData.active) {
+        isGameActive = false; clearInterval(gameState.timer);
+        document.removeEventListener('keydown', handleTypingInput);
+        stopBGM();
+
+        if (isClear) {
+            playSE('win');
+            const stats = getCharaStats();
+            const baseReward = 500;
+            const floorBonus = rogueData.floor * 100;
+            const earned = Math.floor((baseReward + floorBonus) * stats.exp * (1.0 + rogueData.exploreLevel * 0.005));
+            
+            rogueData.earnedXp += earned;
+
+            // 【追加】撃破したキャラをインベントリに追加
+            const charId = playData.rogueEnemyCharId;
+            let getMsgHtml = "";
+            if (charId) {
+                const c = rawData.characters.find(x => x.id == charId);
+                const cName = c ? c.name : "キャラ";
+                const cRarity = c ? c.rarity : "N";
+                if (!gameState.charaInventory[charId]) {
+                    gameState.charaInventory[charId] = { level: 1, count: 1, exp: 0, currentRarity: cRarity };
+                } else {
+                    gameState.charaInventory[charId].count++;
+                }
+                getMsgHtml = `<span class="rarity-${cRarity}" style="font-weight:bold;">[${cRarity}]</span> ${cName} × 1`;
+            }
+
+            if (typeof updateRogueUI === 'function') updateRogueUI();
+
+            // 【修正】通常のリッチなリザルト画面へ置き換え
+            const resTitle = document.getElementById('res-title');
+            if (resTitle) { resTitle.innerText = rogueData.isBossBattle ? "BOSS BATTLE CLEAR!" : "BATTLE WIN!"; resTitle.style.color = "#f1c40f"; }
+            const resIcon = document.getElementById('res-icon');
+            if (resIcon) resIcon.innerText = "⚔️";
+
+            const resScoreSpan = document.getElementById('res-score');
+            if (resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "進行階層: ";
+            if (resScoreSpan) resScoreSpan.innerText = rogueData.floor + "F";
+
+            const resDetails = document.getElementById('res-details');
+            if (resDetails) {
+                let html = `<div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">獲得探索EXP <span style="color:#e67e22;">+${earned}</span></div>`;
+                if (rogueData.isBossBattle) html += `<div style="margin-top:5px; font-weight:bold; color:#c0392b;">🎊 ${rogueData.floor}階層踏破！</div>`;
+                resDetails.innerHTML = html; resDetails.style.display = 'block';
+            }
+
+            const resDrop = document.getElementById('res-drop');
+            if (resDrop) { resDrop.style.display = 'block'; resDrop.innerHTML = getMsgHtml ? `ドロップ: ${getMsgHtml}` : 'ドロップ: なし'; }
+            
+            const resXpLabel = document.getElementById('res-xp-label');
+            if (resXpLabel) resXpLabel.innerText = "現在の一時EXP";
+            const resXpSpan = document.getElementById('res-xp');
+            if (resXpSpan) { resXpSpan.style.lineHeight = "1.1"; resXpSpan.innerHTML = `<span style="color:#f1c40f;">${rogueData.earnedXp}</span>`; }
+
+            document.getElementById('game-screen')?.classList.add('hidden');
+            document.getElementById('result-overlay')?.classList.remove('hidden');
+        } else {
+            playSE('lose');
+            showAppModal("戦闘敗北...\n全滅したため拠点へ強制送還されます。", 'alert').then(() => {
+                if (typeof exitRogueSystem === 'function') exitRogueSystem(false);
+            });
+        }
+        return;
+    }
+
     isGameActive=false; clearInterval(gameState.timer); 
     document.removeEventListener('keydown', handleTypingInput);
     stopBGM();
@@ -347,25 +435,30 @@ function finishGame(isClear) {
     let earned = 0;
     let isCampaign = false;
 
-    // リザルトUIのテキスト初期化 (index.htmlで定義したIDを利用)
     const resXpLabel = document.getElementById('res-xp-label');
     const resXpSpan = document.getElementById('res-xp');
     const resDrop = document.getElementById('res-drop');
     if (resXpLabel) resXpLabel.innerText = "獲得XP";
     if (resDrop) resDrop.style.display = 'block';
     
-    // サバイバルモード処理
     if (playData.isSurvival) {
         const correctCount = gameState.score; 
         let oathMultiplier = 1;
         if (playData.activeOaths.length === 1) oathMultiplier = 2;
         else if (playData.activeOaths.length >= 2) oathMultiplier = 3;
 
-        let milestoneBonus = Math.floor(correctCount / 50) * 50;
-        let earnedExp = (correctCount * oathMultiplier) + milestoneBonus;
-        
         const eqInv = gameState.charaInventory[gameState.equipped];
         const cMaster = rawData.characters ? rawData.characters.find(c => c.id == gameState.equipped) : null;
+        
+        let isMax = false;
+        if (eqInv && cMaster) {
+            const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
+            if (eqInv.level >= maxL) isMax = true;
+        }
+
+        let milestoneBonus = isMax ? 0 : Math.floor(correctCount / 50) * 50;
+        let earnedExp = (correctCount * oathMultiplier) + milestoneBonus;
+        
         let growthResultText = "なし";
         
         if (eqInv && cMaster) {
@@ -568,6 +661,23 @@ function finishGame(isClear) {
     
     document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('result-overlay')?.classList.remove('hidden'); 
     if (typeof checkTitles === 'function') checkTitles();
+}
+
+function handleResultClose() {
+    if (typeof rogueData !== 'undefined' && rogueData.active) {
+        document.getElementById('result-overlay')?.classList.add('hidden');
+        document.getElementById('field-screen')?.classList.remove('hidden');
+        
+        // 【追加】ボス戦だった場合は、リザルトを閉じた後に階層を進める
+        if (rogueData.isBossBattle) {
+            rogueData.floor++;
+            generateRogueFloor();
+        } else {
+            if (typeof drawRogueMap === 'function') drawRogueMap();
+        }
+    } else {
+        backToTitle();
+    }
 }
 
 function backToTitle() { 
