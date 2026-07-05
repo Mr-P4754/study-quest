@@ -1,5 +1,5 @@
 // ==========================================
-// app-ui.js (完全版)
+// app-ui.js (UI制御・各種モード開始・図鑑・ガチャ管理)
 // ==========================================
 
 /* ------------------------------------------
@@ -125,7 +125,7 @@ function openRandomMenu() {
 function closeRandomMenu() { document.getElementById('random-overlay')?.classList.add('hidden'); }
 
 function openTypingMenu() {
-    if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データ(typingシート)が見つかりません");
+    if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データが見つかりません");
     const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g=>g);
     const sel = document.getElementById('typing-grade-select'); if(!sel) return; sel.innerHTML = '<option value="">学年を選択...</option>';
     grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
@@ -144,33 +144,7 @@ function openSurvivalMenu() {
         sel.innerHTML = '<option value="">学年を選択...</option>';
         grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     }
-    
-    const survivalOverlay = document.getElementById('survival-overlay');
-    if (survivalOverlay && !survivalOverlay.dataset.patched) {
-        const modal = survivalOverlay.querySelector('.modal');
-        const startBtn = modal.querySelector('button[onclick="startSurvivalGame()"]');
-        if (startBtn) {
-            const btnContainer = document.createElement('div');
-            btnContainer.style.display = 'grid';
-            btnContainer.style.gridTemplateColumns = '1fr 1fr';
-            btnContainer.style.gap = '10px';
-            
-            startBtn.parentNode.insertBefore(btnContainer, startBtn);
-            startBtn.onclick = () => { oathOrigin='normal'; startSurvivalGame(); };
-            btnContainer.appendChild(startBtn);
-            
-            const oathBtn = document.createElement('button');
-            oathBtn.className = 'menu-btn oath';
-            oathBtn.style.background = '#8e44ad';
-            oathBtn.style.borderColor = '#6c3483';
-            oathBtn.innerText = '😈 誓約へ';
-            oathBtn.onclick = goToOathMenuSurvivalCheck;
-            btnContainer.appendChild(oathBtn);
-            
-            survivalOverlay.dataset.patched = 'true';
-        }
-    }
-    survivalOverlay?.classList.remove('hidden');
+    document.getElementById('survival-overlay')?.classList.remove('hidden');
 }
 function closeSurvivalMenu() { document.getElementById('survival-overlay')?.classList.add('hidden'); }
 
@@ -227,7 +201,6 @@ function startSurvivalGame() {
     const enemyBox = document.querySelector('.enemy-visual-box'); const enemyIcon = document.getElementById('ui-enemy-icon');
     if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); if(enemyIcon) enemyIcon.classList.remove('shake-anim');
     
-    // WAVE表示を0からスタートさせる
     const uienemyName = document.getElementById('ui-enemy-name'); if(uienemyName) uienemyName.innerText = "WAVE: 0";
     if(enemyIcon) enemyIcon.innerHTML = boss.icon; 
     
@@ -859,3 +832,18 @@ function renderTypingUI() {
         romajiBox.innerHTML = `<span class="typing-char-done">${done}</span><span class="typing-char-current">${cur || ''}</span><span class="typing-char-rest">${rest}</span>`;
     }
 }
+
+// =====================================
+// 追加: ローグライクメニュー開閉
+// =====================================
+function openRogueMenu() {
+    if(!rawData.questions) return;
+    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g=>g);
+    const sel = document.getElementById('rogue-grade-select'); 
+    if(sel) {
+        sel.innerHTML = '<option value="">学年を選択...</option>';
+        grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    }
+    document.getElementById('rogue-menu-overlay')?.classList.remove('hidden');
+}
+function closeRogueMenu() { document.getElementById('rogue-menu-overlay')?.classList.add('hidden'); }
