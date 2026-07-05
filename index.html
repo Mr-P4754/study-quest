@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>STUDY QUEST | Stationary Master</title>
+    <title>STUDY QUEST RPG</title>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -22,9 +22,13 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 7.3.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 8.0.0</div>
     
     <div class="menu-btn-container">
+        <button id="btn-rogue-start" class="menu-btn full-width" style="background:linear-gradient(135deg, #d35400, #c0392b); border-bottom-color:#962d22; font-size:1.05em; grid-column: span 2;" onclick="openRogueMenu()">
+            🧭 探索
+        </button>
+
         <button class="menu-btn" onclick="openUnitSelection()">▶ クエスト</button>
         <button class="menu-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="openSurvivalMenu()">🔥 サバイバル</button>
         <button id="btn-revenge" class="menu-btn revenge" onclick="startRevengeMode()" disabled>
@@ -59,6 +63,40 @@
     <div style="margin-top: 15px; padding-bottom: 20px; width: 100%; color: #95a5a6; font-size: 0.9em; display: flex; justify-content: center; align-items: center; gap: 10px;">
         <div id="title-chara-img" style="width: 40px; height: 40px; background: #333; border-radius: 5px; overflow: hidden;"></div>
         <div>装備: <span id="title-equipped-name" style="color:#fff; font-weight:bold;">なし</span><br>所持XP: <span id="title-xp" style="color:#f1c40f;">0</span></div>
+    </div>
+</div>
+
+<div id="field-screen" class="screen hidden" style="background-color: #1a252f; display:flex; flex-direction:column;">
+    <div class="header" style="background: #2c3e50; display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; padding: 5px 10px; height: auto; gap: 5px;">
+        <div style="font-weight:bold; font-size:0.9em; color:#e74c3c; text-align:left; display:flex; align-items:center;" id="rogue-life">❤️❤️❤️</div>
+        <div style="font-weight:bold; font-size:0.9em; text-align:right;">階層: <span id="rogue-floor" style="color:#f1c40f; font-size:1.2em;">1</span>F</div>
+        <div style="font-weight:bold; font-size:0.9em; text-align:left;">歩数: <span id="rogue-steps" style="color:#e74c3c; font-size:1.2em;">0/0</span></div>
+        <div style="font-weight:bold; font-size:0.9em; text-align:right; display:flex; justify-content:flex-end; gap:10px;">
+            <span>探索Lv: <span id="rogue-explv" style="color:#2ecc71; font-size:1.2em;">1</span></span>
+            <span>獲得XP: <span id="rogue-ctxp" style="color:#e67e22; font-size:1.2em;">0</span></span>
+        </div>
+    </div>
+    <div id="rogue-canvas-container" style="flex:1; display:flex; justify-content:center; align-items:center; width:100%; overflow:hidden; position:relative; background: #111;">
+        <canvas id="rogue-canvas"></canvas>
+    </div>
+    
+    <div style="display:flex; justify-content:center; align-items:center; gap:20px; margin: 5px auto 15px auto; flex-shrink: 0; width:100%; max-width: 350px;">
+        <div id="rogue-dpad" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; width:160px; height:130px;">
+            <div></div><button class="menu-btn" style="height:45px; padding:0; background:#34495e; border-bottom:4px solid #2c3e50;" onclick="moveRoguePlayer(0, -1)">▲</button><div></div>
+            <button class="menu-btn" style="height:45px; padding:0; background:#34495e; border-bottom:4px solid #2c3e50;" onclick="moveRoguePlayer(-1, 0)">◀</button>
+            <div></div> <button class="menu-btn" style="height:45px; padding:0; background:#34495e; border-bottom:4px solid #2c3e50;" onclick="moveRoguePlayer(1, 0)">▶</button>
+            <div></div><button class="menu-btn" style="height:45px; padding:0; background:#34495e; border-bottom:4px solid #2c3e50;" onclick="moveRoguePlayer(0, 1)">▼</button><div></div>
+        </div>
+        <button class="menu-btn" style="height:55px; width:55px; padding:0; background:#e74c3c; border-bottom:4px solid #c0392b; border-radius: 50%; font-size: 0.9em;" onclick="escapeRogueConfirm()">帰還</button>
+    </div>
+</div>
+
+<div id="rogue-shop-overlay" class="overlay hidden" style="z-index: 290;">
+    <div class="modal">
+        <h2 style="color:#e67e22; margin-top:0;">🛍️ 中間ショップ</h2>
+        <div style="text-align:right; font-weight:bold; color:#2c3e50; margin-bottom:10px;">獲得XP: <span id="rogue-shop-xp" style="color:#e67e22;">0</span></div>
+        <div id="rogue-shop-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeRogueShop()">探索に戻る</button>
     </div>
 </div>
 
@@ -170,12 +208,14 @@
             <div id="res-xp" style="color:#f1c40f; font-weight:900; font-size:2.5em; line-height:1.2;">+0</div>
         </div>
         <div id="res-rank" style="font-size:1.1em; font-weight:bold; color:#2c3e50; margin-bottom:10px;"></div>
-        <button class="menu-btn" onclick="backToTitle()">タイトルへ戻る</button>
+        <button class="menu-btn" onclick="handleResultClose()">OK</button>
     </div>
 </div>
 
 <div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+30000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
+
 <div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
+
 <div id="gacha-overlay" class="overlay hidden">
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2>
@@ -363,11 +403,11 @@
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#3498db; margin-top:0;">📋 更新履歴</h2>
         <div class="version-list" style="text-align:left; max-height:300px; overflow-y:auto;">
-            <h4>Ver 7.3.0</h4>
+            <h4>Ver 8.0.0</h4>
             <ul>
-                <li>新モード「🔥 サバイバル・ダンジョン」追加</li>
-                <li>サバイバル専用のキャラ直接成長システム実装</li>
-                <li>パフォーマンス改善のためシステム構造を最適化</li>
+                <li>新モード「🧭 探索クエスト」実装</li>
+                <li>歩数制限付きの自動生成マップとインフレ成長システムを追加</li>
+                <li>探索専用の一時XP管理と中間バフショップ機能の実装</li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeVersionHistory()">閉じる</button>
@@ -378,49 +418,27 @@
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#1abc9c; margin-top:0;">📖 プレイガイド</h2>
         <div class="version-list">
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2ecc71; margin:0 0 5px;">⚔️ 基本ルール</h4>
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #d35400; margin:0 0 5px;">🧭 探索クエスト</h4>
+            <ul style="padding-left:20px; margin:5px 0;">
+                <li>限られた歩数で階層を降りていくモードです。</li>
+                <li>マップ内のギミック（泉、毒の沼、罠など）を踏むとステータスが変動します。</li>
+                <li>敵マスに触れるとバトル開始。勝利すると<b>探索専用のXP</b>を獲得！</li>
+                <li>5階層ごとのショップでバフを購入し、さらに深く潜りましょう。</li>
+                <li>探索終了時、手元に残ったXPが正式な経験値として加算されます。</li>
+            </ul>
+
+            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2ecc71; margin:15px 0 5px;">⚔️ 基本ルール</h4>
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>制限時間内に正解を選んでボスを攻撃！</li>
                 <li><b>コンボ</b>を繋ぐとダメージアップ！</li>
                 <li>ライフが0になるとゲームオーバー。ライフは3つあります。</li>
-                <li>スコアは正解数とコンボ数で決まります。</li>
-                <li>クリアすると経験値(XP)を獲得し、キャラクターを強化できます。</li>
             </ul>
             
             <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e74c3c; margin:15px 0 5px;">🔥 サバイバル・ダンジョン</h4>
             <ul style="padding-left:20px; margin:5px 0;">
                 <li>体力が尽きるまで解き続けるエンドレス特訓モードです。</li>
                 <li>1問正解するごとに、残り時間が<b>「+5秒」回復</b>します。</li>
-                <li>サバイバルではプレイヤーのXPや強化アイテムは落ちません。</li>
-                <li>代わりに、<b>「装備しているキャラクター」に直接経験値が入ります！</b></li>
-                <li>レベルMAXのキャラを装備して限界まで戦い抜けば、<b>限界突破素材（ストック）</b>がドロップします。</li>
-            </ul>
-
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #3498db; margin:15px 0 5px;">▶️ クエストモード</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>学年、教科、単元を選択して出発します。</li>
-                <li><b>通常出撃</b>: 選択した単元の問題が出題されます。ボスを倒すとクリア。</li>
-                <li><b>誓約へ</b>: より難易度の高いモード。ライフが1つ減少し、制限時間が短くなりますが、獲得XPが2倍。</li>
-            </ul>
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #8e44ad; margin:15px 0 5px;">💀 リベンジ・ダンジョン</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>過去に敗北したボスに再挑戦できます。</li>
-                <li>クリアすると通常よりも多くのXPを獲得できます。</li>
-            </ul>
-            
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2c3e50; margin:15px 0 5px;">🧮 計算クエスト</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>計算問題に特化したモードです。キーパッドで答えを入力します。</li>
-                <li><b>100問タイムアタック</b>と<b>3分間タイムアタック</b>の2種類があります。</li>
-                <li>クリアすると、ランクに応じて<b>大量の赤ページと青ページ</b>(最大50冊ずつ)を獲得できます！</li>
-            </ul>
-
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e84393; margin:15px 0 5px;">💎 ガチャ & 図鑑</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>XPを消費してガチャを回せます。</li>
-                <li>キャラクターを入手し、図鑑を完成させましょう。</li>
-                <li>レアリティが高いキャラクターほど強力です。</li>
-                <li>図鑑からキャラクターの詳細を確認・強化できます。</li>
+                <li>サバイバルでは<b>「装備しているキャラクター」に直接経験値が入ります！</b></li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeHowToPlay()">閉じる</button>
@@ -436,11 +454,24 @@
         </div>
     </div>
 </div>
-    
-    <script src="app-data.js"></script>
-    <script src="app-main.js"></script>
-    <script src="app-game.js"></script>
-    <script src="app-ui.js"></script>
 
+<div id="rogue-menu-overlay" class="overlay hidden" style="z-index: 290;">
+    <div class="modal" style="max-width:350px;">
+        <h2 style="color:#d35400; margin-top:0;">🧭 探索準備</h2>
+        <p style="font-size:0.9em; text-align:left;">挑戦する学年を選択して、無限のダンジョンに潜りましょう。</p>
+        <div style="margin: 20px 0;">
+            <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
+            <select id="rogue-grade-select" class="select-box" style="width:100%; margin-top:5px; font-size:1.1em; padding:10px;"><option value="">学年を選択...</option></select>
+        </div>
+        <button class="menu-btn" style="background:#d35400;" onclick="startRogueMode()">探索開始</button>
+        <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeRogueMenu()">やめる</button>
+    </div>
+</div>
+
+<script src="app-data.js"></script>
+<script src="app-main.js"></script>
+<script src="app-game.js"></script>
+<script src="app-ui.js"></script>
+<script src="app-rogue.js"></script>
 </body>
 </html>
