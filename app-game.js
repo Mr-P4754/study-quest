@@ -1,6 +1,21 @@
 // ==========================================
 // app-game.js (ゲーム進行・バトルエンジン)
 // ==========================================
+function getGradeMultiplier(gradeStr) {
+    const g = String(gradeStr || '');
+    if (g.includes('高3')) return 2.20;
+    if (g.includes('高2')) return 2.10;
+    if (g.includes('高1')) return 2.00;
+    if (g.includes('中3')) return 1.90;
+    if (g.includes('中2')) return 1.80;
+    if (g.includes('中1')) return 1.70;
+    if (g.includes('小6')) return 1.60;
+    if (g.includes('小5')) return 1.50;
+    if (g.includes('小4')) return 1.40;
+    if (g.includes('小3')) return 1.30;
+    if (g.includes('小2')) return 1.10;
+    return 1.00; // 小1 or 学年不明
+}
 
 function showCutIn(t) { 
     const d = document.createElement('div'); 
@@ -369,7 +384,9 @@ function finishGame(isClear) {
             const stats = getCharaStats();
             const baseReward = 500;
             const floorBonus = rogueData.floor * 100;
-            const earned = Math.floor((baseReward + floorBonus) * stats.exp * (1.0 + rogueData.exploreLevel * 0.005));
+            const currentGrade = playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '';
+            const gradeMultiplier = getGradeMultiplier(currentGrade);
+            const earned = Math.floor((baseReward + floorBonus) * stats.exp * (1.0 + rogueData.exploreLevel * 0.005) * gradeMultiplier);
             
             rogueData.earnedXp += earned;
 
@@ -457,7 +474,9 @@ function finishGame(isClear) {
         }
 
         let milestoneBonus = isMax ? 0 : Math.floor(correctCount / 50) * 50;
-        let earnedExp = (correctCount * oathMultiplier) + milestoneBonus;
+        const currentGrade = playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '';
+        const gradeMultiplier = getGradeMultiplier(currentGrade);
+        let earnedExp = Math.floor(((correctCount * oathMultiplier) + milestoneBonus) * gradeMultiplier);
         
         let growthResultText = "なし";
         
@@ -590,7 +609,9 @@ function finishGame(isClear) {
             conditionRate = CAMPAIGN_RATE;
         }
         const partA = gameState.score * stats.exp; const partB = isClear ? (gameState.score * 0.2) : 0; const partC = gameState.score * (conditionRate - 1.0);
-        earned = Math.floor(partA + partB + partC);
+        const currentGrade = playData.context ? playData.context.grade : (playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '');
+        const gradeMultiplier = getGradeMultiplier(currentGrade);
+        earned = Math.floor((partA + partB + partC) * gradeMultiplier);
         gameState.xp += earned;
         if (playData.context && !playData.isRevenge && !playData.isRandom) {
             const key = `${playData.context.grade}_${playData.context.subject}_${playData.context.unit}`;
@@ -675,6 +696,7 @@ function handleResultClose() {
         } else {
             if (typeof drawRogueMap === 'function') drawRogueMap();
         }
+        playBGM();
     } else {
         backToTitle();
     }
@@ -723,7 +745,7 @@ function toggleMute() {
         stopBGM(); 
     } else { 
         if(btn) { btn.innerText = "🔊 音量: ON"; btn.style.background = "#34495e"; btn.style.borderColor = "#2c3e50"; }
-        playSE('hit'); if(isGameActive) playBGM(); 
+        playSE('hit'); playBGM(); 
     } 
 }
 function playSE(type) {
@@ -744,9 +766,54 @@ function playSE(type) {
 
 const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
 let bgmOscillators = []; let bgmTimeout = null;
+let currentBgmAudio = null;
+let currentBgmUrl = null;
+
 function playBGM() {
-    if (isMuted) return; stopBGM(); 
+    if (isMuted) return; 
+    
     if (audioCtx.state === 'suspended') { audioCtx.resume().catch(e => console.warn('BGM resume blocked', e)); }
+    
+    let bgmUrl = null;
+    const config = (rawData.config && rawData.config.length > 0) ? rawData.config[0] : {};
+
+    if (typeof rogueData !== 'undefined' && rogueData.active && document.getElementById('game-screen')?.classList.contains('hidden')) {
+        bgmUrl = config.exploreBgm;
+    } else if (isGameActive) {
+        if (playData.currentBoss && playData.currentBoss.bgmUrl) { bgmUrl = playData.currentBoss.bgmUrl; }
+        else if (playData.isSurvival && config.survivalBgm) { bgmUrl = config.survivalBgm; }
+        else if (playData.isTyping && config.typingBgm) { bgmUrl = config.typingBgm; }
+        else if (playData.isCalculation && config.calcBgm) { bgmUrl = config.calcBgm; }
+        else if (playData.isRandom && config.randomBgm) { bgmUrl = config.randomBgm; }
+        else if (playData.isRevenge && config.revengeBgm) { bgmUrl = config.revengeBgm; }
+        else { bgmUrl = config.defaultBattleBgm; }
+    }
+
+    // ★最適化: 同じBGMが既に流れている場合は、リセットせずにそのまま継続する
+    if (bgmUrl && currentBgmAudio && currentBgmUrl === bgmUrl && !currentBgmAudio.paused) {
+        return;
+    }
+    
+    stopBGM(); // ここで一旦今のBGMを止める
+
+    if (bgmUrl) {
+        currentBgmAudio = new Audio(bgmUrl);
+        currentBgmUrl = bgmUrl;
+        currentBgmAudio.loop = true;
+        currentBgmAudio.volume = 0.3;
+        currentBgmAudio.play().catch(e => { playMmlBGM(); });
+    } else {
+        playMmlBGM();
+    }
+}
+
+function stopBGM() { 
+    if (currentBgmAudio) { currentBgmAudio.pause(); currentBgmAudio.currentTime = 0; currentBgmAudio = null; }
+    currentBgmUrl = null;
+    if (bgmTimeout) clearTimeout(bgmTimeout); bgmOscillators.forEach(osc => { try { osc.stop(); } catch(e){} }); bgmOscillators = []; 
+}
+
+function playMmlBGM() {
     const mml = BGM_MML.replace(/\s+/g, '').toUpperCase(); let index = 0; let nextTime = audioCtx.currentTime + 0.1; let octave = 4; let defaultLen = 4; let tempo = 120;
     const scheduleNote = () => {
         if (!isGameActive) return;
@@ -773,4 +840,3 @@ function playBGM() {
     };
     scheduleNote();
 }
-function stopBGM() { if (bgmTimeout) clearTimeout(bgmTimeout); bgmOscillators.forEach(osc => { try { osc.stop(); } catch(e){} }); bgmOscillators = []; }
