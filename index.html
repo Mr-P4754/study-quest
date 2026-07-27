@@ -22,41 +22,33 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 8.0.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.0.0</div>
     
-    <div class="menu-btn-container">
-        <button id="btn-rogue-start" class="menu-btn full-width" style="background:linear-gradient(135deg, #d35400, #c0392b); border-bottom-color:#962d22; font-size:1.05em; grid-column: span 2;" onclick="openRogueMenu()">
-            🧭 探索
+    <!-- 修正: 端末の画面サイズに応じて自動で1〜2列になり、縦幅を最大限使うように flex と grid を設定 -->
+    <div class="menu-btn-container" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; flex: 1; min-height: 0; max-width: 750px; overflow-y: auto; padding: 5px; margin-bottom: 10px;">
+        <button class="rich-menu-btn" style="border-left: 6px solid #e74c3c;" onclick="openCategory('main')">
+            <div class="rich-btn-title" style="display:flex; align-items:center;">▶ メインクエスト <div id="badge-main" class="badge hidden" style="position:static; margin-left:8px; width:20px; height:20px; font-size:0.8em;">!</div></div>
+            <div class="rich-btn-desc">基本の学習からPC専用タイピングまで！</div>
         </button>
-
-        <button class="menu-btn" onclick="openUnitSelection()">▶ クエスト</button>
-        <button class="menu-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="openSurvivalMenu()">🔥 サバイバル</button>
-        <button id="btn-revenge" class="menu-btn revenge" onclick="startRevengeMode()" disabled>
-            💀 リベンジ
-            <div id="revenge-badge" class="badge hidden">0</div>
+        <button class="rich-menu-btn" style="border-left: 6px solid #8e44ad;" onclick="openCategory('special')">
+            <div class="rich-btn-title" style="display:flex; align-items:center;">✨ スペシャルクエスト <div id="badge-special" class="badge hidden" style="position:static; margin-left:8px; width:20px; height:20px; font-size:0.8em;">!</div></div>
+            <div class="rich-btn-desc">大量XP獲得！ローグライクやタイムアタック！</div>
         </button>
-        <button class="menu-btn" style="background:#8e44ad; border-color:#6c3483;" onclick="openTypingMenu()">⌨️ タイピング</button>
-        <button class="menu-btn" style="background:#2c3e50; border-color:#1f618d;" onclick="openCalcMenu()">🧮 計算クエスト</button>
-        <button class="menu-btn" style="background:#7f8c8d; border-color:#636e72;" onclick="openRandomMenu()">🎲 ランダム</button>
-        <button class="menu-btn" style="background:#d35400; border-color:#a04000;" onclick="openMissions()">
-            📝 MISSION
-            <div id="mission-badge" class="badge hidden">!</div>
+        <button class="rich-menu-btn" style="border-left: 6px solid #f39c12;" onclick="openCategory('gacha')">
+            <div class="rich-btn-title">💎 ガチャ・図鑑</div>
+            <div class="rich-btn-desc">XPを使って新たな文房具キャラをゲット！</div>
         </button>
-        <button class="menu-btn multi-line" style="background:#e84393; border-color:#d63031;" onclick="openGacha()">
-            <span>💎 ガチャ</span>
-            <span>📖 図鑑</span>
+        <button class="rich-menu-btn" style="border-left: 6px solid #27ae60;" onclick="openCategory('achievement')">
+            <div class="rich-btn-title" style="display:flex; align-items:center;">🏆 実績・ギフト <div id="badge-achievement" class="badge hidden" style="position:static; margin-left:8px; width:20px; height:20px; font-size:0.8em;">!</div></div>
+            <div class="rich-btn-desc">ミッション報酬や称号、ギフトの受け取り！</div>
         </button>
-        <button class="menu-btn" style="background:#f39c12; border-color:#d35400;" onclick="openTitles()">
-            🏆 称号
-            <div id="title-badge" class="badge hidden">!</div>
+        <button class="rich-menu-btn" style="border-left: 6px solid #3498db;" onclick="openSyncMenu()">
+            <div class="rich-btn-title">☁️ データ管理</div>
+            <div class="rich-btn-desc">データのバックアップや引き継ぎ設定！</div>
         </button>
-        <button class="menu-btn" style="background:#27ae60; border-color:#1e8449;" onclick="openShop()">🛒 ショップ</button>
-        <button class="menu-btn" style="background:#16a085; border-color:#1abc9c;" onclick="openRecord()">📊 成績表</button>
-        <button class="menu-btn" style="background:#3498db; border-color:#2980b9;" onclick="openSyncMenu()">☁️ クラウドセーブ</button>
-        <button class="menu-btn" style="background:#1abc9c; border-color:#16a085;" onclick="openHowToPlay()">📖 プレイガイド</button>
-        <button id="btn-gift" class="menu-btn" style="background:#ff6b81; border-color:#d63031;" onclick="openGiftMenu()" disabled>
-            🎁 ギフト
-            <div id="gift-badge" class="badge hidden">0</div>
+        <button class="rich-menu-btn" style="border-left: 6px solid #1abc9c;" onclick="openCategory('guide')">
+            <div class="rich-btn-title">📖 プレイガイド</div>
+            <div class="rich-btn-desc">遊び方の詳細やアップデート履歴の確認！</div>
         </button>
     </div>
     
@@ -66,6 +58,117 @@
     </div>
 </div>
 
+<!-- カテゴリー：メインクエスト -->
+<div id="cat-main-overlay" class="overlay hidden" style="z-index: 220;">
+    <div class="modal" style="max-width:450px;">
+        <h2 style="color:#e74c3c; margin-top:0;">▶ メインクエスト</h2>
+        <div class="sub-menu-grid">
+            <button class="rich-menu-btn" onclick="closeCategory('main'); openUnitSelection();">
+                <div class="rich-btn-title">▶ クエスト</div>
+                <div class="rich-btn-desc">基本の問題はここから！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('main'); openRandomMenu();">
+                <div class="rich-btn-title">🎲 ランダム</div>
+                <div class="rich-btn-desc">全範囲から出題。EXP1.5倍！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('main'); openTypingMenu();">
+                <div class="rich-btn-title">⌨️ タイピング</div>
+                <div class="rich-btn-desc">PC専用。タイピングでEXP獲得！</div>
+            </button>
+        </div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeCategory('main')">閉じる</button>
+    </div>
+</div>
+
+<!-- カテゴリー：スペシャルクエスト -->
+<div id="cat-special-overlay" class="overlay hidden" style="z-index: 220;">
+    <div class="modal" style="max-width:450px;">
+        <h2 style="color:#8e44ad; margin-top:0;">✨ スペシャルクエスト</h2>
+        <div class="sub-menu-grid">
+            <button class="rich-menu-btn" onclick="closeCategory('special'); openRogueMenu();">
+                <div class="rich-btn-title">🧭 探索</div>
+                <div class="rich-btn-desc">ローグライク形式で大量XPを獲得！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('special'); openSurvivalMenu();">
+                <div class="rich-btn-title">🔥 サバイバル</div>
+                <div class="rich-btn-desc">体力尽きるまでエンドレス特訓！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('special'); openCalcMenu();">
+                <div class="rich-btn-title">🧮 計算クエスト</div>
+                <div class="rich-btn-desc">タイムアタックで強化書を獲得！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('special'); startRevengeMode();">
+                <div class="rich-btn-title" style="position:relative;">💀 リベンジ <div id="revenge-badge" class="badge hidden">0</div></div>
+                <div class="rich-btn-desc">間違えた問題に再挑戦！</div>
+            </button>
+        </div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeCategory('special')">閉じる</button>
+    </div>
+</div>
+
+<!-- カテゴリー：ガチャ・図鑑 -->
+<div id="cat-gacha-overlay" class="overlay hidden" style="z-index: 220;">
+    <div class="modal" style="max-width:450px;">
+        <h2 style="color:#f39c12; margin-top:0;">💎 ガチャ・図鑑</h2>
+        <div class="sub-menu-grid">
+            <button class="rich-menu-btn" onclick="closeCategory('gacha'); openGacha();">
+                <div class="rich-btn-title">💎 ガチャ＆図鑑</div>
+                <div class="rich-btn-desc">XPを消費して新たなキャラをゲット・確認！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('gacha'); openShop();">
+                <div class="rich-btn-title">🛒 ショップ</div>
+                <div class="rich-btn-desc">アイテム交換・学習アイテム購入！</div>
+            </button>
+        </div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeCategory('gacha')">閉じる</button>
+    </div>
+</div>
+
+<!-- カテゴリー：実績・ギフト -->
+<div id="cat-achievement-overlay" class="overlay hidden" style="z-index: 220;">
+    <div class="modal" style="max-width:450px;">
+        <h2 style="color:#27ae60; margin-top:0;">🏆 実績・ギフト</h2>
+        <div class="sub-menu-grid">
+            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openMissions();">
+                <div class="rich-btn-title" style="position:relative;">📝 MISSION <div id="mission-badge" class="badge hidden">!</div></div>
+                <div class="rich-btn-desc">デイリーミッション報酬！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openTitles();">
+                <div class="rich-btn-title" style="position:relative;">🏆 称号 <div id="title-badge" class="badge hidden">!</div></div>
+                <div class="rich-btn-desc">やり込み実績の確認と報酬！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openRecord();">
+                <div class="rich-btn-title">📊 成績表</div>
+                <div class="rich-btn-desc">正答率や計算記録の確認！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openGiftMenu();">
+                <div class="rich-btn-title" style="position:relative;">🎁 ギフト <div id="gift-badge" class="badge hidden">0</div></div>
+                <div class="rich-btn-desc">運営からのプレゼント！</div>
+            </button>
+        </div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeCategory('achievement')">閉じる</button>
+    </div>
+</div>
+
+<!-- カテゴリー：プレイガイド -->
+<div id="cat-guide-overlay" class="overlay hidden" style="z-index: 220;">
+    <div class="modal" style="max-width:450px;">
+        <h2 style="color:#1abc9c; margin-top:0;">📖 プレイガイド</h2>
+        <div class="sub-menu-grid">
+            <!-- 修正: openHowToPlay() を GuideModule.open() に変更 -->
+            <button class="rich-menu-btn" onclick="closeCategory('guide'); GuideModule.open();">
+                <div class="rich-btn-title">📖 プレイガイド一覧</div>
+                <div class="rich-btn-desc">遊び方の詳細確認！</div>
+            </button>
+            <button class="rich-menu-btn" onclick="closeCategory('guide'); openVersionHistory();">
+                <div class="rich-btn-title">📋 更新履歴</div>
+                <div class="rich-btn-desc">バージョン情報！</div>
+            </button>
+        </div>
+        <button class="menu-btn" style="margin-top:20px; background:#95a5a6;" onclick="closeCategory('guide')">閉じる</button>
+    </div>
+</div>
+    
 <div id="field-screen" class="screen hidden" style="background-color: #1a252f; display:flex; flex-direction:column;">
     <div class="header" style="background: #2c3e50; display:grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; padding: 5px 10px; height: auto; gap: 5px;">
         <div style="font-weight:bold; font-size:0.9em; color:#e74c3c; text-align:left; display:flex; align-items:center;" id="rogue-life">❤️❤️❤️</div>
@@ -102,7 +205,10 @@
 
 <div id="unit-select-overlay" class="overlay hidden" style="z-index: 250;">
     <div class="modal" style="max-width:400px;">
-        <h2 id="unit-select-title" style="color:#2c3e50; margin-top:0;">クエスト出発</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+            <h2 id="unit-select-title" style="color:#2c3e50; margin:0;">クエスト出発</h2>
+            <button class="help-btn" onclick="GuideModule.open('normal')">❓</button>
+        </div>
         <p style="font-size:0.9em; color:#7f8c8d;">挑戦する単元を選んでください</p>
         <div style="background: #ecf0f1; padding: 15px; border-radius: 10px; margin: 15px 0; border: 2px solid #bdc3c7;">
             <select id="grade-select" class="select-box" style="width:100%; margin-bottom:10px; font-size:1.1em;" onchange="filterSubjects()"><option value="">学年を選択</option></select>
@@ -114,9 +220,10 @@
                 <option value="10000">ボスHP: 10000</option>
             </select>
         </div>
+        <button class="menu-btn" style="background:#e67e22; width:100%; margin-bottom:10px;" onclick="startNormalGameCheck()">通常出撃</button>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="menu-btn" style="background:#e67e22;" onclick="startNormalGameCheck()">通常出撃</button>
             <button class="menu-btn oath" style="background:#8e44ad; border-color:#6c3483;" onclick="goToOathMenuCheck()">😈 誓約へ</button>
+            <button class="menu-btn relief" style="background:#3498db; border-color:#2980b9;" onclick="goToReliefMenuCheck()">🕊️ 救済へ</button>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6;" onclick="closeUnitSelection()">キャンセル</button>
     </div>
@@ -124,15 +231,19 @@
 
 <div id="survival-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:350px;">
-        <h2 style="color:#e74c3c; margin-top:0;">🔥 サバイバル</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#e74c3c; margin:0;">🔥 サバイバル</h2>
+            <button class="help-btn" onclick="GuideModule.open('survival')">❓</button>
+        </div>
         <p style="font-size:0.9em; text-align:left;">体力が尽きるまで問題を解き続けるエンドレスモードです。<br><br>💎 <b>装備キャラが直接成長します</b></p>
         <div style="margin: 20px 0;">
             <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
             <select id="survival-grade-select" class="select-box" style="width:100%; margin-top:5px; font-size:1.1em; padding:10px;"><option value="">学年を選択...</option></select>
         </div>
+        <button class="menu-btn" style="background:#e74c3c; width:100%; margin-bottom:10px;" onclick="oathOrigin='normal'; startSurvivalGame()">特訓開始</button>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button class="menu-btn" style="background:#e74c3c;" onclick="oathOrigin='normal'; startSurvivalGame()">特訓開始</button>
             <button class="menu-btn oath" style="background:#8e44ad; border-color:#6c3483;" onclick="goToOathMenuSurvivalCheck()">😈 誓約へ</button>
+            <button class="menu-btn relief" style="background:#3498db; border-color:#2980b9;" onclick="goToReliefMenuSurvivalCheck()">🕊️ 救済へ</button>
         </div>
         <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeSurvivalMenu()">やめる</button>
     </div>
@@ -140,7 +251,10 @@
 
 <div id="sync-overlay" class="overlay hidden" style="z-index: 400;">
     <div class="modal" style="max-width: 400px;">
-        <h2 style="color:#3498db; margin-top:0;">☁️ クラウドセーブ</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#3498db; margin:0;">☁️ クラウドセーブ</h2>
+            <button class="help-btn" onclick="GuideModule.open('system')">❓</button>
+        </div>
         <p style="text-align:left; font-size:0.9em;">この機能を使うと、スマホや別のPCにデータを引き継げます。</p>
         <div style="background:#eee; padding:10px; border-radius:8px; margin:10px 0;">
             <div style="font-weight:bold; color:#2c3e50;">あなたのID</div>
@@ -214,11 +328,20 @@
 
 <div id="login-bonus-overlay" class="overlay hidden" style="z-index: 300;"><div class="modal"><h2 style="color:#f1c40f; margin-top:0;">LOGIN BONUS</h2><div style="font-size:4em;">🎁</div><p style="margin:20px 0;">今日も学習お疲れ様です！<br>ログインボーナスを獲得しました。</p><div style="background:#fef5e7; padding:20px; border-radius:10px; border:2px solid #e67e22; margin-bottom:20px;"><div style="font-size:1.2em; font-weight:bold; color:#e67e22;">+30000 EXP</div></div><button class="menu-btn" style="width:100%;" onclick="closeLoginBonus()">受け取る</button></div></div>
 
-<div id="mission-overlay" class="overlay hidden" style="z-index: 250;"><div class="modal" style="max-width:500px;"><h2 style="color:#e74c3c; margin-top:0;">📝 DAILY MISSION</h2><div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
+<div id="mission-overlay" class="overlay hidden" style="z-index: 250;">
+    <div class="modal" style="max-width:500px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#e74c3c; margin:0;">📝 DAILY MISSION</h2>
+            <button class="help-btn" onclick="GuideModule.open('system')">❓</button>
+        </div>
+        <div id="mission-list" class="mission-list" style="flex: 1; max-height: none; overflow-y: auto; min-height: 0;"></div><button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeMissions()">閉じる</button></div></div>
 
 <div id="gacha-overlay" class="overlay hidden">
     <div class="modal" style="max-width:500px;">
-        <h2 style="color:#8e44ad; margin-top:0;">文房具図鑑 & ガチャ</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+            <h2 style="color:#8e44ad; margin:0;">文房具図鑑 & ガチャ</h2>
+            <button class="help-btn" onclick="GuideModule.open('gacha')">❓</button>
+        </div>
         <div style="background:#f0f0f0; padding:10px; border-radius:10px; margin-bottom:15px; border: 2px solid #ccc;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-weight:bold; color:#2c3e50;">所持XP: <span id="gacha-xp" style="color:#f39c12;">0</span></span>
@@ -245,7 +368,10 @@
 <div id="chara-detail-overlay" class="overlay hidden" style="z-index: 150;">
     <div class="modal" style="max-width:350px;">
         <div style="flex: 1; overflow-y: auto; width: 100%; padding: 5px;">
-            <h3 id="cd-name" style="margin:0; font-size:1.5em; color:#2c3e50;">キャラ名</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                <h3 id="cd-name" style="margin:0; font-size:1.5em; color:#2c3e50;">キャラ名</h3>
+                <button class="help-btn" onclick="GuideModule.open('enhance')">❓</button>
+            </div>
             <div class="rarity-SSR" id="cd-rarity" style="margin-bottom:10px;">SSR</div>
             <img id="cd-img" src="" class="detail-img">
             <div style="background:#f9f9f9; padding:10px; border-radius:8px; text-align:left; font-size:0.9em;">
@@ -294,7 +420,10 @@
 
 <div id="titles-overlay" class="overlay hidden" style="z-index: 260;">
     <div class="modal" style="max-width:500px;">
-        <h2 style="color:#f39c12; margin-top:0;">🏆 称号リスト</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#f39c12; margin:0;">🏆 称号リスト</h2>
+            <button class="help-btn" onclick="GuideModule.open('system')">❓</button>
+        </div>
         <div id="titles-list" style="flex: 1; overflow-y: auto; min-height: 0;"></div>
         <button class="menu-btn" style="margin-top:20px; font-size:1em; padding:10px; background:#95a5a6; border-color:#7f8c8d;" onclick="closeTitles()">閉じる</button>
     </div>
@@ -302,7 +431,10 @@
 
 <div id="record-overlay" class="overlay hidden" style="z-index: 280;">
     <div class="modal" style="max-width:400px;">
-        <h2 style="color:#8e44ad; margin-top:0;">📊 学力レポート</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#8e44ad; margin:0;">📊 学力レポート</h2>
+            <button class="help-btn" onclick="GuideModule.open('system')">❓</button>
+        </div>
         <div style="flex: 1; overflow-y: auto; width: 100%; padding: 5px;">
             <div class="record-container">
                 <div class="chart-box"><canvas id="radar-chart" width="260" height="260"></canvas></div>
@@ -322,7 +454,10 @@
 
 <div id="oath-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:400px;">
-        <h2 id="oath-title" style="color:#8e44ad; margin-top:0;">😈 誓約の儀</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 id="oath-title" style="color:#8e44ad; margin:0;">😈 誓約の儀</h2>
+            <button class="help-btn" onclick="GuideModule.open('oath')">❓</button>
+        </div>
         <p id="oath-desc" style="font-size:0.9em;">自らにハンデを課し、高みを目指せ。<br>（報酬EXP <span style="color:#e67e22; font-weight:bold;">1.5〜2.0倍</span>）</p>
         <div class="oath-options">
             <div class="oath-option" id="oath-rapid" onclick="toggleOath('rapid')">
@@ -340,9 +475,35 @@
     </div>
 </div>
 
+<div id="relief-overlay" class="overlay hidden" style="z-index: 290;">
+    <div class="modal" style="max-width:400px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 id="relief-title" style="color:#3498db; margin:0;">🕊️ 救済の儀</h2>
+            <button class="help-btn" onclick="GuideModule.open('oath')">❓</button>
+        </div>
+        <p id="relief-desc" style="font-size:0.9em;">加護を受け、確実に試練を乗り越える。<br>（報酬EXP <span style="color:#e74c3c; font-weight:bold;">×0.9 ～ ×0.5</span>）</p>
+        <div class="oath-options">
+            <div class="oath-option" id="relief-time" onclick="toggleRelief('time')">
+                <div class="oath-icon">⏳</div><div><div class="oath-name">時間の救済</div><div class="oath-desc">制限時間が「2倍」になる</div></div>
+            </div>
+            <div class="oath-option" id="relief-life" onclick="toggleRelief('life')">
+                <div class="oath-icon">💖</div><div><div class="oath-name">生命の救済</div><div class="oath-desc">ライフが「5」になる</div></div>
+            </div>
+            <div class="oath-option" id="relief-power" onclick="toggleRelief('power')">
+                <div class="oath-icon">💪</div><div><div class="oath-name">力の救済</div><div class="oath-desc">与えるダメージが「2倍」になる</div></div>
+            </div>
+        </div>
+        <button class="menu-btn" style="background:#3498db; border-color:#2980b9;" onclick="startReliefGame()">この条件で出撃</button>
+        <button class="menu-btn" style="margin-top:10px; background:#95a5a6;" onclick="closeReliefMenu()">やめる</button>
+    </div>
+</div>
+
 <div id="random-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:350px;">
-        <h2 style="color:#34495e; margin-top:0;">🎲 未知の迷宮</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#34495e; margin:0;">🎲 未知の迷宮</h2>
+            <button class="help-btn" onclick="GuideModule.open('random')">❓</button>
+        </div>
         <p style="font-size:0.9em; text-align:left;">学年のみを指定し、全範囲からランダムに出題される問題に挑戦します。<br><br>🔥 <b>報酬EXP 1.5倍</b></p>
         <div style="margin: 20px 0;">
             <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
@@ -355,7 +516,10 @@
 
 <div id="typing-menu-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:400px;">
-        <h2 style="color:#8e44ad; margin-top:0;">⌨️ タイピングクエスト</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#8e44ad; margin:0;">⌨️ タイピングクエスト</h2>
+            <button class="help-btn" onclick="GuideModule.open('typing')">❓</button>
+        </div>
         <div style="background:#fdedec; border:2px solid #e74c3c; padding:10px; border-radius:8px; margin-bottom:15px;">
             <div style="font-weight:bold; color:#c0392b;">⚠️ PC・キーボード専用</div>
             <div style="font-size:0.85em; text-align:left; margin-top:5px; color:#c0392b;">このモードは物理キーボードが必要です。<br>スマホ・タブレットのフリック入力では動作しません。</div>
@@ -371,7 +535,10 @@
 
 <div id="calc-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:420px;">
-        <h2 style="color:#2c3e50; margin-top:0;">🧮 計算クエスト</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#2c3e50; margin:0;">🧮 計算クエスト</h2>
+            <button class="help-btn" onclick="GuideModule.open('calc')">❓</button>
+        </div>
         <p style="font-size:0.9em; color:#7f8c8d; text-align:left;">計算形式を選択し、100問 or 3分間のタイムアタックに挑戦します。</p>
         <div style="margin: 15px 0;">
             <label style="font-weight:bold; color:#2c3e50;">問題形式</label>
@@ -403,45 +570,15 @@
     <div class="modal" style="max-width:500px;">
         <h2 style="color:#3498db; margin-top:0;">📋 更新履歴</h2>
         <div class="version-list" style="text-align:left; max-height:300px; overflow-y:auto;">
-            <h4>Ver 8.0.0</h4>
+            <h4>Ver 9.0.0</h4>
             <ul>
-                <li>新モード「🧭 探索クエスト」実装</li>
-                <li>歩数制限付きの自動生成マップとインフレ成長システムを追加</li>
-                <li>探索専用の一時XP管理と中間バフショップ機能の実装</li>
+                <li>タイトル画面UIの大規模改修（カテゴリー化による利便性向上）</li>
+                <li>初心者向け緩和モード「🕊️ 救済の儀」の実装</li>
+                <li>プレイガイドの拡充・詳細化と正答時の演出強化</li>
+                <li>その他、軽微なバグ修正と安定性の向上</li>
             </ul>
         </div>
         <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeVersionHistory()">閉じる</button>
-    </div>
-</div>
-
-<div id="howto-overlay" class="overlay hidden" style="z-index: 300;">
-    <div class="modal" style="max-width:500px;">
-        <h2 style="color:#1abc9c; margin-top:0;">📖 プレイガイド</h2>
-        <div class="version-list">
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #d35400; margin:0 0 5px;">🧭 探索クエスト</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>限られた歩数で階層を降りていくモードです。</li>
-                <li>マップ内のギミック（泉、毒の沼、罠など）を踏むとステータスが変動します。</li>
-                <li>敵マスに触れるとバトル開始。勝利すると<b>探索専用のXP</b>を獲得！</li>
-                <li>5階層ごとのショップでバフを購入し、さらに深く潜りましょう。</li>
-                <li>探索終了時、手元に残ったXPが正式な経験値として加算されます。</li>
-            </ul>
-
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #2ecc71; margin:15px 0 5px;">⚔️ 基本ルール</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>制限時間内に正解を選んでボスを攻撃！</li>
-                <li><b>コンボ</b>を繋ぐとダメージアップ！</li>
-                <li>ライフが0になるとゲームオーバー。ライフは3つあります。</li>
-            </ul>
-            
-            <h4 style="background:#ecf0f1; padding:5px; border-left:5px solid #e74c3c; margin:15px 0 5px;">🔥 サバイバル・ダンジョン</h4>
-            <ul style="padding-left:20px; margin:5px 0;">
-                <li>体力が尽きるまで解き続けるエンドレス特訓モードです。</li>
-                <li>1問正解するごとに、残り時間が<b>「+5秒」回復</b>します。</li>
-                <li>サバイバルでは<b>「装備しているキャラクター」に直接経験値が入ります！</b></li>
-            </ul>
-        </div>
-        <button class="menu-btn" style="margin-top:15px; background:#95a5a6; border-bottom-color:#7f8c8d;" onclick="closeHowToPlay()">閉じる</button>
     </div>
 </div>
 
@@ -457,7 +594,10 @@
 
 <div id="rogue-menu-overlay" class="overlay hidden" style="z-index: 290;">
     <div class="modal" style="max-width:350px;">
-        <h2 style="color:#d35400; margin-top:0;">🧭 探索準備</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2 style="color:#d35400; margin:0;">🧭 探索準備</h2>
+            <button class="help-btn" onclick="GuideModule.open('rogue')">❓</button>
+        </div>
         <p style="font-size:0.9em; text-align:left;">挑戦する学年を選択して、無限のダンジョンに潜りましょう。</p>
         <div style="margin: 20px 0;">
             <label style="font-weight:bold; color:#2c3e50;">挑戦する学年</label>
@@ -469,6 +609,7 @@
 </div>
 
 <script src="app-data.js"></script>
+<script src="app-guide.js"></script>
 <script src="app-main.js"></script>
 <script src="app-game.js"></script>
 <script src="app-ui.js"></script>
