@@ -21,9 +21,10 @@ function showCutIn(t) {
     const d = document.createElement('div'); 
     d.className='cutin'; 
     d.innerText=t; 
-    if(String(t).includes('MISS')) { 
-        d.style.color='#bdc3c7'; 
-        d.style.webkitTextStroke='2px #2c3e50'; 
+    // 【変更】「✕」の場合に色を青ベースに変更
+    if(String(t).includes('✕')) { 
+        d.style.color='#3498db'; 
+        d.style.webkitTextStroke='2px #1f618d'; 
     } 
     document.body.appendChild(d); 
     setTimeout(()=>d.remove(), 1500); 
@@ -90,6 +91,8 @@ async function retryGame() {
     else if (playData.isSurvival) { startSurvivalGame(); }
     else if (playData.isRandom) { startRandomGame(); }
     else if (playData.activeOaths && playData.activeOaths.length > 0) { startOathGame(); }
+    // 【追加】救済モードのリトライ対応
+    else if (playData.activeReliefs && playData.activeReliefs.length > 0) { startReliefGame(); }
     else if (playData.isRevenge) { startRevengeMode(); }
     else if (typeof rogueData !== 'undefined' && rogueData.active) { alert("探索モード中はリトライできません。"); resumeGame(); }
     else { startGame(); }
@@ -175,6 +178,8 @@ function getCharaStats() {
         });
     }
     if (playData.activeOaths && playData.activeOaths.includes('weak') && !playData.isSurvival) stats.atk *= 0.5;
+    // 【追加】力の救済（攻撃力2倍）
+    if (playData.activeReliefs && playData.activeReliefs.includes('power') && !playData.isSurvival) stats.atk *= 2.0;
 
     // ローグライクモードでのバフフック対応
     if (typeof rogueData !== 'undefined' && rogueData.active) {
@@ -227,7 +232,7 @@ function judge(isCorrect, btn) {
     if(isCorrect) {
         playSE('hit');
         if (playData.isRevenge && playData.currentQ && playData.currentQ.id) { gameState.revengeList = gameState.revengeList.filter(id => String(id) !== String(playData.currentQ.id)); saveGame(); }
-        document.querySelectorAll('.choice-btn').forEach(b => { if(String(b.innerText) === String(playData.currentQ?.a)) b.classList.add('btn-miss-answer'); });
+        // 【修正】正解時の誤答ボタン赤色点滅処理を削除
         
         let damage = 0;
         if (playData.isSurvival) {
@@ -251,7 +256,7 @@ function judge(isCorrect, btn) {
         if ((gameState.maxTime - gameState.timeLeft) <= 1.0) { gameState.stats.achieved_speed = true; saveGame(); }
         
         const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); }
-        updateMissionProgress('correct', 1); updateMissionProgress('maxCombo', gameState.combo); updateUI();
+        if(typeof updateMissionProgress === 'function') { updateMissionProgress('correct', 1); updateMissionProgress('maxCombo', gameState.combo); } updateUI();
         
         if(!playData.isSurvival && gameState.enemyHP <= 0) { 
             const enemyBox = document.querySelector('.enemy-visual-box'); if(enemyBox) { enemyBox.classList.add('anim-paused'); enemyBox.classList.add('fade-out'); } 
@@ -260,7 +265,8 @@ function judge(isCorrect, btn) {
             playData.qIndex++; setTimeout(() => isGameActive && nextQuestion(), 1000); 
         }
     } else {
-        gameState.lives--; gameState.combo = 0; showCutIn("MISS..."); updateUI();
+        // 【修正】「MISS...」を「✕」に変更
+        gameState.lives--; gameState.combo = 0; showCutIn("✕"); updateUI();
         if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); }
     }
 }
@@ -308,7 +314,8 @@ function handleTypingInput(e) {
             const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
             if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
         }
-    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("MISS"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
+    // 【修正】「MISS」を「✕」に変更
+    } else { playSE('type_miss'); if (!playData.typingMissed) { gameState.lives--; playData.typingMissed = true; } gameState.combo = 0; showCutIn("✕"); updateUI(); const romeBox = document.getElementById('ui-typing-romaji'); if(romeBox) { romeBox.classList.add('shake-anim'); setTimeout(()=>romeBox.classList.remove('shake-anim'), 400); } if(gameState.lives <= 0) { finishGame(false); } }
 }
 
 function generateCalcQuestion(type) {
@@ -346,7 +353,8 @@ function submitCalcAnswer() {
     if (isCorrect) {
         playSE('hit'); playData.calcCorrect += 1; gameState.score += 1; if(answerBox) answerBox.classList.add('correct');
         if (enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } showCutIn('GOOD!');
-    } else { playSE('miss'); if(answerBox) answerBox.classList.add('wrong'); showCutIn('MISS'); }
+    // 【修正】「MISS」を「✕」に変更
+    } else { playSE('miss'); if(answerBox) answerBox.classList.add('wrong'); showCutIn('✕'); }
     
     playData.calcQIndex += 1; 
     playData.calcInput = ''; 
@@ -478,6 +486,13 @@ function finishGame(isClear) {
         const gradeMultiplier = getGradeMultiplier(currentGrade);
         let earnedExp = Math.floor(((correctCount * oathMultiplier) + milestoneBonus) * gradeMultiplier);
         
+        // 【追加】救済オプション数に応じたEXP減少補正
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) {
+            const rCount = playData.activeReliefs.length;
+            const penalty = rCount >= 3 ? 0.5 : (rCount === 2 ? 0.7 : 0.9);
+            earnedExp = Math.floor(earnedExp * penalty);
+        }
+        
         let growthResultText = "なし";
         
         if (eqInv && cMaster) {
@@ -576,10 +591,14 @@ function finishGame(isClear) {
             playSE('win');
             const eqInv = gameState.charaInventory[gameState.equipped];
             if (eqInv) {
-                eqInv.exp = (Number(eqInv.exp) || 0) + 1;
                 const cMaster = rawData.characters ? rawData.characters.find(c => c.id == gameState.equipped) : null;
                 const maxL = RARITY_CAPS[eqInv.currentRarity || (cMaster ? cMaster.rarity : 'N')] || 10;
-                if (eqInv.exp >= EXP_REQ && eqInv.level < maxL) { eqInv.exp -= EXP_REQ; eqInv.level++; }
+                if (eqInv.level < maxL) {
+                    eqInv.exp = (Number(eqInv.exp) || 0) + 1;
+                    if (eqInv.exp >= EXP_REQ) { eqInv.exp -= EXP_REQ; eqInv.level++; }
+                } else {
+                    eqInv.exp = 0; // 最大レベル時はEXPを0に固定しUIの表示崩れを防止
+                }
             }
             if (!playData.isRevenge) {
                 const subj = (playData.context ? playData.context.subject : "") || "";
@@ -612,6 +631,14 @@ function finishGame(isClear) {
         const currentGrade = playData.context ? playData.context.grade : (playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '');
         const gradeMultiplier = getGradeMultiplier(currentGrade);
         earned = Math.floor((partA + partB + partC) * gradeMultiplier);
+        
+        // 【追加】救済オプション数に応じたEXP減少補正
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) {
+            const rCount = playData.activeReliefs.length;
+            const penalty = rCount >= 3 ? 0.5 : (rCount === 2 ? 0.7 : 0.9);
+            earned = Math.floor(earned * penalty);
+        }
+        
         gameState.xp += earned;
         if (playData.context && !playData.isRevenge && !playData.isRandom) {
             const key = `${playData.context.grade}_${playData.context.subject}_${playData.context.unit}`;
@@ -695,6 +722,16 @@ function handleResultClose() {
             generateRogueFloor();
         } else {
             if (typeof drawRogueMap === 'function') drawRogueMap();
+            // 戦闘終了時に歩数が0以下だった場合の強制送還チェックを追加
+            if (rogueData.steps <= 0) {
+                setTimeout(() => {
+                    if (typeof showAppModal === 'function') {
+                        showAppModal("歩数がゼロになりました。拠点に強制送還されます。", "alert").then(() => {
+                            if (typeof exitRogueSystem === 'function') exitRogueSystem(false);
+                        });
+                    }
+                }, 100);
+            }
         }
         playBGM();
     } else {
@@ -765,52 +802,28 @@ function playSE(type) {
 }
 
 const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
-let bgmOscillators = []; let bgmTimeout = null;
-let currentBgmAudio = null;
-let currentBgmUrl = null;
+let bgmOscillators = []; 
+let bgmTimeout = null;
+
+// 外部Audio用の変数を削除（currentBgmAudio, currentBgmUrl）
 
 function playBGM() {
     if (isMuted) return; 
     
-    if (audioCtx.state === 'suspended') { audioCtx.resume().catch(e => console.warn('BGM resume blocked', e)); }
-    
-    let bgmUrl = null;
-    const config = (rawData.config && rawData.config.length > 0) ? rawData.config[0] : {};
-
-    if (typeof rogueData !== 'undefined' && rogueData.active && document.getElementById('game-screen')?.classList.contains('hidden')) {
-        bgmUrl = config.exploreBgm;
-    } else if (isGameActive) {
-        if (playData.currentBoss && playData.currentBoss.bgmUrl) { bgmUrl = playData.currentBoss.bgmUrl; }
-        else if (playData.isSurvival && config.survivalBgm) { bgmUrl = config.survivalBgm; }
-        else if (playData.isTyping && config.typingBgm) { bgmUrl = config.typingBgm; }
-        else if (playData.isCalculation && config.calcBgm) { bgmUrl = config.calcBgm; }
-        else if (playData.isRandom && config.randomBgm) { bgmUrl = config.randomBgm; }
-        else if (playData.isRevenge && config.revengeBgm) { bgmUrl = config.revengeBgm; }
-        else { bgmUrl = config.defaultBattleBgm; }
-    }
-
-    // ★最適化: 同じBGMが既に流れている場合は、リセットせずにそのまま継続する
-    if (bgmUrl && currentBgmAudio && currentBgmUrl === bgmUrl && !currentBgmAudio.paused) {
-        return;
+    if (audioCtx.state === 'suspended') { 
+        audioCtx.resume().catch(e => console.warn('BGM resume blocked', e)); 
     }
     
-    stopBGM(); // ここで一旦今のBGMを止める
-
-    if (bgmUrl) {
-        currentBgmAudio = new Audio(bgmUrl);
-        currentBgmUrl = bgmUrl;
-        currentBgmAudio.loop = true;
-        currentBgmAudio.volume = 0.3;
-        currentBgmAudio.play().catch(e => { playMmlBGM(); });
-    } else {
-        playMmlBGM();
-    }
+    stopBGM(); // 既存のBGM（電子音）を停止してから新しい再生を開始
+    playMmlBGM();
 }
 
 function stopBGM() { 
-    if (currentBgmAudio) { currentBgmAudio.pause(); currentBgmAudio.currentTime = 0; currentBgmAudio = null; }
-    currentBgmUrl = null;
-    if (bgmTimeout) clearTimeout(bgmTimeout); bgmOscillators.forEach(osc => { try { osc.stop(); } catch(e){} }); bgmOscillators = []; 
+    if (bgmTimeout) clearTimeout(bgmTimeout); 
+    bgmOscillators.forEach(osc => { 
+        try { osc.stop(); } catch(e){} 
+    }); 
+    bgmOscillators = []; 
 }
 
 function playMmlBGM() {
