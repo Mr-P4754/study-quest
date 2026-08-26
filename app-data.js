@@ -189,6 +189,7 @@ function saveGame() {
     localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
     localStorage.setItem('sq_missions', JSON.stringify(dailyMissions));
     localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
+    localStorage.setItem('sq_subject_stats', JSON.stringify(gameState.subjectStats || {}));
     localStorage.setItem('sq_titles', JSON.stringify(gameState.unlockedTitles));
     localStorage.setItem('sq_claimed_gifts', JSON.stringify(gameState.claimedGifts));
     localStorage.setItem('sq_revenge', JSON.stringify(gameState.revengeList || []));
@@ -201,7 +202,7 @@ function saveGame() {
 async function uploadData() {
     if (!(await showConfirm("現在のデータをクラウドに保存しますか？\n（同じIDの古いデータは上書きされます）"))) return;
     saveGame();
-    const backupData = { xp: gameState.xp, equipped: gameState.equipped, itemLevels: gameState.itemLevels, charaInventory: gameState.charaInventory, missions: dailyMissions, stats: gameState.stats, unlockedTitles: gameState.unlockedTitles, claimedGifts: gameState.claimedGifts, revengeList: gameState.revengeList, unitProgress: gameState.unitProgress, inventory: gameState.inventory, calcRecords: gameState.calcRecords };
+    const backupData = { xp: gameState.xp, equipped: gameState.equipped, itemLevels: gameState.itemLevels, charaInventory: gameState.charaInventory, missions: dailyMissions, stats: gameState.stats, subjectStats: gameState.subjectStats, unlockedTitles: gameState.unlockedTitles, claimedGifts: gameState.claimedGifts, revengeList: gameState.revengeList, unitProgress: gameState.unitProgress, inventory: gameState.inventory, calcRecords: gameState.calcRecords };
     const btn = document.querySelector('#sync-overlay button'); const originalText = btn ? btn.innerText : "送信"; if(btn) { btn.innerText = "送信中..."; btn.disabled = true; }
     try {
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'save', userId: currentUserId, data: backupData }) });
@@ -229,6 +230,7 @@ async function downloadData() {
             gameState.xp = parseInt(data.xp || 0, 10); gameState.equipped = String(data.equipped || '1');
             gameState.itemLevels = forceObj(data.itemLevels); gameState.charaInventory = forceObj(data.charaInventory);
             dailyMissions = forceObj(data.missions); gameState.stats = forceObj(data.stats);
+            gameState.subjectStats = forceObj(data.subjectStats);
             gameState.unlockedTitles = forceArr(data.unlockedTitles); gameState.claimedGifts = forceArr(data.claimedGifts);
             gameState.revengeList = forceArr(data.revengeList); gameState.unitProgress = forceObj(data.unitProgress);
             gameState.calcRecords = forceObj(data.calcRecords);

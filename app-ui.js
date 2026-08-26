@@ -10,44 +10,244 @@ function closeRecord() { document.getElementById('record-overlay')?.classList.ad
 
 function drawRadarChart(labels, data) {
     const canvas = document.getElementById('radar-chart'); if (!canvas) return; const ctx = canvas.getContext('2d');
-    const w = canvas.width; const h = canvas.height; const cx = w / 2; const cy = h / 2; const radius = w / 2 - 40;
-    ctx.clearRect(0, 0, w, h); const sides = Math.max(5, labels.length); 
-    ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
-    for (let i = 1; i <= 5; i++) { const r = radius * (i / 5); ctx.beginPath(); for (let j = 0; j < sides; j++) { const angle = (Math.PI * 2 * j) / sides - Math.PI / 2; const x = cx + Math.cos(angle) * r; const y = cy + Math.sin(angle) * r; if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.closePath(); ctx.stroke(); }
-    ctx.fillStyle = '#333'; ctx.font = 'bold 12px "BIZ UDPGothic"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (let j = 0; j < sides; j++) {
-        const angle = (Math.PI * 2 * j) / sides - Math.PI / 2; const x = cx + Math.cos(angle) * radius; const y = cy + Math.sin(angle) * radius;
-        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
-        if (j < labels.length) { const lx = cx + Math.cos(angle) * (radius + 20); const ly = cy + Math.sin(angle) * (radius + 20); ctx.fillText(labels[j], lx, ly); }
+    
+    // 高DPIディスプレイ対応
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = 260;
+    const displayHeight = 260;
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+        canvas.width = displayWidth * dpr;
+        canvas.height = displayHeight * dpr;
+        canvas.style.width = displayWidth + 'px';
+        canvas.style.height = displayHeight + 'px';
     }
-    if (data.length === 0) return;
-    ctx.beginPath();
-    for (let j = 0; j < sides; j++) { if (j >= data.length) break; const val = Math.min(100, Math.max(0, data[j])); const r = radius * (val / 100); const angle = (Math.PI * 2 * j) / sides - Math.PI / 2; const x = cx + Math.cos(angle) * r; const y = cy + Math.sin(angle) * r; if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
-    ctx.closePath(); ctx.fillStyle = 'rgba(142, 68, 173, 0.5)'; ctx.fill(); ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+    
+    const cx = displayWidth / 2;
+    const cy = displayHeight / 2;
+    const radius = 72; // 外側ラベルの文字切れを防ぐための適正半径
+    
+    const count = labels ? labels.length : 0;
+    const sides = Math.max(3, count);
+    
+    // 背景グリッド描画（5段階: 20%, 40%, 60%, 80%, 100%）
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 5; i++) {
+        const r = radius * (i / 5);
+        ctx.beginPath();
+        for (let j = 0; j < sides; j++) {
+            const angle = (Math.PI * 2 * j) / sides - Math.PI / 2;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            if (j === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    // 軸線およびラベル描画
+    ctx.font = 'bold 11px "BIZ UDPGothic", sans-serif';
+    for (let j = 0; j < sides; j++) {
+        const angle = (Math.PI * 2 * j) / sides - Math.PI / 2;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.stroke();
+        
+        if (j < count) {
+            const labelDist = radius + 18;
+            const lx = cx + Math.cos(angle) * labelDist;
+            const ly = cy + Math.sin(angle) * labelDist;
+            
+            const cos = Math.cos(angle);
+            if (Math.abs(cos) < 0.25) {
+                ctx.textAlign = 'center';
+            } else if (cos > 0) {
+                ctx.textAlign = 'left';
+            } else {
+                ctx.textAlign = 'right';
+            }
+            
+            const sin = Math.sin(angle);
+            if (Math.abs(sin) < 0.25) {
+                ctx.textBaseline = 'middle';
+            } else if (sin > 0) {
+                ctx.textBaseline = 'top';
+            } else {
+                ctx.textBaseline = 'bottom';
+            }
+            
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillText(labels[j], lx, ly);
+        }
+    }
+    
+    // データポリゴンの描画
+    if (count >= 3 && data && data.length >= 3) {
+        ctx.beginPath();
+        for (let j = 0; j < count; j++) {
+            const val = Math.min(100, Math.max(0, Number(data[j]) || 0));
+            const r = radius * (val / 100);
+            const angle = (Math.PI * 2 * j) / count - Math.PI / 2;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            if (j === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(142, 68, 173, 0.35)';
+        ctx.fill();
+        ctx.strokeStyle = '#8e44ad';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // 頂点ドット描画
+        for (let j = 0; j < count; j++) {
+            const val = Math.min(100, Math.max(0, Number(data[j]) || 0));
+            const r = radius * (val / 100);
+            const angle = (Math.PI * 2 * j) / count - Math.PI / 2;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#8e44ad';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+    } else if (count > 0) {
+        ctx.fillStyle = '#7f8c8d';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '12px "BIZ UDPGothic", sans-serif';
+        ctx.fillText('※3教科以上プレイで', cx, cy - 8);
+        ctx.fillText('チャートが描画されます', cx, cy + 10);
+    } else {
+        ctx.fillStyle = '#95a5a6';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '12px "BIZ UDPGothic", sans-serif';
+        ctx.fillText('データなし', cx, cy);
+    }
+    
+    ctx.restore();
 }
 
 function renderRecord() {
-    const tbody = document.getElementById('grade-tbody'); if(!tbody) return; tbody.innerHTML = ''; const subjects = Object.keys(gameState.subjectStats).sort();
-    if (subjects.length === 0) { tbody.innerHTML = '<tr><td colspan="3">データがありません。<br>クエストをプレイしてください。</td></tr>'; drawRadarChart([], []); }
-    else {
-        const labels = []; const dataPoints = [];
+    const summaryBox = document.getElementById('record-summary');
+    const tbody = document.getElementById('grade-tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    const statsObj = gameState.subjectStats || {};
+    const subjects = Object.keys(statsObj).sort();
+    
+    let grandTotal = 0;
+    let grandCorrect = 0;
+    
+    if (subjects.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-10 text-gray">データがありません。<br>クエストをプレイしてください。</td></tr>';
+        drawRadarChart([], []);
+    } else {
+        const labels = [];
+        const dataPoints = [];
         subjects.forEach(subj => {
-            const d = gameState.subjectStats[subj]; const rate = d.total > 0 ? (d.correct / d.total * 100) : 0;
-            let rank = 'G'; if (rate >= 90) rank = 'S'; else if (rate >= 80) rank = 'A'; else if (rate >= 70) rank = 'B'; else if (rate >= 60) rank = 'C'; else if (rate >= 50) rank = 'D'; else if (rate >= 40) rank = 'E'; else if (rate >= 20) rank = 'F';
-            labels.push(subj); dataPoints.push(rate);
-            tbody.innerHTML += `<tr><td>${subj}</td><td>${rate.toFixed(1)}% <span style="font-size:0.8em; color:#7f8c8d;">(${d.correct}/${d.total})</span></td><td class="rank-${rank}">${rank}</td></tr>`;
+            const d = statsObj[subj] || { correct: 0, total: 0 };
+            const total = Number(d.total) || 0;
+            const correct = Number(d.correct) || 0;
+            grandTotal += total;
+            grandCorrect += correct;
+            const rate = total > 0 ? (correct / total * 100) : 0;
+            
+            let rank = 'G';
+            if (rate >= 90) rank = 'S';
+            else if (rate >= 80) rank = 'A';
+            else if (rate >= 70) rank = 'B';
+            else if (rate >= 60) rank = 'C';
+            else if (rate >= 50) rank = 'D';
+            else if (rate >= 40) rank = 'E';
+            else if (rate >= 20) rank = 'F';
+            
+            labels.push(subj);
+            dataPoints.push(rate);
+            tbody.innerHTML += `<tr><td class="font-bold">${subj}</td><td>${rate.toFixed(1)}% <span class="record-sub-stat">(${correct}/${total})</span></td><td class="rank-${rank}">${rank}</td></tr>`;
         });
         drawRadarChart(labels, dataPoints);
     }
-    const recordList = document.getElementById('calc-record-list'); if(!recordList) return; recordList.innerHTML = '';
-    const keys = Object.keys(gameState.calcRecords || {});
-    if (keys.length === 0) { recordList.innerHTML = '<div>計算クエストの記録はありません。</div>'; return; }
+    
+    // 総合サマリー表示
+    if (summaryBox) {
+        const grandRate = grandTotal > 0 ? (grandCorrect / grandTotal * 100) : 0;
+        let grandRank = 'G';
+        if (grandRate >= 90) grandRank = 'S';
+        else if (grandRate >= 80) grandRank = 'A';
+        else if (grandRate >= 70) grandRank = 'B';
+        else if (grandRate >= 60) grandRank = 'C';
+        else if (grandRate >= 50) grandRank = 'D';
+        else if (grandRate >= 40) grandRank = 'E';
+        else if (grandRate >= 20) grandRank = 'F';
+        
+        summaryBox.innerHTML = `
+            <div class="record-summary-row">
+                <div class="record-summary-card">
+                    <div class="record-summary-label">総合正答率</div>
+                    <div class="record-summary-val text-purple">${grandRate.toFixed(1)}% <span class="rank-${grandRank} text-lg">(${grandRank})</span></div>
+                </div>
+                <div class="record-summary-card">
+                    <div class="record-summary-label">総解答数</div>
+                    <div class="record-summary-val text-dark">${grandCorrect} / ${grandTotal}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 計算クエスト記録の描画
+    const recordList = document.getElementById('calc-record-list');
+    if (!recordList) return;
+    recordList.innerHTML = '';
+    
+    const calcObj = gameState.calcRecords || {};
+    const keys = Object.keys(calcObj);
+    if (keys.length === 0) {
+        recordList.innerHTML = '<div class="text-gray p-5">計算クエストの記録はありません。</div>';
+        return;
+    }
+    
     keys.forEach(key => {
-        const parts = key.split('_'); const mode = parts.pop(); const type = parts.join('_');
-        const title = { addition: 'たし算', subtraction: 'ひき算', multiplication: 'かけ算', division: '割り算(あまりなし)', division_remainder: '割り算(あまりあり)', random: 'ランダム' }[type] || type;
-        const modeLabel = mode === '100q' ? '100問' : '3分'; const list = gameState.calcRecords[key];
-        let html = `<div style="margin-bottom:10px;"><strong>${title} / ${modeLabel}</strong><br>`;
-        list.forEach((item, index) => { html += `<div style="font-size:0.85em; color:#34495e;">${index+1}. ${item.correct}正解 / ${item.time.toFixed(1)}秒</div>`; }); html += '</div>'; recordList.innerHTML += html;
+        const parts = key.split('_');
+        const mode = parts.pop();
+        const type = parts.join('_');
+        const title = {
+            addition: 'たし算',
+            subtraction: 'ひき算',
+            multiplication: 'かけ算',
+            division: '割り算(あまりなし)',
+            division_remainder: '割り算(あまりあり)',
+            random: 'ランダム'
+        }[type] || type;
+        const modeLabel = mode === '100q' ? '100問' : '3分';
+        const list = calcObj[key];
+        if (!Array.isArray(list) || list.length === 0) return;
+        
+        let html = `<div class="calc-record-group"><div class="calc-record-title">⚡ ${title} / ${modeLabel}</div>`;
+        list.forEach((item, index) => {
+            const timeNum = Number(item.time) || 0;
+            const correctNum = Number(item.correct) || 0;
+            const dateStr = item.date ? `<span class="calc-record-date">${item.date}</span>` : '';
+            html += `<div class="calc-record-item"><span class="calc-record-rank">${index + 1}.</span> <span>${correctNum}正解 / ${timeNum.toFixed(1)}秒</span> ${dateStr}</div>`;
+        });
+        html += '</div>';
+        recordList.innerHTML += html;
     });
 }
 
@@ -645,10 +845,15 @@ function changeZukanSort() { const sel = document.getElementById('zukan-sort-sel
 function renderZukan() { 
     const g=document.getElementById('zukan-grid'); if(!g) return; g.innerHTML=''; 
     if(!rawData.characters) return;
-    let list = [...rawData.characters];
     list.sort((a, b) => {
         const invA = gameState.charaInventory[a.id]; const invB = gameState.charaInventory[b.id];
-        if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') { const rOrder = { 'UR':5, 'SSR':4, 'SR':3, 'R':2, 'N':1 }; const valA = rOrder[a.rarity] || 0; const valB = rOrder[b.rarity] || 0; return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB; }
+        if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') { 
+            const rOrder = { 'UR':5, 'SSR':4, 'SR':3, 'R':2, 'N':1 }; 
+            const rA = (invA && invA.currentRarity) ? invA.currentRarity : a.rarity;
+            const rB = (invB && invB.currentRarity) ? invB.currentRarity : b.rarity;
+            const valA = rOrder[rA] || 0; const valB = rOrder[rB] || 0; 
+            return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB; 
+        }
         if (zukanSortMode === 'type') { return (a.type || "").localeCompare(b.type || ""); }
         if (zukanSortMode === 'level') { const lvA = invA ? invA.level : -1; const lvB = invB ? invB.level : -1; if (lvA !== lvB) return lvB - lvA; }
         if (zukanSortMode === 'stock') { const cntA = invA ? invA.count : -1; const cntB = invB ? invB.count : -1; if (cntA !== cntB) return cntB - cntA; }
@@ -678,6 +883,7 @@ function openCharaDetail(id) {
     const cdName = document.getElementById('cd-name'); if(cdName) cdName.innerHTML = getDisplayName(c, o);
     const cdRarity = document.getElementById('cd-rarity'); if(cdRarity) { cdRarity.innerText = currentR; cdRarity.className = "rarity-" + currentR; }
     const maxLv = RARITY_CAPS[currentR] || 10;
+    const isMax = o.level >= maxLv;
     const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + o.level + ' / ' + maxLv;
     
     let skillHtml = ''; currentSkills.forEach(s => { skillHtml += `<span class="skill-tag ${s}">${s}</span>`; });
@@ -690,11 +896,19 @@ function openCharaDetail(id) {
     const detailBtnRow = document.querySelector('.detail-btn-row');
     if(detailBtnRow) {
         if (document.querySelector('.item-use-area')) document.querySelector('.item-use-area').remove();
-        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${(gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${(gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${(gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
+        const canUse = !isMax;
+        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${canUse && (gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${canUse && (gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${canUse && (gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
     }
     
-    const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = o.exp + ' / ' + EXP_REQ; 
-    const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = (o.exp / EXP_REQ * 100) + '%';
+    const btnEnhance = document.getElementById('btn-enhance');
+    if (btnEnhance) {
+        btnEnhance.disabled = isMax;
+        btnEnhance.style.opacity = isMax ? "0.5" : "1.0";
+        btnEnhance.style.cursor = isMax ? "not-allowed" : "pointer";
+    }
+
+    const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = isMax ? 'MAX' : ((o.exp || 0) + ' / ' + EXP_REQ); 
+    const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = isMax ? '100%' : (Math.min(100, ((o.exp || 0) / EXP_REQ * 100)) + '%');
     const cdImg = document.getElementById('cd-img');
     if(cdImg) { if(c.imageUrl && c.imageUrl.startsWith('http')) cdImg.src=c.imageUrl; else cdImg.src=''; }
     document.getElementById('chara-detail-overlay')?.classList.remove('hidden'); 
@@ -754,7 +968,39 @@ async function useExpItem(itemId, gain) {
 }
 
 let selectedMaterials = {};
-function openEnhanceMenu() { selectedMaterials = {}; document.getElementById('material-select-overlay')?.classList.remove('hidden'); document.getElementById('chara-detail-overlay')?.classList.add('hidden'); renderEnhanceList(); }
+function getNeededExpForMax(t, currentR) {
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return 0;
+    return ((maxLv - t.level) * EXP_REQ) - (Number(t.exp) || 0);
+}
+
+function getSelectedTotalExp() {
+    let total = 0;
+    if (!rawData.characters) return 0;
+    Object.keys(selectedMaterials).forEach(id => {
+        const cnt = selectedMaterials[id] || 0;
+        if (cnt > 0) {
+            const matChar = rawData.characters.find(c => c.id === id);
+            const expVal = matChar ? (MAT_EXP[matChar.rarity] || 25) : 25;
+            total += (expVal * cnt);
+        }
+    });
+    return total;
+}
+
+function openEnhanceMenu() { 
+    const t = gameState.charaInventory[viewingCharaId]; 
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null; 
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || chara.rarity; 
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return alert("すでにLv.MAXです");
+    selectedMaterials = {}; 
+    document.getElementById('material-select-overlay')?.classList.remove('hidden'); 
+    document.getElementById('chara-detail-overlay')?.classList.add('hidden'); 
+    renderEnhanceList(); 
+}
+
 function closeEnhanceMenu() { document.getElementById('material-select-overlay')?.classList.add('hidden'); openCharaDetail(viewingCharaId); }
 
 function renderEnhanceList() {
@@ -770,37 +1016,126 @@ function renderEnhanceList() {
     updateEnhancePreview(totalGain);
 }
 
-function toggleMaterial(id, maxCount) { if (!selectedMaterials[id]) selectedMaterials[id] = 0; selectedMaterials[id]++; if (selectedMaterials[id] > maxCount) { selectedMaterials[id] = 0; } renderEnhanceList(); }
+function toggleMaterial(id, maxCount) { 
+    const t = gameState.charaInventory[viewingCharaId];
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || chara.rarity;
+    const neededExp = getNeededExpForMax(t, currentR);
+
+    if (!selectedMaterials[id]) selectedMaterials[id] = 0; 
+    const currentGain = getSelectedTotalExp();
+
+    if (selectedMaterials[id] >= maxCount || currentGain >= neededExp) {
+        selectedMaterials[id] = 0;
+    } else {
+        selectedMaterials[id]++;
+    }
+    renderEnhanceList(); 
+}
 
 function updateEnhancePreview(gainExp) {
     const enhanceTotal = document.getElementById('enhance-total-exp'); if(enhanceTotal) enhanceTotal.innerText = gainExp;
     const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null; if (!t || !chara) return;
     const currentR = t.currentRarity || chara.rarity; const maxLv = RARITY_CAPS[currentR] || 10;
-    let simExp = t.exp + gainExp; let simLv = t.level;
-    while (simExp >= EXP_REQ) { if (simLv >= maxLv) { simExp = 0; break; } simExp -= EXP_REQ; simLv++; }
+    let simExp = (Number(t.exp) || 0) + gainExp; let simLv = t.level;
+    while (simExp >= EXP_REQ && simLv < maxLv) { simExp -= EXP_REQ; simLv++; }
+    if (simLv >= maxLv) simExp = 0;
+
     const preview = document.getElementById('enhance-lv-preview');
     if(!preview) return;
-    if (simLv > t.level) { preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold;">➞ ${simLv}</span>`; preview.style.color = '#e67e22'; } else { preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`; preview.style.color = '#7f8c8d'; }
+    if (simLv >= maxLv) { 
+        preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold; color:#e74c3c;">➞ Lv.${maxLv} (MAX)</span>`; 
+    } else if (simLv > t.level) { 
+        preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold; color:#e67e22;">➞ Lv.${simLv}</span> (あと${EXP_REQ - simExp})`; 
+    } else { 
+        preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`; 
+        preview.style.color = '#7f8c8d'; 
+    }
 }
 
 async function executeBulkEnhance() {
-    const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0); if (totalSelected === 0) return alert("素材を選択してください");
-    let totalGain = 0; Object.keys(selectedMaterials).forEach(id => { const count = selectedMaterials[id]; if (count > 0 && rawData.characters) { const matChar = rawData.characters.find(c => c.id === id); if(matChar) { const expVal = MAT_EXP[matChar.rarity] || 25; totalGain += (expVal * count); } } });
-    if (!(await showConfirm(`選択した${totalSelected}体を消費して強化しますか？\n獲得EXP: ${totalGain}`))) return;
-    Object.keys(selectedMaterials).forEach(id => { const count = selectedMaterials[id]; if (gameState.charaInventory[id]) { gameState.charaInventory[id].count -= count; if (gameState.charaInventory[id].count < 0) gameState.charaInventory[id].count = 0; } });
-    const t = gameState.charaInventory[viewingCharaId]; const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
-    const currentR = t.currentRarity || (chara ? chara.rarity : 'N'); const maxLv = RARITY_CAPS[currentR] || 10;
-    t.exp = (Number(t.exp) || 0) + totalGain; let lvUpCount = 0;
-    while (t.exp >= EXP_REQ) { if (t.level >= maxLv) { t.exp = 0; break; } t.exp -= EXP_REQ; t.level++; lvUpCount++; }
-    updateMissionProgress('enhance', 1); checkTitles(); saveGame();
-    alert(`強化完了！\n経験値 +${totalGain} を獲得しました。${lvUpCount > 0 ? '\nレベルアップしました！' : ''}`);
-    selectedMaterials = {}; renderEnhanceList(); updateEnhancePreview(0);
+    const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0); 
+    if (totalSelected === 0) return alert("素材を選択してください");
+    
+    const t = gameState.charaInventory[viewingCharaId]; 
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || (chara ? chara.rarity : 'N'); 
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return alert("すでにLv.MAXです");
+
+    let totalGain = 0; 
+    Object.keys(selectedMaterials).forEach(id => { 
+        const count = selectedMaterials[id]; 
+        if (count > 0 && rawData.characters) { 
+            const matChar = rawData.characters.find(c => c.id === id); 
+            if(matChar) { const expVal = MAT_EXP[matChar.rarity] || 25; totalGain += (expVal * count); } 
+        } 
+    });
+
+    if (!(await showConfirm(`選択した素材（最大${totalSelected}体）を消費して強化しますか？\n獲得EXP: +${totalGain}`))) return;
+    
+    // 素材を1体ずつ適用し、Lv.MAX に達した時点で余剰素材の消費を打ち切る安全設計
+    let usedCount = 0;
+    let actualExpGained = 0;
+    let lvUpCount = 0;
+
+    for (const id of Object.keys(selectedMaterials)) {
+        let count = selectedMaterials[id] || 0;
+        const matChar = rawData.characters ? rawData.characters.find(c => c.id === id) : null;
+        const expVal = matChar ? (MAT_EXP[matChar.rarity] || 25) : 25;
+
+        while (count > 0 && t.level < maxLv) {
+            if (gameState.charaInventory[id] && gameState.charaInventory[id].count > 0) {
+                gameState.charaInventory[id].count--;
+                count--;
+                usedCount++;
+                actualExpGained += expVal;
+                t.exp = (Number(t.exp) || 0) + expVal;
+
+                while (t.exp >= EXP_REQ && t.level < maxLv) {
+                    t.exp -= EXP_REQ;
+                    t.level++;
+                    lvUpCount++;
+                }
+                if (t.level >= maxLv) {
+                    t.exp = 0;
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    updateMissionProgress('enhance', 1); 
+    checkTitles(); 
+    saveGame();
+    
+    const isNowMax = t.level >= maxLv;
+    let msg = `強化完了！\n経験値 +${actualExpGained} を獲得しました。`;
+    if (lvUpCount > 0) msg += `\nレベルが Lv.${t.level} に上がりました！`;
+    if (isNowMax) msg += `\n🎉 Lv.MAXに到達しました！`;
+    if (usedCount < totalSelected) msg += `\n（Lv.MAXに到達したため、余剰の素材${totalSelected - usedCount}体は消費されずに残りました）`;
+    
+    alert(msg);
+    selectedMaterials = {}; 
+    renderEnhanceList(); 
+    updateEnhancePreview(0);
+    
     if(chara) {
         const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + t.level + ' / ' + maxLv; 
-        const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = t.exp + ' / ' + EXP_REQ; 
-        const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = (t.exp / EXP_REQ * 100) + '%';
+        const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = isNowMax ? 'MAX' : (t.exp + ' / ' + EXP_REQ); 
+        const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = isNowMax ? '100%' : (Math.min(100, (t.exp / EXP_REQ * 100)) + '%');
         const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value); 
         const cdVal = document.getElementById('cd-val'); if(cdVal) cdVal.innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
+        const btnEnhance = document.getElementById('btn-enhance');
+        if (btnEnhance) {
+            btnEnhance.disabled = isNowMax;
+            btnEnhance.style.opacity = isNowMax ? "0.5" : "1.0";
+            btnEnhance.style.cursor = isNowMax ? "not-allowed" : "pointer";
+        }
     }
 }
 
