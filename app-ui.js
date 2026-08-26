@@ -845,6 +845,7 @@ function changeZukanSort() { const sel = document.getElementById('zukan-sort-sel
 function renderZukan() { 
     const g=document.getElementById('zukan-grid'); if(!g) return; g.innerHTML=''; 
     if(!rawData.characters) return;
+    const list = [...rawData.characters];
     list.sort((a, b) => {
         const invA = gameState.charaInventory[a.id]; const invB = gameState.charaInventory[b.id];
         if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') { 
