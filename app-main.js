@@ -241,7 +241,6 @@ function renderMissions() {
         if(!fin)all=false; 
         l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; 
     }); 
-    const ac=document.getElementById('mission-all-clear'); 
     if(all){ 
         const isClaimed = dailyMissions.claimed.allClear;
         let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 

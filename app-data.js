@@ -201,7 +201,7 @@ function saveGame() {
 async function uploadData() {
     if (!(await showConfirm("現在のデータをクラウドに保存しますか？\n（同じIDの古いデータは上書きされます）"))) return;
     saveGame();
-    const backupData = { xp: gameState.xp, equipped: gameState.equipped, itemLevels: gameState.itemLevels, charaInventory: gameState.charaInventory, missions: dailyMissions, stats: gameState.stats, unlockedTitles: gameState.unlockedTitles, claimedGifts: gameState.claimedGifts, revengeList: gameState.revengeList, unitProgress: gameState.unitProgress, inventory: gameState.inventory };
+    const backupData = { xp: gameState.xp, equipped: gameState.equipped, itemLevels: gameState.itemLevels, charaInventory: gameState.charaInventory, missions: dailyMissions, stats: gameState.stats, unlockedTitles: gameState.unlockedTitles, claimedGifts: gameState.claimedGifts, revengeList: gameState.revengeList, unitProgress: gameState.unitProgress, inventory: gameState.inventory, calcRecords: gameState.calcRecords };
     const btn = document.querySelector('#sync-overlay button'); const originalText = btn ? btn.innerText : "送信"; if(btn) { btn.innerText = "送信中..."; btn.disabled = true; }
     try {
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'save', userId: currentUserId, data: backupData }) });
@@ -231,6 +231,7 @@ async function downloadData() {
             dailyMissions = forceObj(data.missions); gameState.stats = forceObj(data.stats);
             gameState.unlockedTitles = forceArr(data.unlockedTitles); gameState.claimedGifts = forceArr(data.claimedGifts);
             gameState.revengeList = forceArr(data.revengeList); gameState.unitProgress = forceObj(data.unitProgress);
+            gameState.calcRecords = forceObj(data.calcRecords);
             const cInv = forceObj(data.inventory);
             gameState.inventory = { redPages: Number(cInv.redPages) || 0, bluePages: Number(cInv.bluePages) || 0, xpBookSmall: Number(cInv.xpBookSmall) || 0, xpBookMedium: Number(cInv.xpBookMedium) || 0, xpBookLarge: Number(cInv.xpBookLarge) || 0 };
             currentUserId = inputId; localStorage.setItem('sq_user_id', inputId); saveGame();

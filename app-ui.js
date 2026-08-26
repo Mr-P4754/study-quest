@@ -558,7 +558,20 @@ function receiveAllGifts() {
     items.forEach(item => { const id = item.getAttribute('data-id'); const expVal = item.getAttribute('data-exp'); const exp = parseInt(expVal, 10); if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) { gameState.claimedGifts.push(id); if (!isNaN(exp)) totalExp += exp; count++; } });
     if (count > 0) { gameState.xp += totalExp; saveGame(); updateTitleInfo(); playSE('win'); alert(`🎁 ギフトを${count}件受け取りました！\n合計: +${totalExp} XP`); closeGiftMenu(); checkTitles(); updateGiftButtonState(); } else { closeGiftMenu(); }
 }
-function updateGiftButtonState() { if (!rawData.gifts) return; const unclaimed = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); const btn = document.getElementById('btn-gift'); const badge = document.getElementById('gift-badge'); if (unclaimed.length > 0 && btn && badge) { btn.disabled = false; btn.style.opacity = "1.0"; btn.style.filter = "none"; badge.innerText = unclaimed.length; badge.classList.remove('hidden'); } else if(btn && badge) { btn.disabled = true; btn.style.opacity = "0.7"; badge.classList.add('hidden'); } }
+function updateGiftButtonState() { 
+    if (!rawData.gifts) return; 
+    const unclaimed = rawData.gifts.filter(g => { const id = g.id || g['ID']; return id && !gameState.claimedGifts.includes(id); }); 
+    const btn = document.getElementById('btn-gift'); 
+    const badge = document.getElementById('gift-badge'); 
+    if (unclaimed.length > 0) {
+        if (btn) { btn.disabled = false; btn.style.opacity = "1.0"; btn.style.filter = "none"; }
+        if (badge) { badge.innerText = unclaimed.length; badge.classList.remove('hidden'); }
+    } else {
+        if (btn) { btn.disabled = true; btn.style.opacity = "0.7"; }
+        if (badge) { badge.innerText = "0"; badge.classList.add('hidden'); }
+    }
+    if (typeof updateCategoryBadges === 'function') updateCategoryBadges();
+}
 
 async function executeEvolution() {
     const o = gameState.charaInventory[viewingCharaId];
@@ -701,8 +714,19 @@ function openCharaDetail(id) {
 }
 
 function closeCharaDetail() { document.getElementById('chara-detail-overlay')?.classList.add('hidden'); renderZukan(); }
-function equipCurrentChara() { gameState.equipped=viewingCharaId; saveGame(); alert("装備しました"); closeCharaDetail(); renderZukan(); updateTitleInfo(); }
-async function sellCharaStock() { const o=gameState.charaInventory[viewingCharaId]; if (o && o.count > 0 && !(await showConfirm("売却しますか？"))) return; if(o && o.count>0){ o.count--; gameState.xp+=200; saveGame(); openCharaDetail(viewingCharaId); } }
+async function sellCharaStock() { 
+    const o = gameState.charaInventory[viewingCharaId]; 
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
+    if (!o || o.count <= 0) return;
+    const currentR = o.currentRarity || (c ? c.rarity : 'N');
+    const price = (typeof SELL_PRICES !== 'undefined' && SELL_PRICES[currentR]) ? SELL_PRICES[currentR] : 250;
+    if (!(await showConfirm(`素材を1体売却して ${price} XPを獲得しますか？`))) return; 
+    o.count--; 
+    gameState.xp += price; 
+    saveGame(); 
+    openCharaDetail(viewingCharaId); 
+    updateTitleInfo();
+}
 
 async function useExpItem(itemId, gain) {
     if ((gameState.inventory[itemId] || 0) <= 0) return;
@@ -792,8 +816,8 @@ function renderShop() {
     l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="currentShopTab='buy'; renderShop();">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="currentShopTab='exchange'; renderShop();">アイテム交換</div></div>`; 
     if(currentShopTab === 'buy') {
         if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
-            const lv = (gameState.itemLevels && gameState.itemLevels[i.id]) ? gameState.itemLevels[i.id] : 0; const p=i.price*(lv+1); 
-            l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" onclick="buyItem('${i.id}',${p})">${lv>=10?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
+            const isMax = lv >= MAX_ITEM_LEVEL;
+            l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" ${isMax?'disabled':''} onclick="buyItem('${i.id}',${p})">${isMax?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
         }); 
     } else {
         const rates = [ { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 200, icon: '📔' }, { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 500, icon: '📕' }, { id: 'xpBookLarge', name: '大の書', cost: 50, gain: 1000, icon: '📘' } ];

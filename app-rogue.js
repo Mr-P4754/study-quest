@@ -30,11 +30,17 @@ const ROGUE_TILES = {
 function startRogueMode() {
     const g = document.getElementById('rogue-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = rawData.questions.filter(q => q.grade == g);
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2 && q.subject !== 'タイピング' && q.unit !== 'タイピング');
     if(qList.length === 0) return alert("問題がありません");
 
     // 選択された学年の問題を保存しておく
     playData.rogueQuestions = qList;
+    playData.isTyping = false;
+    playData.isCalculation = false;
+    playData.isSurvival = false;
+    playData.isRandom = false;
+    playData.isRevenge = false;
+    document.removeEventListener('keydown', handleTypingInput);
 
     rogueData.floor = 1;
     rogueData.earnedXp = 0;
@@ -54,6 +60,9 @@ function startRogueMode() {
     if (!window.rogueKeyHandlerRegistered) {
         window.addEventListener('keydown', (e) => {
             if (!rogueData.active || !document.getElementById('game-screen').classList.contains('hidden')) return;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'w') moveRoguePlayer(0, -1);
             if (e.key === 'ArrowDown' || e.key.toLowerCase() === 's') moveRoguePlayer(0, 1);
             if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') moveRoguePlayer(-1, 0);
@@ -459,9 +468,18 @@ function triggerRogueBattle(isBoss = false) {
 
     isGameActive = false;
     isPaused = false;
+    document.removeEventListener('keydown', handleTypingInput);
 
-    document.getElementById('field-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('field-screen')?.classList.add('hidden');
+    document.getElementById('game-screen')?.classList.remove('hidden');
+
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    document.getElementById('ui-question')?.classList.remove('hidden');
 
     const uienemyName = document.getElementById('ui-enemy-name');
     let displayBossName = bossName;

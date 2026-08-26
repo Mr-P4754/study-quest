@@ -88,11 +88,20 @@ async function retryGame() {
     
     if (playData.isCalculation) { startCalcGame(); }
     else if (playData.isTyping) { startTypingGame(); }
-    else if (playData.isSurvival) { startSurvivalGame(); }
+    else if (playData.isSurvival) {
+        if (playData.activeOaths && playData.activeOaths.length > 0) { tempOaths = [...playData.activeOaths]; oathOrigin = 'survival'; }
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) { tempReliefs = [...playData.activeReliefs]; oathOrigin = 'survival'; }
+        startSurvivalGame(); 
+    }
     else if (playData.isRandom) { startRandomGame(); }
-    else if (playData.activeOaths && playData.activeOaths.length > 0) { startOathGame(); }
-    // 【追加】救済モードのリトライ対応
-    else if (playData.activeReliefs && playData.activeReliefs.length > 0) { startReliefGame(); }
+    else if (playData.activeOaths && playData.activeOaths.length > 0) {
+        tempOaths = [...playData.activeOaths];
+        startOathGame(); 
+    }
+    else if (playData.activeReliefs && playData.activeReliefs.length > 0) {
+        tempReliefs = [...playData.activeReliefs];
+        startReliefGame(); 
+    }
     else if (playData.isRevenge) { startRevengeMode(); }
     else if (typeof rogueData !== 'undefined' && rogueData.active) { alert("探索モード中はリトライできません。"); resumeGame(); }
     else { startGame(); }
@@ -112,7 +121,7 @@ function startCountdown() {
         else {
             clearInterval(countdownTimer); isGameActive = true;
             if (playData.isCalculation) { nextCalcQuestion(); startCalcTimer(); } 
-            else if(playData.isTyping) { nextTypingQuestion(); } 
+            else if (playData.isTyping && !(typeof rogueData !== 'undefined' && rogueData.active)) { nextTypingQuestion(); } 
             else { nextQuestion(); }
             playBGM();
         }
@@ -267,14 +276,14 @@ function judge(isCorrect, btn) {
     } else {
         // 【修正】「MISS...」を「✕」に変更
         gameState.lives--; gameState.combo = 0; showCutIn("✕"); updateUI();
-        if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping) nextTypingQuestion(); else nextQuestion(); }, 1500); }
+        if(gameState.lives <= 0) { setTimeout(() => isGameActive && finishGame(false), 1500); } else { setTimeout(() => { if(!isGameActive) return; if(playData.isTyping && !(typeof rogueData !== 'undefined' && rogueData.active)) nextTypingQuestion(); else nextQuestion(); }, 1500); }
     }
 }
 
 function nextTypingQuestion() {
     if (!isGameActive) return;
     if (playData.qIndex >= playData.questions.length) { playData.questions.sort(() => Math.random() - 0.5); playData.qIndex = 0; }
-    playData.typingTarget = playData.questions[playData.qIndex];
+    playData.typingTarget = { ...playData.questions[playData.qIndex] };
     playData.typingIndex = 0;
     playData.typingMissed = false;
     if (typeof renderTypingUI === 'function') renderTypingUI();
@@ -311,6 +320,12 @@ function handleTypingInput(e) {
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); gameState.score += damage; gameState.combo++; showCutIn("-" + damage);
+            gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
+            gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
+            if (typeof updateMissionProgress === 'function') {
+                updateMissionProgress('correct', 1);
+                updateMissionProgress('maxCombo', gameState.combo);
+            }
             const enemyIcon = document.getElementById('ui-enemy-icon'); if(enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } updateUI();
             if(gameState.enemyHP <= 0) { setTimeout(() => isGameActive && finishGame(true), 500); } else { playData.qIndex++; setTimeout(() => { if(isGameActive) nextTypingQuestion(); }, 200); }
         }
@@ -352,6 +367,10 @@ function submitCalcAnswer() {
     const enemyIcon = document.getElementById('ui-enemy-icon');
     if (isCorrect) {
         playSE('hit'); playData.calcCorrect += 1; gameState.score += 1; if(answerBox) answerBox.classList.add('correct');
+        gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
+        if (typeof updateMissionProgress === 'function') {
+            updateMissionProgress('correct', 1);
+        }
         if (enemyIcon) { enemyIcon.classList.remove('shake-anim'); void enemyIcon.offsetWidth; enemyIcon.classList.add('shake-anim'); } showCutIn('GOOD!');
     // 【修正】「MISS」を「✕」に変更
     } else { playSE('miss'); if(answerBox) answerBox.classList.add('wrong'); showCutIn('✕'); }
@@ -414,6 +433,11 @@ function finishGame(isClear) {
             }
 
             if (typeof updateRogueUI === 'function') updateRogueUI();
+            if (rogueData.isBossBattle) {
+                gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
+                if (typeof updateMissionProgress === 'function') updateMissionProgress('kill', 1);
+            }
+            saveGame();
 
             // 【修正】通常のリッチなリザルト画面へ置き換え
             const resTitle = document.getElementById('res-title');
@@ -650,7 +674,8 @@ function finishGame(isClear) {
         if(isClear) {
             gameState.stats.totalKill = (gameState.stats.totalKill || 0) + 1;
             let requiredLives = 3;
-            if (playData.activeOaths && playData.activeOaths.includes('backwater')) requiredLives = 1;
+            if (playData.activeReliefs && playData.activeReliefs.includes('life')) requiredLives = 5;
+            else if (playData.activeOaths && playData.activeOaths.includes('backwater')) requiredLives = 1;
             if (gameState.lives >= requiredLives) { gameState.stats.achieved_perfect = true; }
             if (playData.isRevenge) gameState.revengeList = [];
             
@@ -829,7 +854,8 @@ function stopBGM() {
 function playMmlBGM() {
     const mml = BGM_MML.replace(/\s+/g, '').toUpperCase(); let index = 0; let nextTime = audioCtx.currentTime + 0.1; let octave = 4; let defaultLen = 4; let tempo = 120;
     const scheduleNote = () => {
-        if (!isGameActive) return;
+        const canPlay = isGameActive || (typeof rogueData !== 'undefined' && rogueData.active);
+        if (!canPlay) return;
         try {
             while (nextTime < audioCtx.currentTime + 2.0 && index < mml.length) {
                 let char = mml[index++];
@@ -849,7 +875,8 @@ function playMmlBGM() {
                 }
             }
         } catch(e) {}
-        if (index >= mml.length) index = 0; if (isGameActive && !isMuted) bgmTimeout = setTimeout(scheduleNote, 500);
+        if (index >= mml.length) index = 0; 
+        if (canPlay && !isMuted) bgmTimeout = setTimeout(scheduleNote, 500);
     };
     scheduleNote();
 }
