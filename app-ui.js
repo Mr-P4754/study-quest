@@ -1152,6 +1152,8 @@ function renderShop() {
     l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="currentShopTab='buy'; renderShop();">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="currentShopTab='exchange'; renderShop();">アイテム交換</div></div>`; 
     if(currentShopTab === 'buy') {
         if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
+            const lv = (gameState.itemLevels && gameState.itemLevels[i.id]) ? gameState.itemLevels[i.id] : 0;
+            const p = i.price * (lv + 1);
             const isMax = lv >= MAX_ITEM_LEVEL;
             l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" ${isMax?'disabled':''} onclick="buyItem('${i.id}',${p})">${isMax?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
         }); 
