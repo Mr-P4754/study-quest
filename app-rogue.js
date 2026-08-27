@@ -519,18 +519,14 @@ function showRogueCutIn(t) {
     const container = document.getElementById('rogue-canvas-container');
     if (!container) return;
     const d = document.createElement('div');
+    d.className = 'rogue-cutin';
     d.style.position = 'absolute';
-    d.style.top = '40px'; // 歩数や階層の下（キャンバス上部）
+    d.style.top = '40px';
     d.style.left = '50%';
-    d.style.transform = 'translateX(-50%)'; // 【追加】横方向の中央揃え
-    d.style.fontSize = '1.2em';
-    d.style.fontWeight = 'bold';
-    d.style.color = '#f1c40f';
-    d.style.textShadow = '2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+    d.style.transform = 'translateX(-50%)';
     d.style.zIndex = '100';
     d.style.pointerEvents = 'none';
     d.style.whiteSpace = 'nowrap';
-    d.style.animation = 'damageFloat 1.2s ease-out forwards';
     d.innerText = t;
     container.appendChild(d);
     setTimeout(() => d.remove(), 1200);

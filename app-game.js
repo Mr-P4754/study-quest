@@ -18,16 +18,25 @@ function getGradeMultiplier(gradeStr) {
 }
 
 function showCutIn(t) { 
+    const str = String(t);
     const d = document.createElement('div'); 
-    d.className='cutin'; 
-    d.innerText=t; 
-    // 【変更】「✕」の場合に色を青ベースに変更
-    if(String(t).includes('✕')) { 
-        d.style.color='#3498db'; 
-        d.style.webkitTextStroke='2px #1f618d'; 
-    } 
+    d.className = 'cutin'; 
+    d.innerText = str; 
+
+    if (str.includes('✕')) {
+        d.classList.add('cutin-miss');
+    } else if (str.startsWith('-') || /^\d+$/.test(str.replace(/^-/, ''))) {
+        d.classList.add('cutin-damage');
+    } else if (str.includes('+') || str === 'GOOD!') {
+        d.classList.add('cutin-heal');
+    } else if (str === 'GO!' || /^[1-3]$/.test(str)) {
+        d.classList.add('cutin-countdown');
+    } else {
+        d.classList.add('cutin-damage');
+    }
+
     document.body.appendChild(d); 
-    setTimeout(()=>d.remove(), 1500); 
+    setTimeout(() => d.remove(), 1300); 
 }
 
 function updateUI() { 
