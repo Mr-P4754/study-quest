@@ -52,9 +52,11 @@ function filterUnits() {
 }
 
 function updateTitleInfo() {
-    const chara = (rawData.characters && rawData.characters.length > 0) ? rawData.characters.find(c => c.id == gameState.equipped) : null;
-    let lv = (gameState.charaInventory[gameState.equipped] || {}).level || 0;
-    const tEquippedName = document.getElementById('title-equipped-name'); if(tEquippedName) tEquippedName.innerText = (chara ? chara.name : "なし") + " Lv." + lv;
+    const chara = (rawData.characters && rawData.characters.length > 0) ? rawData.characters.find(c => String(c.id) == String(gameState.equipped)) : null;
+    const inv = gameState.charaInventory[gameState.equipped] || (chara ? gameState.charaInventory[chara.id] : null);
+    let lv = (inv && inv.level) ? inv.level : 0;
+    const displayName = (chara && typeof getDisplayName === 'function') ? getDisplayName(chara, inv) : (chara ? chara.name : "なし");
+    const tEquippedName = document.getElementById('title-equipped-name'); if(tEquippedName) tEquippedName.innerText = displayName + (chara ? " Lv." + lv : "");
     const tXp = document.getElementById('title-xp'); if(tXp) tXp.innerText = gameState.xp;
     const imgContainer = document.getElementById('title-chara-img');
     if(imgContainer) {

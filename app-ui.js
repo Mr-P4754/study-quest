@@ -877,7 +877,9 @@ function renderZukan() {
 }
 
 function openCharaDetail(id) { 
-    viewingCharaId=id; const c = rawData.characters ? rawData.characters.find(x=>x.id==id) : null; const o=gameState.charaInventory[id]; if(!c||!o)return; 
+    viewingCharaId=id; const c = rawData.characters ? rawData.characters.find(x=>String(x.id)==String(id)) : null; 
+    const o = gameState.charaInventory[id] || gameState.charaInventory[String(id)] || (c ? gameState.charaInventory[c.id] : null); 
+    if(!c||!o) return; 
     const currentR = o.currentRarity || c.rarity; const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
     const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
     
@@ -901,6 +903,23 @@ function openCharaDetail(id) {
         detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${canUse && (gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${canUse && (gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${canUse && (gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
     }
     
+    // 装備ボタンの状態更新
+    const isEquipped = String(gameState.equipped) === String(id);
+    const btnEquip = document.getElementById('btn-equip') || document.querySelector('.btn-equip-action');
+    if (btnEquip) {
+        if (isEquipped) {
+            btnEquip.innerText = '✅ 装備中';
+            btnEquip.disabled = true;
+            btnEquip.style.opacity = '0.7';
+            btnEquip.style.cursor = 'default';
+        } else {
+            btnEquip.innerText = '🛡️ このキャラを装備';
+            btnEquip.disabled = false;
+            btnEquip.style.opacity = '1.0';
+            btnEquip.style.cursor = 'pointer';
+        }
+    }
+
     const btnEnhance = document.getElementById('btn-enhance');
     if (btnEnhance) {
         btnEnhance.disabled = isMax;
@@ -926,6 +945,25 @@ function openCharaDetail(id) {
             btn.innerHTML = `<div style="font-weight:bold; font-size:1.1em; margin-bottom:4px;">🪽 転生する</div><div style="font-size:0.75em; font-weight:normal;">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</div>`; btn.onclick = executeReincarnation; evoContainer.appendChild(btn); evoContainer.classList.remove('hidden');
         }
     }
+}
+
+/**
+ * 現在詳細モーダルで表示しているキャラを装備する
+ */
+function equipCurrentChara() {
+    if (!viewingCharaId) return;
+    const chara = rawData.characters ? rawData.characters.find(c => String(c.id) == String(viewingCharaId)) : null;
+    const inv = gameState.charaInventory[viewingCharaId] || (chara ? gameState.charaInventory[chara.id] : null);
+    if (!chara || !inv) return;
+
+    gameState.equipped = String(chara.id);
+    saveGame();
+    if (typeof playSE === 'function') playSE('win');
+    if (typeof updateTitleInfo === 'function') updateTitleInfo();
+    renderZukan();
+    openCharaDetail(chara.id);
+    const displayName = (typeof getDisplayName === 'function') ? getDisplayName(chara, inv) : chara.name;
+    alert(`【${displayName}】を装備しました！`);
 }
 
 function closeCharaDetail() { document.getElementById('chara-detail-overlay')?.classList.add('hidden'); renderZukan(); }
