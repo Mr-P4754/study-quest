@@ -411,10 +411,10 @@ function finishGame(isClear) {
             rogueData.earnedXp += earned;
 
             // 【追加】撃破したキャラをインベントリに追加
-            const charId = playData.rogueEnemyCharId;
+            const charId = playData.rogueEnemyCharId ? String(playData.rogueEnemyCharId) : null;
             let getMsgHtml = "";
-            if (charId) {
-                const c = rawData.characters.find(x => x.id == charId);
+            if (charId && rawData.characters) {
+                const c = rawData.characters.find(x => String(x.id) === charId);
                 const cName = c ? c.name : "キャラ";
                 const cRarity = c ? c.rarity : "N";
                 if (!gameState.charaInventory[charId]) {
@@ -758,7 +758,13 @@ function handleResultClose() {
 }
 
 function backToTitle() { 
-    document.getElementById('result-overlay')?.classList.add('hidden'); document.getElementById('game-screen')?.classList.add('hidden'); document.getElementById('title-screen')?.classList.remove('hidden'); document.getElementById('pause-overlay')?.classList.add('hidden'); 
+    document.getElementById('result-overlay')?.classList.add('hidden'); 
+    document.getElementById('game-screen')?.classList.add('hidden'); 
+    document.getElementById('title-screen')?.classList.remove('hidden'); 
+    document.getElementById('pause-overlay')?.classList.add('hidden'); 
+    document.getElementById('field-screen')?.classList.add('hidden');
+    document.getElementById('rogue-shop-overlay')?.classList.add('hidden');
+    if (typeof rogueData !== 'undefined') rogueData.active = false;
     if (countdownTimer) clearInterval(countdownTimer);
     clearInterval(gameState.timer); 
     isGameActive = false; isPaused = false; 

@@ -59,7 +59,12 @@ function startRogueMode() {
     
     if (!window.rogueKeyHandlerRegistered) {
         window.addEventListener('keydown', (e) => {
-            if (!rogueData.active || !document.getElementById('game-screen').classList.contains('hidden')) return;
+            if (!rogueData.active || 
+                !document.getElementById('game-screen')?.classList.contains('hidden') ||
+                !document.getElementById('rogue-shop-overlay')?.classList.contains('hidden') ||
+                !document.getElementById('app-modal-overlay')?.classList.contains('hidden') ||
+                !document.getElementById('result-overlay')?.classList.contains('hidden')
+            ) return;
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                 e.preventDefault();
             }
@@ -136,7 +141,11 @@ function drawRogueMap() {
 }
 
 function moveRoguePlayer(dx, dy) {
-    if (rogueData.isAnimating) return;
+    if (!rogueData.active || rogueData.isAnimating) return;
+    if (!document.getElementById('game-screen')?.classList.contains('hidden')) return;
+    if (!document.getElementById('rogue-shop-overlay')?.classList.contains('hidden')) return;
+    if (!document.getElementById('app-modal-overlay')?.classList.contains('hidden')) return;
+    if (!document.getElementById('result-overlay')?.classList.contains('hidden')) return;
 
     const nx = rogueData.playerX + dx;
     const ny = rogueData.playerY + dy;
@@ -409,15 +418,16 @@ function getRogueEnemyChar(isBoss, floor) {
         else rarity = 'N';
     }
     
-    let pool = rawData.characters.filter(c => c.rarity === rarity);
-    if (!pool || pool.length === 0) pool = rawData.characters; // フォールバック
-    return pool[Math.floor(Math.random() * pool.length)];
+    let pool = (rawData.characters || []).filter(c => c.rarity === rarity);
+    if (!pool || pool.length === 0) pool = rawData.characters || [];
+    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
+    return { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
 }
 
 // 【変更】triggerRogueBattle 全体を以下に差し替え
 function triggerRogueBattle(isBoss = false) {
     rogueData.isBossBattle = isBoss;
-    const enemyChar = getRogueEnemyChar(isBoss, rogueData.floor);
+    const enemyChar = getRogueEnemyChar(isBoss, rogueData.floor) || { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
     playData.rogueEnemyCharId = enemyChar.id;
 
     // HP倍率の計算
