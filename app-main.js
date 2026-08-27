@@ -139,8 +139,15 @@ function checkTitles() {
     updateCategoryBadges();
 }
 
-function openTitles() { document.getElementById('titles-overlay')?.classList.remove('hidden'); renderTitles(); }
-function closeTitles() { document.getElementById('titles-overlay')?.classList.add('hidden'); }
+function openTitles() { 
+    if (typeof hideCurrentCategoryOverlay === 'function') hideCurrentCategoryOverlay();
+    document.getElementById('titles-overlay')?.classList.remove('hidden'); 
+    renderTitles(); 
+}
+function closeTitles() { 
+    document.getElementById('titles-overlay')?.classList.add('hidden'); 
+    if (typeof returnToCurrentCategory === 'function') returnToCurrentCategory();
+}
 
 function renderTitles() {
     const list = document.getElementById('titles-list'); if(!list) return; list.innerHTML = '';
@@ -232,8 +239,15 @@ function updateMissionBadge() {
     updateCategoryBadges(); // カテゴリーバッジ連動
 }
 
-function openMissions() { document.getElementById('mission-overlay')?.classList.remove('hidden'); renderMissions(); }
-function closeMissions() { document.getElementById('mission-overlay')?.classList.add('hidden'); }
+function openMissions() { 
+    if (typeof hideCurrentCategoryOverlay === 'function') hideCurrentCategoryOverlay();
+    document.getElementById('mission-overlay')?.classList.remove('hidden'); 
+    renderMissions(); 
+}
+function closeMissions() { 
+    document.getElementById('mission-overlay')?.classList.add('hidden'); 
+    if (typeof returnToCurrentCategory === 'function') returnToCurrentCategory();
+}
 
 function renderMissions() { 
     const l=document.getElementById('mission-list'); if(!l) return; l.innerHTML=''; let all=true; 

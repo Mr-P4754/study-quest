@@ -5,8 +5,15 @@
 /* ------------------------------------------
  * 成績表・レーダーチャート
  * ------------------------------------------ */
-function openRecord() { document.getElementById('record-overlay')?.classList.remove('hidden'); renderRecord(); }
-function closeRecord() { document.getElementById('record-overlay')?.classList.add('hidden'); }
+function openRecord() { 
+    hideCurrentCategoryOverlay();
+    document.getElementById('record-overlay')?.classList.remove('hidden'); 
+    renderRecord(); 
+}
+function closeRecord() { 
+    document.getElementById('record-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
 function drawRadarChart(labels, data) {
     const canvas = document.getElementById('radar-chart'); if (!canvas) return; const ctx = canvas.getContext('2d');
@@ -263,11 +270,25 @@ function closeSyncMenu() { document.getElementById('sync-overlay')?.classList.ad
 /* ------------------------------------------
  * Ver 9.0.0 追加: カテゴリーメニュー制御
  * ------------------------------------------ */
+let currentCategory = null;
+
 function openCategory(categoryId) {
+    currentCategory = categoryId;
     document.getElementById('cat-' + categoryId + '-overlay')?.classList.remove('hidden');
 }
 function closeCategory(categoryId) {
+    currentCategory = null;
     document.getElementById('cat-' + categoryId + '-overlay')?.classList.add('hidden');
+}
+function hideCurrentCategoryOverlay() {
+    if (currentCategory) {
+        document.getElementById('cat-' + currentCategory + '-overlay')?.classList.add('hidden');
+    }
+}
+function returnToCurrentCategory() {
+    if (currentCategory) {
+        document.getElementById('cat-' + currentCategory + '-overlay')?.classList.remove('hidden');
+    }
 }
 
 /* ------------------------------------------
@@ -275,15 +296,27 @@ function closeCategory(categoryId) {
  * ------------------------------------------ */
 let oathOrigin = 'normal';
 
-function openUnitSelection() { const unitTitle = document.getElementById('unit-select-title'); if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } document.getElementById('unit-select-overlay')?.classList.remove('hidden'); }
-function closeUnitSelection() { document.getElementById('unit-select-overlay')?.classList.add('hidden'); }
+function openUnitSelection() { 
+    hideCurrentCategoryOverlay();
+    const unitTitle = document.getElementById('unit-select-title'); 
+    if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } 
+    document.getElementById('unit-select-overlay')?.classList.remove('hidden'); 
+}
+function closeUnitSelection() { 
+    document.getElementById('unit-select-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 function startNormalGameCheck() { 
     const g = document.getElementById('grade-select')?.value; 
     const s = document.getElementById('subject-select')?.value; 
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
-    playData.selectedBossHp = Number(hp); closeUnitSelection(); oathOrigin = 'normal'; startGame(); 
+    currentCategory = null;
+    document.getElementById('unit-select-overlay')?.classList.add('hidden'); 
+    playData.selectedBossHp = Number(hp); 
+    oathOrigin = 'normal'; 
+    startGame(); 
 }
 function goToOathMenuCheck() { 
     const g = document.getElementById('grade-select')?.value; 
@@ -291,7 +324,10 @@ function goToOathMenuCheck() {
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
-    playData.selectedBossHp = Number(hp); closeUnitSelection(); oathOrigin = 'normal'; openOathMenu(); 
+    playData.selectedBossHp = Number(hp); 
+    document.getElementById('unit-select-overlay')?.classList.add('hidden'); 
+    oathOrigin = 'normal'; 
+    openOathMenu(); 
 }
 
 function goToReliefMenuCheck() { 
@@ -300,19 +336,26 @@ function goToReliefMenuCheck() {
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u || !hp) return alert("全ての項目を選択してください"); 
-    playData.selectedBossHp = Number(hp); closeUnitSelection(); oathOrigin = 'normal'; openReliefMenu(); 
+    playData.selectedBossHp = Number(hp); 
+    document.getElementById('unit-select-overlay')?.classList.add('hidden'); 
+    oathOrigin = 'normal'; 
+    openReliefMenu(); 
 }
 
 function goToOathMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    closeSurvivalMenu(); oathOrigin = 'survival'; openOathMenu();
+    document.getElementById('survival-overlay')?.classList.add('hidden'); 
+    oathOrigin = 'survival'; 
+    openOathMenu();
 }
 
 function goToReliefMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    closeSurvivalMenu(); oathOrigin = 'survival'; openReliefMenu();
+    document.getElementById('survival-overlay')?.classList.add('hidden'); 
+    oathOrigin = 'survival'; 
+    openReliefMenu();
 }
 
 let tempOaths = [];
@@ -337,7 +380,14 @@ function openOathMenu() {
     document.getElementById('oath-overlay')?.classList.remove('hidden'); 
 }
 
-function closeOathMenu() { document.getElementById('oath-overlay')?.classList.add('hidden'); }
+function closeOathMenu() { 
+    document.getElementById('oath-overlay')?.classList.add('hidden'); 
+    if (oathOrigin === 'survival') {
+        document.getElementById('survival-overlay')?.classList.remove('hidden');
+    } else {
+        document.getElementById('unit-select-overlay')?.classList.remove('hidden');
+    }
+}
 function toggleOath(type) { const el = document.getElementById('oath-' + type); if (tempOaths.includes(type)) { tempOaths = tempOaths.filter(t => t !== type); if(el) el.classList.remove('selected'); } else { tempOaths.push(type); if(el) el.classList.add('selected'); } }
 
 let tempReliefs = [];
@@ -347,7 +397,14 @@ function openReliefMenu() {
     document.getElementById('relief-overlay')?.classList.remove('hidden'); 
 }
 
-function closeReliefMenu() { document.getElementById('relief-overlay')?.classList.add('hidden'); }
+function closeReliefMenu() { 
+    document.getElementById('relief-overlay')?.classList.add('hidden'); 
+    if (oathOrigin === 'survival') {
+        document.getElementById('survival-overlay')?.classList.remove('hidden');
+    } else {
+        document.getElementById('unit-select-overlay')?.classList.remove('hidden');
+    }
+}
 function toggleRelief(type) { 
     const el = document.getElementById('relief-' + type); 
     if (tempReliefs.includes(type)) { 
@@ -409,21 +466,35 @@ function openRandomMenu() {
     const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g=>g);
     const sel = document.getElementById('random-grade-select'); if(!sel) return; sel.innerHTML = '<option value="">学年を選択...</option>';
     grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    hideCurrentCategoryOverlay();
     document.getElementById('random-overlay')?.classList.remove('hidden');
 }
-function closeRandomMenu() { document.getElementById('random-overlay')?.classList.add('hidden'); }
+function closeRandomMenu() { 
+    document.getElementById('random-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
 function openTypingMenu() {
     if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データが見つかりません");
     const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g=>g);
     const sel = document.getElementById('typing-grade-select'); if(!sel) return; sel.innerHTML = '<option value="">学年を選択...</option>';
     grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    hideCurrentCategoryOverlay();
     document.getElementById('typing-menu-overlay')?.classList.remove('hidden');
 }
-function closeTypingMenu() { document.getElementById('typing-menu-overlay')?.classList.add('hidden'); }
+function closeTypingMenu() { 
+    document.getElementById('typing-menu-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
-function openCalcMenu() { document.getElementById('calc-overlay')?.classList.remove('hidden'); }
-function closeCalcMenu() { document.getElementById('calc-overlay')?.classList.add('hidden'); }
+function openCalcMenu() { 
+    hideCurrentCategoryOverlay();
+    document.getElementById('calc-overlay')?.classList.remove('hidden'); 
+}
+function closeCalcMenu() { 
+    document.getElementById('calc-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
 function openSurvivalMenu() {
     if(!rawData.questions) return;
@@ -433,9 +504,13 @@ function openSurvivalMenu() {
         sel.innerHTML = '<option value="">学年を選択...</option>';
         grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     }
+    hideCurrentCategoryOverlay();
     document.getElementById('survival-overlay')?.classList.remove('hidden');
 }
-function closeSurvivalMenu() { document.getElementById('survival-overlay')?.classList.add('hidden'); }
+function closeSurvivalMenu() { 
+    document.getElementById('survival-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
 
 /* ------------------------------------------
@@ -461,6 +536,7 @@ function startSurvivalGame() {
     playData.isCalculation = false; 
     playData.isSurvival = true; 
     playData.context = null;
+    currentCategory = null;
     
     const charaStats = getCharaStats();
     gameState.score = 0; 
@@ -515,6 +591,7 @@ function startGame() {
     if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = []; playData.activeReliefs = []; playData.isRandom = false; playData.isTyping = false; playData.isCalculation = false; playData.isSurvival = false; playData.context = { grade: g, subject: s, unit: u };
+    currentCategory = null;
     
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = Number(boss.hp)||3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time;
@@ -543,10 +620,23 @@ function startGame() {
 }
 
 function startRevengeMode() {
-    if (!gameState.revengeList || gameState.revengeList.length === 0) return;
+    if (!gameState.revengeList || gameState.revengeList.length === 0) {
+        alert("復習対象の問題がありません！");
+        returnToCurrentCategory();
+        return;
+    }
     const targetQuestions = rawData.questions.filter(q => gameState.revengeList.includes(q.id));
     if (targetQuestions.length !== gameState.revengeList.length) { gameState.revengeList = targetQuestions.map(q => q.id); saveGame(); updateTitleInfo(); }
-    if (targetQuestions.length === 0) { alert("復習すべき問題データが見つかりませんでした。"); gameState.revengeList = []; saveGame(); updateTitleInfo(); return; }
+    if (targetQuestions.length === 0) { 
+        alert("復習すべき問題データが見つかりませんでした。"); 
+        gameState.revengeList = []; 
+        saveGame(); 
+        updateTitleInfo(); 
+        returnToCurrentCategory();
+        return; 
+    }
+    hideCurrentCategoryOverlay();
+    currentCategory = null;
     const boss = { name: "忘却の亡霊", hp: targetQuestions.length * 100, icon: "👻" };
     playData.questions = targetQuestions.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = true; playData.activeOaths = []; playData.activeReliefs = []; playData.isRandom = false; playData.isTyping = false; playData.isCalculation = false; playData.isSurvival = false; playData.context = null;
@@ -589,6 +679,7 @@ function startOathGame() {
     
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = [...tempOaths]; playData.activeReliefs = []; playData.isRandom = false; playData.isTyping = false; playData.isCalculation = false; playData.isSurvival = false; playData.context = { grade: g, subject: s, unit: u };
+    currentCategory = null;
     
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = playData.activeOaths.includes('backwater') ? 1 : 3;
@@ -624,6 +715,7 @@ function startRandomGame() {
     let boss; if (possibleBosses.length > 0) { const b = possibleBosses[Math.floor(Math.random() * possibleBosses.length)]; boss = { name: b.name, hp: Number(b.hp) || 3000, icon: b.icon }; } else { boss = { name: "迷宮のヌシ", hp: 3000, icon: "🐲" }; }
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = []; playData.activeReliefs = []; playData.isRandom = true; playData.isTyping = false; playData.isCalculation = false; playData.isSurvival = false; playData.context = null;
+    currentCategory = null;
     
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 3; gameState.enemyHP = boss.hp; gameState.maxHP = boss.hp; gameState.maxTime = 10 * charaStats.time;
@@ -668,6 +760,7 @@ function startTypingGame() {
     
     playData.questions = qList.sort(() => Math.random() - 0.5); playData.qIndex = 0; playData.currentBoss = boss;
     playData.isRevenge = false; playData.activeOaths = []; playData.activeReliefs = []; playData.isRandom = false; playData.isTyping = true; playData.isCalculation = false; playData.isSurvival = false; playData.context = null;
+    currentCategory = null;
     
     const charaStats = getCharaStats();
     gameState.score = 0; gameState.combo = 0; gameState.lives = 5; gameState.enemyHP = Number(boss.hp) || 3000; gameState.maxHP = gameState.enemyHP; gameState.maxTime = 10 * charaStats.time; 
@@ -708,6 +801,7 @@ function startCalcGame() {
     if (!type || !mode) return alert("問題形式とモードを選択してください");
     const hand = document.querySelector('input[name="calc-hand"]:checked')?.value || 'right';
     playData.isCalculation = true; playData.isTyping = false; playData.isSurvival = false; playData.calcType = type; playData.calcMode = mode; playData.calcQIndex = 0; playData.calcCorrect = 0; playData.calcInput = ''; playData.calcElapsed = 0; playData.calcTimeLeft = mode === '3min' ? 180 : 0; playData.calcCountTarget = mode === '100q' ? 100 : 0; playData.calcQuestions = []; playData.currentQ = null; playData.isRevenge = false; playData.activeOaths = []; playData.activeReliefs = []; playData.isRandom = false; playData.context = null; playData.handPreference = hand;
+    currentCategory = null;
 
     gameState.score = 0; gameState.combo = 0; gameState.lives = 0; gameState.enemyHP = 0; gameState.maxHP = 1; gameState.maxTime = playData.calcTimeLeft || 1;
     isGameActive = false; isPaused = false;
@@ -750,9 +844,13 @@ function openGiftMenu(giftsToShow = null) {
     if (giftsToShow.length === 0) { alert("受け取るプレゼントはありません。"); updateGiftButtonState(); return; }
     const list = document.getElementById('gift-list'); if(!list) return; list.innerHTML = '';
     giftsToShow.forEach(g => { const id = g.id || g['ID'] || 'unknown'; const title = g.title || g['タイトル'] || 'No Title'; const msg = g.message || g['メッセージ'] || 'No Message'; const exp = g.exp || g['EXP'] || 0; list.innerHTML += `<div class="gift-item" data-id="${id}" data-exp="${exp}"><div class="gift-header"><span class="gift-title">${title}</span><span class="gift-exp">+${exp} XP</span></div><div class="gift-msg">${msg}</div></div>`; });
+    hideCurrentCategoryOverlay();
     document.getElementById('gift-overlay')?.classList.remove('hidden');
 }
-function closeGiftMenu() { document.getElementById('gift-overlay')?.classList.add('hidden'); }
+function closeGiftMenu() { 
+    document.getElementById('gift-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 function receiveAllGifts() {
     const items = document.querySelectorAll('.gift-item'); if (items.length === 0) return; let totalExp = 0; let count = 0;
     items.forEach(item => { const id = item.getAttribute('data-id'); const expVal = item.getAttribute('data-exp'); const exp = parseInt(expVal, 10); if (id && id !== 'undefined' && id !== 'unknown' && !gameState.claimedGifts.includes(id)) { gameState.claimedGifts.push(id); if (!isNaN(exp)) totalExp += exp; count++; } });
@@ -1182,8 +1280,15 @@ async function executeBulkEnhance() {
  * ショップ・アイテム
  * ------------------------------------------ */
 let currentShopTab = 'buy'; 
-function openShop() { document.getElementById('shop-overlay')?.classList.remove('hidden'); renderShop(); }
-function closeShop() { document.getElementById('shop-overlay')?.classList.add('hidden'); }
+function openShop() { 
+    hideCurrentCategoryOverlay();
+    document.getElementById('shop-overlay')?.classList.remove('hidden'); 
+    renderShop(); 
+}
+function closeShop() { 
+    document.getElementById('shop-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 function renderShop() {
     const shopXp = document.getElementById('shop-xp'); if(shopXp) shopXp.innerText = gameState.xp;
     const l=document.getElementById('shop-list'); if(!l) return;
@@ -1207,8 +1312,14 @@ function renderShop() {
 function exchangeBook(bookId, cost) { if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; gameState.inventory.redPages -= cost; gameState.inventory.bluePages -= cost; gameState.inventory[bookId]++; updateMissionProgress('shop', 1); saveGame(); renderShop(); playSE('win'); }
 function buyItem(id,p) { if (!gameState.itemLevels) gameState.itemLevels = {}; if((gameState.itemLevels[id]||0)>=10)return; if(gameState.xp<p)return alert("XP不足"); gameState.xp-=p; gameState.itemLevels[id]=(gameState.itemLevels[id]||0)+1; updateMissionProgress('shop', 1); saveGame(); openShop(); updateTitleInfo(); checkTitles(); }
 
-function openVersionHistory() { document.getElementById('version-overlay')?.classList.remove('hidden'); }
-function closeVersionHistory() { document.getElementById('version-overlay')?.classList.add('hidden'); }
+function openVersionHistory() { 
+    hideCurrentCategoryOverlay();
+    document.getElementById('version-overlay')?.classList.remove('hidden'); 
+}
+function closeVersionHistory() { 
+    document.getElementById('version-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}
 
 /* 修正: openHowToPlay と closeHowToPlay を GuideModule 連携に変更 */
 function openHowToPlay() { GuideModule.open(); }
@@ -1218,6 +1329,7 @@ function closeHowToPlay() { GuideModule.close(); }
  * ガチャシステム
  * ------------------------------------------ */
 function openGacha() { 
+    hideCurrentCategoryOverlay();
     document.getElementById('gacha-overlay')?.classList.remove('hidden'); 
     const gXp = document.getElementById('gacha-xp');
     if(gXp) gXp.innerText = gameState.xp;
@@ -1226,6 +1338,7 @@ function openGacha() {
 
 function closeGacha() { 
     document.getElementById('gacha-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
 }
 
 async function rollGacha(times) {
@@ -1339,6 +1452,10 @@ function openRogueMenu() {
         sel.innerHTML = '<option value="">学年を選択...</option>';
         grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     }
+    hideCurrentCategoryOverlay();
     document.getElementById('rogue-menu-overlay')?.classList.remove('hidden');
 }
-function closeRogueMenu() { document.getElementById('rogue-menu-overlay')?.classList.add('hidden'); }
+function closeRogueMenu() { 
+    document.getElementById('rogue-menu-overlay')?.classList.add('hidden'); 
+    returnToCurrentCategory();
+}

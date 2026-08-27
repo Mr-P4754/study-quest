@@ -78,16 +78,17 @@ button { cursor: pointer; font-family: inherit; -webkit-user-select: none; user-
 /* ミス・間違い表示 (✕) */
 .cutin.cutin-miss {
     font-size: clamp(7.0rem, 28vmin, 15rem);
-    color: #48dbfb;
-    -webkit-text-stroke: clamp(3px, 1.2vmin, 7px) #0c2461;
+    color: #ffffff;
+    -webkit-text-stroke: clamp(2.5px, 0.9vmin, 5.5px) #00a8ff;
     text-shadow: 
-        0 0 35px rgba(72, 219, 251, 0.95),
-        0 0 15px rgba(10, 61, 98, 0.8),
-        4px 4px 0 #0a3d62,
-        -3px -3px 0 #0a3d62,
-        3px -3px 0 #0a3d62,
-        -3px 3px 0 #0a3d62,
-        6px 6px 18px rgba(0, 0, 0, 0.7);
+        0 0 40px #00d2d3,
+        0 0 20px #00f0ff,
+        0 0 10px #70d6ff,
+        3px 3px 0 #0984e3,
+        -2px -2px 0 #0984e3,
+        2px -2px 0 #0984e3,
+        -2px 2px 0 #0984e3,
+        4px 4px 15px rgba(0, 168, 255, 0.7);
     animation: missPopShake 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 

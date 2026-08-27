@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>STUDY QUEST RPG</title>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=9.1.5">
+    <link rel="stylesheet" href="style.css?v=9.1.7">
 </head>
 <body>
 
@@ -25,7 +25,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.1.5</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.1.7</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -65,15 +65,15 @@
     <div class="modal modal-w450">
         <h2 class="text-red mt-0">▶ メインクエスト</h2>
         <div class="sub-menu-grid">
-            <button class="rich-menu-btn" onclick="closeCategory('main'); openUnitSelection();">
+            <button class="rich-menu-btn" onclick="openUnitSelection();">
                 <div class="rich-btn-title">▶ クエスト</div>
                 <div class="rich-btn-desc">基本の問題はここから！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('main'); openRandomMenu();">
+            <button class="rich-menu-btn" onclick="openRandomMenu();">
                 <div class="rich-btn-title">🎲 ランダム</div>
                 <div class="rich-btn-desc">全範囲から出題。EXP1.5倍！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('main'); openTypingMenu();">
+            <button class="rich-menu-btn" onclick="openTypingMenu();">
                 <div class="rich-btn-title">⌨️ タイピング</div>
                 <div class="rich-btn-desc">PC専用。タイピングでEXP獲得！</div>
             </button>
@@ -87,19 +87,19 @@
     <div class="modal modal-w450">
         <h2 class="text-purple mt-0">✨ スペシャルクエスト</h2>
         <div class="sub-menu-grid">
-            <button class="rich-menu-btn" onclick="closeCategory('special'); openRogueMenu();">
+            <button class="rich-menu-btn" onclick="openRogueMenu();">
                 <div class="rich-btn-title">🧭 探索</div>
                 <div class="rich-btn-desc">ローグライク形式で大量XPを獲得！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('special'); openSurvivalMenu();">
+            <button class="rich-menu-btn" onclick="openSurvivalMenu();">
                 <div class="rich-btn-title">🔥 サバイバル</div>
                 <div class="rich-btn-desc">体力尽きるまでエンドレス特訓！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('special'); openCalcMenu();">
+            <button class="rich-menu-btn" onclick="openCalcMenu();">
                 <div class="rich-btn-title">🧮 計算クエスト</div>
                 <div class="rich-btn-desc">タイムアタックで強化書を獲得！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('special'); startRevengeMode();">
+            <button class="rich-menu-btn" onclick="startRevengeMode();">
                 <div class="rich-btn-title">💀 リベンジ <div id="revenge-badge" class="badge hidden">0</div></div>
                 <div class="rich-btn-desc">間違えた問題に再挑戦！</div>
             </button>
@@ -113,11 +113,11 @@
     <div class="modal modal-w450">
         <h2 class="text-orange mt-0">💎 ガチャ・図鑑</h2>
         <div class="sub-menu-grid">
-            <button class="rich-menu-btn" onclick="closeCategory('gacha'); openGacha();">
+            <button class="rich-menu-btn" onclick="openGacha();">
                 <div class="rich-btn-title">💎 ガチャ＆図鑑</div>
                 <div class="rich-btn-desc">XPを消費して新たなキャラをゲット・確認！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('gacha'); openShop();">
+            <button class="rich-menu-btn" onclick="openShop();">
                 <div class="rich-btn-title">🛒 ショップ</div>
                 <div class="rich-btn-desc">アイテム交換・学習アイテム購入！</div>
             </button>
@@ -131,19 +131,19 @@
     <div class="modal modal-w450">
         <h2 class="text-green mt-0">🏆 実績・ギフト</h2>
         <div class="sub-menu-grid">
-            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openMissions();">
+            <button class="rich-menu-btn" onclick="openMissions();">
                 <div class="rich-btn-title">📝 MISSION <div id="mission-badge" class="badge hidden">!</div></div>
                 <div class="rich-btn-desc">デイリーミッション報酬！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openTitles();">
+            <button class="rich-menu-btn" onclick="openTitles();">
                 <div class="rich-btn-title">🏆 称号 <div id="title-badge" class="badge hidden">!</div></div>
                 <div class="rich-btn-desc">やり込み実績の確認と報酬！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('achievement'); openRecord();">
+            <button class="rich-menu-btn" onclick="openRecord();">
                 <div class="rich-btn-title">📊 成績表</div>
                 <div class="rich-btn-desc">正答率や計算記録の確認！</div>
             </button>
-            <button id="btn-gift" class="rich-menu-btn" onclick="closeCategory('achievement'); openGiftMenu();">
+            <button id="btn-gift" class="rich-menu-btn" onclick="openGiftMenu();">
                 <div class="rich-btn-title">🎁 ギフト <div id="gift-badge" class="badge hidden">0</div></div>
                 <div class="rich-btn-desc">運営からのプレゼント！</div>
             </button>
@@ -157,11 +157,11 @@
     <div class="modal modal-w450">
         <h2 class="text-cyan mt-0">📖 プレイガイド</h2>
         <div class="sub-menu-grid">
-            <button class="rich-menu-btn" onclick="closeCategory('guide'); GuideModule.open();">
+            <button class="rich-menu-btn" onclick="GuideModule.open();">
                 <div class="rich-btn-title">📖 プレイガイド一覧</div>
                 <div class="rich-btn-desc">遊び方の詳細確認！</div>
             </button>
-            <button class="rich-menu-btn" onclick="closeCategory('guide'); openVersionHistory();">
+            <button class="rich-menu-btn" onclick="openVersionHistory();">
                 <div class="rich-btn-title">📋 更新履歴</div>
                 <div class="rich-btn-desc">バージョン情報！</div>
             </button>
@@ -572,6 +572,14 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.1.7</h4>
+            <ul>
+                <li>タイトルカテゴリー画面のナビゲーション不具合修正（各種モーダルを閉じた際に直前のカテゴリーモーダルへ正常に戻るよう改善）</li>
+            </ul>
+            <h4>Ver 9.1.6</h4>
+            <ul>
+                <li>誤答「✕」の配色を明るく眩しいネオンスカイブルー＆高輝度シアン光彩へ強化（視認性を向上）</li>
+            </ul>
             <h4>Ver 9.1.5</h4>
             <ul>
                 <li>戦闘演出の視認性改善（誤答時の「✕」表示色を暗い背景でもくっきり認識できる鮮やかな青・シアン系統へ調整）</li>
@@ -637,11 +645,11 @@
     </div>
 </div>
 
-<script src="app-data.js?v=9.1.5"></script>
-<script src="app-guide.js?v=9.1.5"></script>
-<script src="app-main.js?v=9.1.5"></script>
-<script src="app-game.js?v=9.1.5"></script>
-<script src="app-ui.js?v=9.1.5"></script>
-<script src="app-rogue.js?v=9.1.5"></script>
+<script src="app-data.js?v=9.1.7"></script>
+<script src="app-guide.js?v=9.1.7"></script>
+<script src="app-main.js?v=9.1.7"></script>
+<script src="app-game.js?v=9.1.7"></script>
+<script src="app-ui.js?v=9.1.7"></script>
+<script src="app-rogue.js?v=9.1.7"></script>
 </body>
 </html>

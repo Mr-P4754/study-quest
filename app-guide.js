@@ -160,6 +160,7 @@ const GuideModule = {
         if (topicId && GUIDE_DATA.topics[topicId]) {
             this.renderTopicDetail(topicId);
         } else {
+            if (typeof hideCurrentCategoryOverlay === 'function') hideCurrentCategoryOverlay();
             this.renderCategoryList();
         }
         container.querySelector('.overlay')?.classList.remove('hidden');
@@ -168,6 +169,7 @@ const GuideModule = {
     close() {
         const overlay = document.querySelector('#guide-modal-container .overlay');
         if (overlay) overlay.classList.add('hidden');
+        if (typeof returnToCurrentCategory === 'function') returnToCurrentCategory();
     },
 
     // ① カテゴリ＆トピック一覧画面の描画
