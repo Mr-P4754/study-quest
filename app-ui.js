@@ -962,7 +962,7 @@ function equipCurrentChara() {
     if (typeof updateTitleInfo === 'function') updateTitleInfo();
     renderZukan();
     openCharaDetail(chara.id);
-    const displayName = (typeof getDisplayName === 'function') ? getDisplayName(chara, inv) : chara.name;
+    const displayName = (typeof getDisplayName === 'function') ? getDisplayName(chara, inv, false) : chara.name;
     alert(`【${displayName}】を装備しました！`);
 }
 

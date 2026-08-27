@@ -56,7 +56,7 @@ function updateTitleInfo() {
     const inv = gameState.charaInventory[gameState.equipped] || (chara ? gameState.charaInventory[chara.id] : null);
     let lv = (inv && inv.level) ? inv.level : 0;
     const displayName = (chara && typeof getDisplayName === 'function') ? getDisplayName(chara, inv) : (chara ? chara.name : "なし");
-    const tEquippedName = document.getElementById('title-equipped-name'); if(tEquippedName) tEquippedName.innerText = displayName + (chara ? " Lv." + lv : "");
+    const tEquippedName = document.getElementById('title-equipped-name'); if(tEquippedName) tEquippedName.innerHTML = displayName + (chara ? " Lv." + lv : "");
     const tXp = document.getElementById('title-xp'); if(tXp) tXp.innerText = gameState.xp;
     const imgContainer = document.getElementById('title-chara-img');
     if(imgContainer) {

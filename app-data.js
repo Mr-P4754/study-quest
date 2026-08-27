@@ -9,6 +9,27 @@ const RARITY_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
 const SKILL_TYPES = ['ATK', 'TIME', 'EXP'];
 const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 
+/**
+ * キャラクターの表示名を取得する（進化・転生装飾対応）
+ * @param {Object} char キャラクターマスターデータ
+ * @param {Object} inv ユーザーのキャラクター所持データ
+ * @param {boolean} isHtml HTMLタグ付きで装飾を付与するかどうか（falseの場合はプレーンテキスト）
+ * @returns {string} キャラクター表示名
+ */
+function getDisplayName(char, inv, isHtml = true) {
+    if (!char) return "";
+    if (!inv) return char.name || "";
+    let name = char.name || "";
+    const currentR = inv.currentRarity || char.rarity;
+    if (typeof getRarityIndex === 'function' && getRarityIndex(currentR) > getRarityIndex(char.rarity)) {
+        name += isHtml ? '<span class="name-deco-evo">✨️</span>' : '✨️';
+    }
+    if (inv.reincarnationCount && inv.reincarnationCount > 0) {
+        name += isHtml ? '<span class="name-deco-reborn">🪽</span>' : '🪽';
+    }
+    return name;
+}
+
 const LV_BONUS_RATE = 0.01;
 const EXP_REQ = 100;
 const MAT_EXP = { 'N': 25, 'R': 50, 'SR': 100, 'SSR': 200, 'UR': 500 };

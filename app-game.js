@@ -199,13 +199,6 @@ function getCharaStats() {
     return stats;
 }
 
-function getDisplayName(char, inv) {
-    if (!inv) return char.name; let name = char.name; const currentR = inv.currentRarity || char.rarity;
-    if (getRarityIndex(currentR) > getRarityIndex(char.rarity)) name += '<span class="name-deco-evo">✨️</span>';
-    if (inv.reincarnationCount && inv.reincarnationCount > 0) name += '<span class="name-deco-reborn">🪽</span>';
-    return name;
-}
-
 function nextQuestion() {
     if(!isGameActive) return;
     if(playData.qIndex >= playData.questions.length) { 
