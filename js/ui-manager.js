@@ -9,13 +9,13 @@ import {
     runtimeState,
     GUIDE_DATA,
     saveGame
-} from './state.js?v=9.1.9';
+} from './state.js?v=9.2.0';
 
 import {
     getDisplayName,
     drawRadarChart,
     playSE
-} from './utils.js?v=9.1.9';
+} from './utils.js?v=9.2.0';
 
 // ==========================================
 // タイトル初期化・カテゴリー制御
@@ -207,18 +207,12 @@ export function returnToCurrentCategory() {
 // モード選択モーダル開閉制御
 // ==========================================
 export function openUnitSelection() { 
-    console.log('[DEBUG] openUnitSelection() 呼出');
-    console.log('[DEBUG] currentCategory:', runtimeState.currentCategory);
     closeAllCategoryModals();
     const unitTitle = document.getElementById('unit-select-title'); 
     if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } 
-    const overlay = document.getElementById('unit-select-overlay');
-    console.log('[DEBUG] unit-select-overlay 要素:', overlay);
-    console.log('[DEBUG] hidden含む?:', overlay?.classList.contains('hidden'));
-    overlay?.classList.remove('hidden'); 
-    console.log('[DEBUG] hidden削除後:', overlay?.classList.contains('hidden'));
-    console.log('[DEBUG] overlay display:', overlay ? getComputedStyle(overlay).display : 'N/A');
+    document.getElementById('unit-select-overlay')?.classList.remove('hidden'); 
 }
+
 
 export function closeUnitSelection() { 
     document.getElementById('unit-select-overlay')?.classList.add('hidden'); 
