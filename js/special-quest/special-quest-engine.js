@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.4';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.4';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.4';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.5';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.5';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.5';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -848,7 +848,7 @@ function showPlayerDamageFlash() {
 // ----------------------------------------------------
 
 /**
- * 次の問題を出題（通常クエスト共通のTIMEボーナス適用）
+ * 次の問題を出題（通常クエスト共通の q.q / q.choices 描画ロジックとTIMEボーナス適用）
  */
 export function nextTbQuestion() {
     if (!tbState.isActive) return;
@@ -867,18 +867,23 @@ export function nextTbQuestion() {
     tbState.maxTime = 10 * (stats.time || 1.0);
     tbState.timeLeft = tbState.maxTime;
 
+    // 通常クエストと完全共通の問題文プロパティ (q.q または q.question)
+    const questionText = (q.q !== undefined && q.q !== null) ? q.q : (q.question || '問題文');
     const qBox = document.querySelector('#team-battle-screen #ui-question') || document.getElementById('ui-question') || document.getElementById('tb-question');
-    if (qBox) qBox.innerText = q.question || '問題文';
+    if (qBox) qBox.innerText = questionText;
 
+    // 選択肢のシャッフルとボタン生成 (通常クエスト共通の choices 配列)
     const choicesGrid = document.querySelector('#team-battle-screen #ui-choices') || document.getElementById('ui-choices') || document.getElementById('tb-choices');
-    if (choicesGrid && q.choices) {
+    const choicesList = q.choices || q.c || [];
+    if (choicesGrid && choicesList.length > 0) {
         choicesGrid.innerHTML = '';
-        const shuffledChoices = [...q.choices].sort(() => Math.random() - 0.5);
+        const shuffledChoices = [...choicesList].sort(() => Math.random() - 0.5);
         shuffledChoices.forEach(choice => {
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.type = 'button';
             btn.innerText = choice;
+            // クリック時にボタン要素自身を渡して発光エフェクトを有効化
             btn.onclick = () => judgeTbAnswer(choice, btn);
             choicesGrid.appendChild(btn);
         });
@@ -886,7 +891,7 @@ export function nextTbQuestion() {
 }
 
 /**
- * クイズ回答判定と自陣攻撃（発光エフェクト・500msディレイ・属性補正適用）
+ * クイズ回答判定と自陣攻撃（通常クエスト共通の q.a 判定・発光エフェクト・500msディレイ・属性補正適用）
  * @param {string} selectedChoice
  * @param {HTMLButtonElement} [buttonElement]
  */
@@ -894,7 +899,9 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
     if (!tbState.isActive || tbState.isPaused || !tbState.currentQuestion) return;
 
     const q = tbState.currentQuestion;
-    const isCorrect = (String(selectedChoice).trim() === String(q.answer).trim());
+    // 通常クエスト共通の正解プロパティ (q.a または q.answer)
+    const correctAnswer = String((q.a !== undefined && q.a !== null) ? q.a : (q.answer || '')).trim();
+    const isCorrect = (String(selectedChoice).trim() === correctAnswer);
     const activePlayer = tbState.party[tbState.activeSlot];
 
     // 全ての選択肢ボタンを非活性化
@@ -962,7 +969,7 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
     } else {
         // 不正解：正解ボタンを可視化
         allBtns.forEach(b => {
-            if (String(b.innerText).trim() === String(q.answer).trim()) {
+            if (String(b.innerText).trim() === correctAnswer) {
                 b.classList.add('btn-miss-answer');
             }
         });
@@ -990,7 +997,7 @@ function showEnemyDamageFlash() {
 // ----------------------------------------------------
 
 /**
- * アクティブな戦闘キャラクターを切り替える
+ * アクティブな戦闘キャラクターを切り替える（残りタイム割合を正確に引き継ぎ）
  * @param {number} slotIndex (0: 前衛, 1: 後衛1, 2: 後衛2)
  */
 export function switchTbActiveChar(slotIndex) {
@@ -1001,13 +1008,19 @@ export function switchTbActiveChar(slotIndex) {
         return alert("そのキャラクターは戦闘不能です！");
     }
 
+    // 1. 交替前の残りタイム割合（％）を計算・退避
+    const currentRatio = (tbState.maxTime > 0) ? Math.max(0, tbState.timeLeft / tbState.maxTime) : 1.0;
+
+    // 2. アクティブキャラを交替
     tbState.activeSlot = slotIndex;
     playSE('count');
 
-    // 交代演出・タイマーを新前衛キャラのTIME補正に合わせてリセット
+    // 3. 新キャラのTIMEボーナスから新しい maxTime を算出
     const stats = getTbCharaStats(targetChar);
     tbState.maxTime = 10 * (stats.time || 1.0);
-    tbState.timeLeft = tbState.maxTime;
+
+    // 4. 割合を適用して残り時間を引き継ぎ
+    tbState.timeLeft = Math.max(0.1, tbState.maxTime * currentRatio);
 
     updateTbBattleUI();
 }
