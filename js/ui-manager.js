@@ -341,6 +341,7 @@ export function closeGiftMenu() {
 
 export function renderGiftList() {
     const list = document.getElementById('gift-list');
+    const receiveBtn = document.getElementById('btn-receive-all-gifts');
     if (!list) return;
     list.innerHTML = '';
     
@@ -349,7 +350,18 @@ export function renderGiftList() {
     
     if (unclaimed.length === 0) {
         list.innerHTML = '<div style="text-align:center; padding:20px; color:#7f8c8d;">受け取れるギフトはありません。</div>';
+        if (receiveBtn) {
+            receiveBtn.disabled = true;
+            receiveBtn.style.opacity = '0.5';
+            receiveBtn.style.cursor = 'not-allowed';
+        }
         return;
+    }
+    
+    if (receiveBtn) {
+        receiveBtn.disabled = false;
+        receiveBtn.style.opacity = '1';
+        receiveBtn.style.cursor = 'pointer';
     }
     
     unclaimed.forEach(g => {
@@ -378,6 +390,7 @@ export function receiveAllGifts() {
     
     gameState.xp += totalExp;
     saveGame();
+    playSE('win');
     renderGiftList();
     updateTitleInfo();
     checkAdminGifts();
@@ -386,8 +399,11 @@ export function receiveAllGifts() {
 
 export function checkAdminGifts() {
     let gifts = rawData.gifts || [];
-    let count = gifts.filter(g => g.id && !gameState.claimedGifts.includes(g.id)).length;
+    let unclaimed = gifts.filter(g => g.id && !gameState.claimedGifts.includes(g.id));
+    let count = unclaimed.length;
     const badge = document.getElementById('gift-badge');
+    const giftBtn = document.getElementById('btn-gift');
+    
     if (badge) {
         if (count > 0) {
             badge.innerText = count;
@@ -396,6 +412,15 @@ export function checkAdminGifts() {
             badge.classList.add('hidden');
         }
     }
+    
+    if (giftBtn) {
+        if (count > 0) {
+            giftBtn.style.opacity = '1';
+        } else {
+            giftBtn.style.opacity = '0.7';
+        }
+    }
+    
     updateCategoryBadges();
 }
 

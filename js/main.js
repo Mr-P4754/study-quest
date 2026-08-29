@@ -114,7 +114,9 @@ import {
     triggerRogueShop,
     closeRogueShop,
     renderRogueShopContents,
-    buyRogueShopItem,
+    buyRogueHeal,
+    buyRogueAtk,
+    buyRogueSteps,
     getRogueEnemyChar,
     triggerRogueBattle,
     showRogueCutIn,
@@ -318,7 +320,7 @@ Object.assign(globalScope, {
     startOathGame,
     startReliefGame,
 
-    // 探索・ローグライク
+    // 探索
     startRogueMode,
     generateRogueFloor,
     drawRogueMap,
@@ -328,7 +330,9 @@ Object.assign(globalScope, {
     triggerRogueShop,
     closeRogueShop,
     renderRogueShopContents,
-    buyRogueShopItem,
+    buyRogueHeal,
+    buyRogueAtk,
+    buyRogueSteps,
     getRogueEnemyChar,
     triggerRogueBattle,
     showRogueCutIn,

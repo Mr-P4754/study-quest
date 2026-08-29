@@ -1,5 +1,5 @@
 // ==========================================
-// js/quest-explore.js (探索・ローグライクエンジン)
+// js/quest-explore.js (ローグライク探索・コアエンジン)
 // ==========================================
 
 import {
@@ -14,8 +14,7 @@ import {
 
 import {
     playSE,
-    playBGM,
-    stopBGM
+    playBGM
 } from './utils.js';
 
 import {
@@ -27,7 +26,6 @@ import {
 
 import {
     showAppModal,
-    showAlert,
     showConfirm,
     updateTitleInfo
 } from './ui-manager.js';
@@ -38,13 +36,14 @@ export function startRogueMode() {
     let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2 && q.subject !== 'タイピング' && q.unit !== 'タイピング');
     if(qList.length === 0) return alert("問題がありません");
 
+    // 選択された学年の問題を保存しておく
     playData.rogueQuestions = qList;
     playData.isTyping = false;
     playData.isCalculation = false;
     playData.isSurvival = false;
     playData.isRandom = false;
     playData.isRevenge = false;
-    if (typeof window !== 'undefined' && typeof window.handleTypingInput === 'function') {
+    if (typeof window !== 'undefined' && window.handleTypingInput) {
         document.removeEventListener('keydown', window.handleTypingInput);
     }
 
@@ -61,9 +60,7 @@ export function startRogueMode() {
     
     document.getElementById('rogue-menu-overlay')?.classList.add('hidden');
     document.getElementById('title-screen')?.classList.add('hidden');
-    document.getElementById('game-screen')?.classList.add('hidden');
     document.getElementById('field-screen')?.classList.remove('hidden');
-    document.getElementById('cat-special-overlay')?.classList.add('hidden');
     
     if (typeof window !== 'undefined' && !window.rogueKeyHandlerRegistered) {
         window.addEventListener('keydown', (e) => {
@@ -89,6 +86,7 @@ export function startRogueMode() {
 }
 
 export function generateRogueFloor() {
+    // 階層による歩数上限の減少を廃止し、固定値(30) + ボーナス歩数に変更
     rogueData.maxSteps = 30 + (rogueData.bonusSteps || 0);
     rogueData.steps = rogueData.maxSteps;
 
@@ -98,15 +96,15 @@ export function generateRogueFloor() {
 
     for (let y = 1; y < h - 1; y++) {
         for (let x = 1; x < w - 1; x++) {
-            rogueData.map[y][x] = ROGUE_TILES.FLOOR;
+            rogueData.map[y][x] = ROGUE_TILES.FLOOR; // 未踏破マス
         }
     }
 
     rogueData.playerX = 1;
     rogueData.playerY = 1;
-    rogueData.map[1][1] = ROGUE_TILES.VISITED;
+    rogueData.map[1][1] = ROGUE_TILES.VISITED; // スタート位置は踏破済み
 
-    rogueData.shopBought = false;
+    rogueData.shopBought = false; // 階層移動時にショップ購入権をリセット
 
     if (rogueData.floor % 5 === 0) {
         rogueData.map[5][5] = ROGUE_TILES.SHOP;
@@ -165,13 +163,17 @@ export function moveRoguePlayer(dx, dy) {
 
     const tile = rogueData.map[ny][nx];
     
+    // 未踏破マスの場合は踏破済みにし、ランダムエンカウントを判定
     if (tile === ROGUE_TILES.FLOOR) {
         rogueData.map[ny][nx] = ROGUE_TILES.VISITED;
         triggerRogueRNGEvent();
     } else {
+        // ショップや階段の場合は処理を実行
         processRogueTile(tile);
     }
 
+    // イベント発生で戦闘画面に移行していない場合のみ歩数切れチェック
+    // 敵出現アニメーション中 (!rogueData.isAnimating) の場合は強制送還チェックを保留する
     if (rogueData.steps <= 0 && tile !== ROGUE_TILES.STAIRS && rogueData.active && !rogueData.isAnimating && document.getElementById('game-screen')?.classList.contains('hidden')) {
         showAppModal("歩数がゼロになりました。拠点に強制送還されます。", "alert").then(() => {
             exitRogueSystem(false);
@@ -190,10 +192,10 @@ export function triggerRogueRNGEvent() {
     let enemyChance = Math.min(0.8, 0.3 + (rogueData.floor * 0.05));
     
     if (Math.random() < enemyChance) {
-        rogueData.isAnimating = true;
+        rogueData.isAnimating = true; // 敵出現時は操作をロック
         showRogueCutIn("敵出現⚠️");
         setTimeout(() => {
-            rogueData.isAnimating = false;
+            rogueData.isAnimating = false; // ロック解除してバトル開始
             triggerRogueBattle(false);
         }, 800);
     } else {
@@ -248,216 +250,92 @@ export function triggerRogueShop() {
 
 export function closeRogueShop() {
     document.getElementById('rogue-shop-overlay')?.classList.add('hidden');
-    drawRogueMap();
 }
 
 export function renderRogueShopContents() {
-    const xpSpan = document.getElementById('rogue-shop-xp');
-    if (xpSpan) xpSpan.innerText = rogueData.earnedXp;
+    const shopXp = document.getElementById('rogue-shop-xp');
+    if (shopXp) shopXp.innerText = rogueData.earnedXp;
 
     const list = document.getElementById('rogue-shop-list');
     if (!list) return;
 
-    if (rogueData.shopBought) {
-        list.innerHTML = `
-            <div style="text-align:center; padding: 20px; font-weight:bold; color:#7f8c8d;">
-                この階層の商品は購入済みです。<br>次の階層に進むと再度購入できます。
-            </div>
-        `;
-        return;
-    }
+    list.innerHTML = `
+        <div style="background:rgba(0,0,0,0.05); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; color:#e67e22; text-align:center;">
+            🛒 一時探索ショップ (現在のXPを消費)
+        </div>
+    `;
 
-    const items = [
-        { id: 'heal', name: '全回復ポーション', icon: '🧪', desc: 'ライフを最大まで回復する', cost: 1000 },
-        { id: 'step', name: '加速の巻物', icon: '📜', desc: '最大歩数を永続的に +10 する', cost: 1500 },
-        { id: 'atk', name: '力の秘薬', icon: '🍷', desc: '攻撃力を永続的に +20% 強化する', cost: 2000 }
+    const rogueItems = [
+        { id: 'r_heal', name: 'ライフ上限UP薬', price: 30000, desc: '最大ライフ枠と現在ライフを+1', icon: '❤️', action: 'buyRogueHeal' },
+        { id: 'r_atk', name: '攻撃の秘薬', price: 20000, desc: '攻撃バフ倍率を +0.5 上昇', icon: '⚔️', action: 'buyRogueAtk' },
+        { id: 'r_step', name: '韋駄天の靴', price: 30000, desc: '残り歩数上限を +10 追加する', icon: '👟', action: 'buyRogueSteps' }
     ];
 
-    list.innerHTML = items.map(item => `
-        <div class="shop-item">
-            <div class="shop-icon">${item.icon}</div>
-            <div class="shop-info">
-                <div class="shop-name">${item.name}</div>
-                <div class="shop-desc">${item.desc}</div>
+    rogueItems.forEach(item => {
+        const canBuy = !rogueData.shopBought && (rogueData.earnedXp >= item.price);
+        const btnText = rogueData.shopBought ? '品切れ' : `⬇️ ${item.price}XP`;
+        list.innerHTML += `
+            <div class="shop-item">
+                <div class="shop-icon">${item.icon}</div>
+                <div class="shop-info">
+                    <div class="shop-name">${item.name}</div>
+                    <div class="shop-desc">${item.desc}</div>
+                </div>
+                <div class="shop-right">
+                    <button class="shop-buy-btn" ${canBuy ? '' : 'disabled'} onclick="${item.action}(${item.price})">${btnText}</button>
+                </div>
             </div>
-            <div class="shop-right">
-                <button class="shop-buy-btn" onclick="buyRogueShopItem('${item.id}', ${item.cost})" ${rogueData.earnedXp < item.cost ? 'disabled' : ''}>
-                    ${item.cost} XP
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    });
 }
 
-export function buyRogueShopItem(id, cost) {
-    if (rogueData.shopBought) return alert("この階層ではすでにアイテムを購入しています。");
-    if (rogueData.earnedXp < cost) return alert("獲得XPが足りません！");
-
-    rogueData.earnedXp -= cost;
+export function buyRogueHeal(price) {
+    if (rogueData.shopBought || rogueData.earnedXp < price) return;
+    rogueData.earnedXp -= price;
     rogueData.shopBought = true;
-
-    if (id === 'heal') {
-        gameState.lives = rogueData.maxLives || 3;
-        alert("ライフが全回復しました！");
-    } else if (id === 'step') {
-        rogueData.bonusSteps = (rogueData.bonusSteps || 0) + 10;
-        rogueData.maxSteps += 10;
-        rogueData.steps += 10;
-        alert("歩数上限が +10 増加しました！");
-    } else if (id === 'atk') {
-        rogueData.atkBuff += 0.20;
-        alert("攻撃力が +20% 強化されました！");
-    }
-
-    updateRogueUI();
+    
+    if (!rogueData.maxLives) rogueData.maxLives = 3;
+    rogueData.maxLives += 1;
+    gameState.lives += 1;
+    
+    playSE('hit');
     renderRogueShopContents();
+    updateRogueUI();
 }
 
-export function getRogueEnemyChar(isBoss, floor) {
-    let rarity = 'N';
-    if (isBoss) {
-        if (floor % 100 === 0) rarity = 'UR';
-        else if (floor % 50 === 0) rarity = 'SSR';
-        else if (floor % 5 === 0) rarity = 'SR';
-        else rarity = 'R';
-    } else {
-        const rand = Math.random();
-        if (rand < 0.01) rarity = 'UR';
-        else if (rand < 0.05) rarity = 'SSR';
-        else if (rand < 0.20) rarity = 'SR';
-        else if (rand < 0.50) rarity = 'R';
-        else rarity = 'N';
-    }
-    
-    let pool = (rawData.characters || []).filter(c => c.rarity === rarity);
-    if (!pool || pool.length === 0) pool = rawData.characters || [];
-    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
-    return { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
+export function buyRogueAtk(price) {
+    if (rogueData.shopBought || rogueData.earnedXp < price) return;
+    rogueData.earnedXp -= price;
+    rogueData.shopBought = true;
+    rogueData.atkBuff += 0.5;
+    playSE('hit');
+    renderRogueShopContents();
+    updateRogueUI();
 }
 
-export function triggerRogueBattle(isBoss = false) {
-    rogueData.isBossBattle = isBoss;
-    const enemyChar = getRogueEnemyChar(isBoss, rogueData.floor) || { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
-    playData.rogueEnemyCharId = enemyChar.id;
-
-    let hpMultiplier = 1.0;
-    if (isBoss) {
-        if (rogueData.floor % 5 === 0) hpMultiplier = 1.5;
-        else hpMultiplier = 1.25;
-    }
-    const calculatedHp = Math.floor(1000 * Number(enemyChar.value || 1.0) * hpMultiplier);
-
-    let qList = [...playData.rogueQuestions].sort(() => Math.random() - 0.5);
-    playData.questions = qList;
-    playData.qIndex = 0;
-
-    let rarityText = `[${enemyChar.rarity}] `;
-    let bossName = isBoss ? `${rogueData.floor}F ボス: ${rarityText}${enemyChar.name}` : `${rarityText}${enemyChar.name}`;
-    let iconUrl = (enemyChar.imageUrl && enemyChar.imageUrl.startsWith('http')) ? enemyChar.imageUrl : "👾";
-
-    playData.currentBoss = { name: bossName, hp: calculatedHp, icon: iconUrl };
-    playData.isRevenge = false;
-
-    playData.activeOaths = [];
-    if (isBoss && rogueData.floor % 5 === 0) {
-        const oaths = ['rapid', 'weak'];
-        playData.activeOaths = [ oaths[Math.floor(Math.random() * oaths.length)] ];
-    }
-
-    playData.isRandom = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
-    playData.isSurvival = false;
-    playData.context = null;
-
-    gameState.score = 0;
-    gameState.combo = 0;
-    gameState.enemyHP = calculatedHp;
-    gameState.maxHP = calculatedHp;
-    
-    const charaStats = getCharaStats();
-    gameState.maxTime = 10 * charaStats.time;
-    if (playData.activeOaths.includes('rapid')) gameState.maxTime *= 0.5;
-    gameState.timeLeft = gameState.maxTime; 
-
-    runtimeState.isGameActive = false;
-    runtimeState.isPaused = false;
-    
-    if (typeof window !== 'undefined' && typeof window.handleTypingInput === 'function') {
-        document.removeEventListener('keydown', window.handleTypingInput);
-    }
-
-    document.getElementById('field-screen')?.classList.add('hidden');
-    document.getElementById('game-screen')?.classList.remove('hidden');
-
-    document.getElementById('calc-layout')?.classList.add('hidden');
-    document.getElementById('ui-calc-answer')?.classList.add('hidden');
-    document.getElementById('calc-keypad')?.classList.add('hidden');
-    document.getElementById('ui-calc-progress')?.classList.add('hidden');
-    document.getElementById('ui-choices')?.classList.remove('hidden');
-    document.getElementById('ui-typing-area')?.classList.add('hidden');
-    document.getElementById('ui-question')?.classList.remove('hidden');
-
-    const uienemyName = document.getElementById('ui-enemy-name');
-    let displayBossName = bossName;
-    if (playData.activeOaths.length > 0) displayBossName = "【誓約】" + bossName;
-    if (uienemyName) uienemyName.innerText = displayBossName;
-    
-    const enemyIcon = document.getElementById('ui-enemy-icon');
-    if (enemyIcon) { 
-        if(iconUrl.startsWith('http')) { 
-            enemyIcon.innerHTML = `<img src="${iconUrl}">`; 
-        } else { 
-            enemyIcon.innerHTML = iconUrl; 
-        }
-        enemyIcon.classList.remove('shake-anim'); 
-    }
-    
-    const enemyBox = document.querySelector('.enemy-visual-box');
-    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out');
-    const hpFrame = document.querySelector('.enemy-hp-frame');
-    if (hpFrame) hpFrame.style.display = '';
-    const timerBar = document.getElementById('ui-timer'); 
-    if(timerBar) timerBar.style.width = '100%'; 
-    const timerText = document.getElementById('ui-timer-text'); 
-    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
-
-    updateUI();
-    startCountdown();
-}
-
-export function showRogueCutIn(t) {
-    const container = document.getElementById('rogue-canvas-container');
-    if (!container) return;
-    const d = document.createElement('div');
-    d.className = 'rogue-cutin';
-    d.style.position = 'absolute';
-    d.style.top = '40px';
-    d.style.left = '50%';
-    d.style.transform = 'translateX(-50%)';
-    d.style.zIndex = '100';
-    d.style.pointerEvents = 'none';
-    d.style.whiteSpace = 'nowrap';
-    d.innerText = t;
-    container.appendChild(d);
-    setTimeout(() => d.remove(), 1200);
+export function buyRogueSteps(price) {
+    if (rogueData.shopBought || rogueData.earnedXp < price) return;
+    rogueData.earnedXp -= price;
+    rogueData.shopBought = true;
+    rogueData.bonusSteps = (rogueData.bonusSteps || 0) + 10;
+    rogueData.maxSteps += 10;
+    rogueData.steps += 10;
+    playSE('hit');
+    renderRogueShopContents();
+    updateRogueUI();
 }
 
 export function updateRogueUI() {
-    const lifeEl = document.getElementById('rogue-life');
-    if (lifeEl) lifeEl.innerText = '❤️'.repeat(Math.max(0, gameState.lives));
-
-    const floorEl = document.getElementById('rogue-floor');
-    if (floorEl) floorEl.innerText = rogueData.floor;
-
-    const stepsEl = document.getElementById('rogue-steps');
-    if (stepsEl) stepsEl.innerText = `${rogueData.steps}/${rogueData.maxSteps}`;
-
-    const expLvEl = document.getElementById('rogue-explv');
-    if (expLvEl) expLvEl.innerText = rogueData.exploreLevel;
-
-    const xpEl = document.getElementById('rogue-ctxp');
-    if (xpEl) xpEl.innerText = rogueData.earnedXp;
+    const l = document.getElementById('rogue-life');
+    if (l) l.innerText = '❤️'.repeat(Math.max(0, gameState.lives));
+    const f = document.getElementById('rogue-floor');
+    if (f) f.innerText = rogueData.floor;
+    const s = document.getElementById('rogue-steps');
+    if (s) s.innerText = `${rogueData.steps}/${rogueData.maxSteps}`;
+    const e = document.getElementById('rogue-explv');
+    if (e) e.innerText = rogueData.exploreLevel;
+    const x = document.getElementById('rogue-ctxp');
+    if (x) x.innerText = rogueData.earnedXp;
 }
 
 export function escapeRogueConfirm() {
@@ -519,4 +397,130 @@ export function exitRogueSystem(success) {
     document.getElementById('result-overlay')?.classList.remove('hidden');
     
     if (typeof updateTitleInfo === 'function') updateTitleInfo();
+}
+
+export function getRogueEnemyChar(isBoss, floor) {
+    let rarity = 'N';
+    if (isBoss) {
+        if (floor % 100 === 0) rarity = 'UR';
+        else if (floor % 50 === 0) rarity = 'SSR';
+        else if (floor % 5 === 0) rarity = 'SR';
+        else rarity = 'R';
+    } else {
+        const rand = Math.random();
+        if (rand < 0.01) rarity = 'UR';
+        else if (rand < 0.05) rarity = 'SSR';
+        else if (rand < 0.20) rarity = 'SR';
+        else if (rand < 0.50) rarity = 'R';
+        else rarity = 'N';
+    }
+    
+    let pool = (rawData.characters || []).filter(c => c.rarity === rarity);
+    if (!pool || pool.length === 0) pool = rawData.characters || [];
+    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
+    return { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
+}
+
+export function triggerRogueBattle(isBoss = false) {
+    rogueData.isBossBattle = isBoss;
+    const enemyChar = getRogueEnemyChar(isBoss, rogueData.floor) || { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
+    playData.rogueEnemyCharId = enemyChar.id;
+
+    let hpMultiplier = 1.0;
+    if (isBoss) {
+        if (rogueData.floor % 5 === 0) hpMultiplier = 1.5;
+        else hpMultiplier = 1.25;
+    }
+    const calculatedHp = Math.floor(1000 * Number(enemyChar.value || 1.0) * hpMultiplier);
+
+    let qList = [...playData.rogueQuestions].sort(() => Math.random() - 0.5);
+    
+    playData.questions = qList;
+    playData.qIndex = 0;
+
+    let rarityText = `[${enemyChar.rarity}] `;
+    let bossName = isBoss ? `${rogueData.floor}F ボス: ${rarityText}${enemyChar.name}` : `${rarityText}${enemyChar.name}`;
+    let iconUrl = (enemyChar.imageUrl && enemyChar.imageUrl.startsWith('http')) ? enemyChar.imageUrl : "👾";
+
+    playData.currentBoss = { name: bossName, hp: calculatedHp, icon: iconUrl };
+    playData.isRevenge = false;
+
+    playData.activeOaths = [];
+    if (isBoss && rogueData.floor % 5 === 0) {
+        const oaths = ['rapid', 'weak'];
+        playData.activeOaths = [ oaths[Math.floor(Math.random() * oaths.length)] ];
+    }
+
+    playData.isRandom = false;
+    playData.isTyping = false;
+    playData.isCalculation = false;
+    playData.isSurvival = false;
+    playData.context = null;
+
+    gameState.score = 0;
+    gameState.combo = 0;
+    gameState.enemyHP = calculatedHp;
+    gameState.maxHP = calculatedHp;
+    
+    const charaStats = getCharaStats();
+    gameState.maxTime = 10 * charaStats.time;
+    if (playData.activeOaths.includes('rapid')) gameState.maxTime *= 0.5;
+    gameState.timeLeft = gameState.maxTime; 
+
+    runtimeState.isGameActive = false;
+    runtimeState.isPaused = false;
+    if (typeof window !== 'undefined' && window.handleTypingInput) {
+        document.removeEventListener('keydown', window.handleTypingInput);
+    }
+
+    document.getElementById('field-screen')?.classList.add('hidden');
+    document.getElementById('game-screen')?.classList.remove('hidden');
+
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    document.getElementById('ui-question')?.classList.remove('hidden');
+
+    const uienemyName = document.getElementById('ui-enemy-name');
+    let displayBossName = bossName;
+    if (playData.activeOaths.length > 0) displayBossName = "【誓約】" + bossName;
+    if (uienemyName) uienemyName.innerText = displayBossName;
+    
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if (enemyIcon) { 
+        if(iconUrl.startsWith('http')) { enemyIcon.innerHTML = `<img src="${iconUrl}">`; } else { enemyIcon.innerHTML = iconUrl; }
+        enemyIcon.classList.remove('shake-anim'); 
+    }
+    
+    const enemyBox = document.querySelector('.enemy-visual-box');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out');
+    const hpFrame = document.querySelector('.enemy-hp-frame');
+    if (hpFrame) hpFrame.style.display = '';
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+
+    updateUI();
+    startCountdown();
+}
+
+export function showRogueCutIn(t) {
+    const container = document.getElementById('rogue-canvas-container');
+    if (!container) return;
+    const d = document.createElement('div');
+    d.className = 'rogue-cutin';
+    d.style.position = 'absolute';
+    d.style.top = '40px';
+    d.style.left = '50%';
+    d.style.transform = 'translateX(-50%)';
+    d.style.zIndex = '100';
+    d.style.pointerEvents = 'none';
+    d.style.whiteSpace = 'nowrap';
+    d.innerText = t;
+    container.appendChild(d);
+    setTimeout(() => d.remove(), 1200);
 }

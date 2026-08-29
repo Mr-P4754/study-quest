@@ -1106,26 +1106,51 @@ export function startRevengeMode() {
     playData.context = null;
     playData.activeOaths = [];
     playData.activeReliefs = [];
+    runtimeState.currentCategory = null;
     
+    const charaStats = getCharaStats();
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false; 
     gameState.lives = 3; 
     gameState.score = 0; 
     gameState.combo = 0; 
     playData.qIndex = 0;
-    gameState.maxTime = 10;
-    gameState.timeLeft = 10;
+    gameState.maxTime = 10 * charaStats.time;
+    gameState.timeLeft = gameState.maxTime;
     gameState.maxHP = playData.questions.length * 100;
     gameState.enemyHP = gameState.maxHP;
 
+    document.getElementById('pause-overlay')?.classList.add('hidden');
     document.getElementById('title-screen')?.classList.add('hidden'); 
     document.getElementById('game-screen')?.classList.remove('hidden'); 
     document.getElementById('cat-main-overlay')?.classList.add('hidden');
+    document.getElementById('cat-special-overlay')?.classList.add('hidden');
+    document.getElementById('cat-gacha-overlay')?.classList.add('hidden');
+    document.getElementById('cat-achievement-overlay')?.classList.add('hidden');
+    document.getElementById('cat-guide-overlay')?.classList.add('hidden');
+
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = '';
+
+    const enemyBox = document.querySelector('.enemy-visual-box'); 
+    const enemyIcon = document.getElementById('ui-enemy-icon'); 
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
+    if(enemyIcon) enemyIcon.classList.remove('shake-anim');
 
     const uienemyName = document.getElementById('ui-enemy-name'); 
     if(uienemyName) uienemyName.innerText = "リベンジ・シャドウ"; 
-    const enemyIcon = document.getElementById('ui-enemy-icon'); 
     if(enemyIcon) enemyIcon.innerText = "💀"; 
+
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
 
     updateUI(); 
     startCountdown();
