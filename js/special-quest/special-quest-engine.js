@@ -790,14 +790,14 @@ export function calcTbEnemyAtk(enemy) {
 }
 
 /**
- * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.5倍 ＋ 相性補正）計算
- * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.5 * affinity))
+ * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.4倍 ＋ 相性補正）計算
+ * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.4 * affinity))
  * @param {Object} enemy
  * @param {Object} [activePlayer]
  * @returns {number}
  */
 export function calcTbTickDamage(enemy, activePlayer) {
-    if (!enemy) return 50;
+    if (!enemy) return 40;
     const baseAtk = calcTbEnemyAtk(enemy);
     let affinity = 1.0;
     if (activePlayer) {
@@ -805,7 +805,7 @@ export function calcTbTickDamage(enemy, activePlayer) {
         const playerSkills = activePlayer.skills || ['ATK'];
         affinity = getTbAffinityMultiplier(enemySkills, playerSkills, true);
     }
-    return Math.max(1, Math.floor(baseAtk * 0.5 * affinity));
+    return Math.max(1, Math.floor(baseAtk * 0.4 * affinity));
 }
 
 // ----------------------------------------------------
