@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.3';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.3';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.3';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.4';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.4';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.4';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -771,18 +771,28 @@ export function getTbAffinityInfo(playerSkills, enemySkills) {
 }
 
 /**
- * 敵からアクティブな味方への基本ダメージ（ペナルティの基準値）計算
- * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正) ※相性補正は攻撃のみに適用
+ * 敵キャラクターの基礎攻撃力を算出
+ * 計算式: Math.floor(100 * 敵の補正値(value) * 敵のレベル補正)
  * @param {Object} enemy
- * @param {Object} activePlayer
  * @returns {number}
  */
-export function calcTbTickDamage(enemy, activePlayer) {
-    if (!enemy || !activePlayer) return 30;
+export function calcTbEnemyAtk(enemy) {
+    if (!enemy) return 100;
     const val = Number(enemy.value) || 1.0;
     const lv = Number(enemy.level) || 1;
     const lvScale = 1 + (lv - 1) * 0.05;
-    return Math.max(1, Math.floor(30 * val * lvScale));
+    return Math.max(10, Math.floor(100 * val * lvScale));
+}
+
+/**
+ * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.2倍）計算
+ * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.2)) ※相性補正は常に等倍(1.0倍)
+ * @param {Object} enemy
+ * @param {Object} [activePlayer]
+ * @returns {number}
+ */
+export function calcTbTickDamage(enemy, activePlayer) {
+    return Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.2));
 }
 
 // ----------------------------------------------------
@@ -1174,9 +1184,8 @@ function applyTbPenalty(reason) {
     const activePlayer = tbState.party[tbState.activeSlot];
     if (!activePlayer || !activePlayer.isAlive) return;
 
-    // 通常スリップダメージの10倍のペナルティダメージ
-    const baseDamage = calcTbTickDamage(tbState.enemy, activePlayer);
-    const penaltyDamage = baseDamage * 10;
+    // ペナルティダメージ（敵攻撃力の1.0倍、相性補正なし）
+    const penaltyDamage = Math.max(10, Math.floor(calcTbEnemyAtk(tbState.enemy) * 1.0));
 
     activePlayer.hp = Math.max(0, activePlayer.hp - penaltyDamage);
 
