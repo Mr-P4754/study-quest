@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.7';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.7';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.7';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.8';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.8';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.8';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -770,7 +770,7 @@ export function getTbAffinityInfo(playerSkills, enemySkills) {
 }
 
 /**
- * 敵キャラクターの基礎攻撃力を算出
+ * 敵キャラクターの基礎攻撃力を算出（内部的に全属性ATK扱いとして基本攻撃力を計算）
  * 計算式: Math.floor(100 * 敵の補正値(value) * 敵のレベル補正)
  * @param {Object} enemy
  * @returns {number}
@@ -784,14 +784,22 @@ export function calcTbEnemyAtk(enemy) {
 }
 
 /**
- * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.2倍）計算
- * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.2)) ※相性補正は常に等倍(1.0倍)
+ * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.2倍 ＋ 相性補正）計算
+ * 計算式: Math.max(1, Math.floor(baseAtk * 0.2 * affinity))
  * @param {Object} enemy
  * @param {Object} [activePlayer]
  * @returns {number}
  */
 export function calcTbTickDamage(enemy, activePlayer) {
-    return Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.2));
+    if (!enemy) return 20;
+    const baseAtk = calcTbEnemyAtk(enemy);
+    let affinity = 1.0;
+    if (activePlayer) {
+        const enemySkills = enemy.skills || [enemy.type || 'ATK'];
+        const playerSkills = activePlayer.skills || ['ATK'];
+        affinity = getTbAffinityMultiplier(enemySkills, playerSkills, true);
+    }
+    return Math.max(1, Math.floor(baseAtk * 0.2 * affinity));
 }
 
 // ----------------------------------------------------
@@ -1215,8 +1223,12 @@ function applyTbPenalty(reason) {
     const activePlayer = tbState.party[tbState.activeSlot];
     if (!activePlayer || !activePlayer.isAlive) return;
 
-    // ペナルティダメージ（敵攻撃力の1.0倍、相性補正なし）
-    const penaltyDamage = Math.max(10, Math.floor(calcTbEnemyAtk(tbState.enemy) * 1.0));
+    // ペナルティダメージ（敵攻撃力の1.0倍 ＋ 相性補正）
+    const baseAtk = calcTbEnemyAtk(tbState.enemy);
+    const enemySkills = tbState.enemy.skills || [tbState.enemy.type || 'ATK'];
+    const playerSkills = activePlayer.skills || ['ATK'];
+    const affinity = getTbAffinityMultiplier(enemySkills, playerSkills, true);
+    const penaltyDamage = Math.max(10, Math.floor(baseAtk * 1.0 * affinity));
 
     activePlayer.hp = Math.max(0, activePlayer.hp - penaltyDamage);
 
