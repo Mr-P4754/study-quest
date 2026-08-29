@@ -339,7 +339,7 @@ export function openCharaDetail(id) {
 
 export function closeCharaDetail() {
     document.getElementById('chara-detail-overlay')?.classList.add('hidden');
-    viewingCharaId = null;
+    renderZukan();
 }
 
 export function equipCurrentChara() {

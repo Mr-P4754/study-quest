@@ -246,6 +246,13 @@ export function closeTypingMenu() {
 }
 
 export function openSurvivalMenu() { 
+    if(!rawData.questions) return;
+    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+    const sel = document.getElementById('survival-grade-select'); 
+    if(sel) {
+        sel.innerHTML = '<option value="">学年を選択...</option>';
+        grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    }
     hideCurrentCategoryOverlay();
     document.getElementById('survival-overlay')?.classList.remove('hidden'); 
 }
@@ -264,6 +271,13 @@ export function closeCalcMenu() {
 }
 
 export function openRogueMenu() { 
+    if(!rawData.questions) return;
+    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+    const sel = document.getElementById('rogue-grade-select'); 
+    if(sel) {
+        sel.innerHTML = '<option value="">学年を選択...</option>';
+        grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    }
     hideCurrentCategoryOverlay();
     document.getElementById('rogue-menu-overlay')?.classList.remove('hidden'); 
 }
@@ -275,36 +289,53 @@ export function closeRogueMenu() {
 export function openOathMenu() {
     runtimeState.tempOaths = [];
     document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected'));
+    
+    const title = document.querySelector('#oath-overlay h2');
+    const desc = document.querySelector('#oath-overlay p');
+    const weakOption = document.getElementById('oath-weak');
+    
+    if (runtimeState.oathOrigin === 'survival') {
+        if (title) title.innerText = "😈 特訓の誓約";
+        if (desc) desc.innerHTML = 'より過酷な特訓に挑む。<br>（獲得特訓EXP <span style="color:#e67e22; font-weight:bold;">2倍/3倍</span>）';
+        if (weakOption) weakOption.style.display = 'none';
+    } else {
+        if (title) title.innerText = "😈 誓約の儀";
+        if (desc) desc.innerHTML = '自らにハンデを課し、高みを目指せ。<br>（報酬EXP <span style="color:#e67e22; font-weight:bold;">1.5〜2.0倍</span>）';
+        if (weakOption) weakOption.style.display = 'flex';
+    }
+    
     document.getElementById('oath-overlay')?.classList.remove('hidden');
 }
+
 export function closeOathMenu() {
     document.getElementById('oath-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
-        openSurvivalMenu();
+        document.getElementById('survival-overlay')?.classList.remove('hidden');
     } else if (runtimeState.oathOrigin === 'random') {
-        openRandomMenu();
+        document.getElementById('random-overlay')?.classList.remove('hidden');
     } else if (runtimeState.oathOrigin === 'typing') {
-        openTypingMenu();
+        document.getElementById('typing-menu-overlay')?.classList.remove('hidden');
     } else {
-        openUnitSelection();
+        document.getElementById('unit-select-overlay')?.classList.remove('hidden');
     }
 }
 
 export function openReliefMenu() {
     runtimeState.tempReliefs = [];
-    document.querySelectorAll('.oath-option').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('#relief-overlay .oath-option').forEach(el => el.classList.remove('selected'));
     document.getElementById('relief-overlay')?.classList.remove('hidden');
 }
+
 export function closeReliefMenu() {
     document.getElementById('relief-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
-        openSurvivalMenu();
+        document.getElementById('survival-overlay')?.classList.remove('hidden');
     } else if (runtimeState.oathOrigin === 'random') {
-        openRandomMenu();
+        document.getElementById('random-overlay')?.classList.remove('hidden');
     } else if (runtimeState.oathOrigin === 'typing') {
-        openTypingMenu();
+        document.getElementById('typing-menu-overlay')?.classList.remove('hidden');
     } else {
-        openUnitSelection();
+        document.getElementById('unit-select-overlay')?.classList.remove('hidden');
     }
 }
 
@@ -603,13 +634,12 @@ export function showConfirm(msg) { return showAppModal(msg, 'confirm'); }
 // ==========================================
 export const GuideModule = {
     open: function(topicId = null) {
-        hideCurrentCategoryOverlay();
         const existing = document.getElementById('guide-overlay');
         if (existing) existing.remove();
         
         const overlay = document.createElement('div');
         overlay.id = 'guide-overlay';
-        overlay.className = 'overlay overlay-z400';
+        overlay.className = 'overlay overlay-z800';
         
         const modal = document.createElement('div');
         modal.className = 'modal modal-w500';
@@ -627,7 +657,6 @@ export const GuideModule = {
     close: function() {
         const overlay = document.getElementById('guide-overlay');
         if (overlay) overlay.remove();
-        returnToCurrentCategory();
     },
     
     showCategoryList: function() {
