@@ -5,15 +5,25 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.0';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.0';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.0';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.1';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.1';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.1';
 
 // ----------------------------------------------------
 // 内部状態管理
 // ----------------------------------------------------
 let selectedPartySlot = 0; // 現在選択中の編成スロット (0: 前衛, 1: 後衛1, 2: 後衛2)
 let tempParty = [null, null, null]; // 編成画面内での一時パーティー状態
+let partySortMode = 'rarity_desc'; // 手持ちキャラクター一覧のソート順
+
+/**
+ * パーティー編成画面の手持ちキャラソート順を変更
+ * @param {string} mode
+ */
+export function changePartySort(mode) {
+    partySortMode = mode || 'rarity_desc';
+    renderPartyZukanGrid();
+}
 
 // ----------------------------------------------------
 // 画面開閉ロジック
@@ -229,18 +239,41 @@ function renderPartyZukanGrid() {
     // 所持キャラのみを抽出
     const ownedCharas = rawData.characters.filter(c => !!gameState.charaInventory[c.id]);
 
-    // レア度・レベル順にソート
+    // ソート順の適用
     const rOrder = { 'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 };
     ownedCharas.sort((a, b) => {
         const invA = gameState.charaInventory[a.id];
         const invB = gameState.charaInventory[b.id];
         const rA = (invA && invA.currentRarity) ? invA.currentRarity : a.rarity;
         const rB = (invB && invB.currentRarity) ? invB.currentRarity : b.rarity;
-        const diffR = (rOrder[rB] || 0) - (rOrder[rA] || 0);
-        if (diffR !== 0) return diffR;
-        const lvA = invA ? invA.level : 1;
-        const lvB = invB ? invB.level : 1;
-        return lvB - lvA;
+        const lvA = (invA && typeof invA.level === 'number' && invA.level >= 1) ? invA.level : 1;
+        const lvB = (invB && typeof invB.level === 'number' && invB.level >= 1) ? invB.level : 1;
+
+        if (partySortMode === 'rarity_desc') {
+            const diffR = (rOrder[rB] || 0) - (rOrder[rA] || 0);
+            if (diffR !== 0) return diffR;
+            return lvB - lvA;
+        }
+        if (partySortMode === 'rarity_asc') {
+            const diffR = (rOrder[rA] || 0) - (rOrder[rB] || 0);
+            if (diffR !== 0) return diffR;
+            return lvA - lvB;
+        }
+        if (partySortMode === 'level_desc') {
+            if (lvA !== lvB) return lvB - lvA;
+            return (rOrder[rB] || 0) - (rOrder[rA] || 0);
+        }
+        if (partySortMode === 'level_asc') {
+            if (lvA !== lvB) return lvA - lvB;
+            return (rOrder[rA] || 0) - (rOrder[rB] || 0);
+        }
+        if (partySortMode === 'type') {
+            const typeCompare = (a.type || '').localeCompare(b.type || '');
+            if (typeCompare !== 0) return typeCompare;
+            return (rOrder[rB] || 0) - (rOrder[rA] || 0);
+        }
+        // default (図鑑番号順)
+        return Number(a.id) - Number(b.id);
     });
 
     ownedCharas.forEach(c => {
@@ -510,7 +543,7 @@ export function getTbCharaStats(partyMember) {
 
 /**
  * 最大HP算出関数
- * 計算式: Math.floor(1000 * 補正値(value) * (1 + (レベル - 1) * 0.1))
+ * 計算式: Math.floor(1000 * 補正値(value)) + (レベル - 1) * 50
  * @param {Object} target
  * @param {boolean} [isEnemy=false]
  * @returns {number}
@@ -522,7 +555,7 @@ export function calcTbMaxHp(target, isEnemy = false) {
         val = Number(target.customValue) || val;
     }
     const lv = Number(target.level) || 1;
-    return Math.floor(1000 * val * (1 + (lv - 1) * 0.1));
+    return Math.floor(1000 * val) + (lv - 1) * 50;
 }
 
 /**
@@ -782,6 +815,76 @@ export function startTeamBattle() {
     // リアルタイムゲームループ開始 (100ms周期)
     if (tbState.timerId) clearInterval(tbState.timerId);
     tbState.timerId = setInterval(tbGameLoop, 100);
+
+    // 3秒前カウントダウンカットイン開始（開始演出中は時間・操作を完全ロック）
+    showTbCountdownCutIn(1);
+}
+
+/**
+ * 戦闘開始前・敵変更時の3秒前カウントダウンカットイン
+ * @param {number} stageNum
+ * @returns {Promise<void>}
+ */
+export function showTbCountdownCutIn(stageNum) {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('tb-countdown-overlay');
+        const textEl = document.getElementById('tb-countdown-text');
+        if (!overlay || !textEl) {
+            resolve();
+            return;
+        }
+
+        // バトル一時停止（タイマー・ダメージをロック）
+        tbState.isPaused = true;
+        overlay.classList.remove('hidden');
+
+        // 選択肢ボタンを一時非活性化
+        const allBtns = document.querySelectorAll('#tb-ui-choices .choice-btn');
+        allBtns.forEach(b => b.disabled = true);
+
+        const steps = [
+            { text: '3', se: 'count', color: '#f59e0b' },
+            { text: '2', se: 'count', color: '#f59e0b' },
+            { text: '1', se: 'count', color: '#f59e0b' },
+            { text: `STAGE ${stageNum}\nSTART!`, se: 'hit', color: '#ef4444' }
+        ];
+
+        let stepIndex = 0;
+
+        function runStep() {
+            if (!tbState.isActive) {
+                overlay.classList.add('hidden');
+                resolve();
+                return;
+            }
+
+            if (stepIndex >= steps.length) {
+                overlay.classList.add('hidden');
+                tbState.isPaused = false;
+                // 選択肢ボタンを再活性化
+                const btns = document.querySelectorAll('#tb-ui-choices .choice-btn');
+                btns.forEach(b => b.disabled = false);
+                resolve();
+                return;
+            }
+
+            const cur = steps[stepIndex];
+            textEl.innerText = cur.text;
+            textEl.style.color = cur.color;
+            textEl.style.textShadow = `0 0 25px ${cur.color}, 0 4px 12px rgba(0,0,0,0.9)`;
+
+            // アニメーションを再トリガー
+            textEl.style.animation = 'none';
+            void textEl.offsetWidth; // リフロー
+            textEl.style.animation = 'tbCountdownPop 0.85s ease-out forwards';
+
+            playSE(cur.se);
+            stepIndex++;
+            setTimeout(runStep, 850);
+        }
+
+        runStep();
+    });
 }
 
 /**
@@ -1160,6 +1263,8 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
                     if (!tbState.isActive) return;
                     setupTbStage(tbState.stage + 1);
                     nextTbQuestion();
+                    // 新しい敵登場のカウントダウンカットイン
+                    showTbCountdownCutIn(tbState.stage);
                 } else {
                     // 全ステージ制覇・完全勝利！
                     finishTeamBattle(true);

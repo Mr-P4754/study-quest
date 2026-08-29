@@ -177,7 +177,7 @@
     display: block; /* スマホでも解除ボタンを常に表示 */
 }
 
-/* 下部：キャラ選択リスト */
+/* 下部：キャラ選択リスト ＆ ソート */
 .party-select-list-title {
     font-size: clamp(0.72rem, 1.8vw, 0.85rem);
     font-weight: bold;
@@ -187,7 +187,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 6px;
     flex-shrink: 0;
+}
+
+.party-select-list-title select {
+    font-size: clamp(0.65rem, 1.4vw, 0.75rem);
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-weight: bold;
 }
 
 .party-zukan-scroll {
@@ -745,4 +756,50 @@
     0% { transform: translateY(0px); }
     50% { transform: translateY(-5px); }
     100% { transform: translateY(0px); }
+}
+
+/* チームバトル 開始時・敵変更時カウントダウンカットイン */
+.tb-countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 60;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+}
+
+.tb-countdown-text {
+    font-size: clamp(3.2rem, 11vw, 5.8rem);
+    font-weight: 900;
+    color: #f59e0b;
+    text-align: center;
+    line-height: 1.1;
+    text-shadow: 0 0 25px rgba(245, 158, 11, 0.9), 0 4px 12px rgba(0, 0, 0, 0.9);
+    letter-spacing: 2px;
+}
+
+@keyframes tbCountdownPop {
+    0% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+    30% {
+        transform: scale(1.0);
+        opacity: 1;
+    }
+    80% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
 }

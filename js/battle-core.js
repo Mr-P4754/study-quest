@@ -11,7 +11,7 @@ import {
     runtimeState,
     LV_BONUS_RATE,
     saveGame
-} from './state.js?v=10.0.0';
+} from './state.js?v=10.0.1';
 
 import {
     getDisplayName,
@@ -19,12 +19,12 @@ import {
     playSE,
     playBGM,
     stopBGM
-} from './utils.js?v=10.0.0';
+} from './utils.js?v=10.0.1';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=10.0.0';
+} from './gacha-shop.js?v=10.0.1';
 
 import {
     showAppModal,
@@ -32,7 +32,7 @@ import {
     showConfirm,
     updateTitleInfo,
     addCalcRecord
-} from './ui-manager.js?v=10.0.0';
+} from './ui-manager.js?v=10.0.1';
 
 export function showCutIn(t) { 
     const str = String(t);

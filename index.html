@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=10.0.0">
-    <link rel="stylesheet" href="css/layout.css?v=10.0.0">
-    <link rel="stylesheet" href="css/components.css?v=10.0.0">
-    <link rel="stylesheet" href="css/quests.css?v=10.0.0">
-    <link rel="stylesheet" href="css/special-quest.css?v=10.0.0">
+    <link rel="stylesheet" href="css/base.css?v=10.0.1">
+    <link rel="stylesheet" href="css/layout.css?v=10.0.1">
+    <link rel="stylesheet" href="css/components.css?v=10.0.1">
+    <link rel="stylesheet" href="css/quests.css?v=10.0.1">
+    <link rel="stylesheet" href="css/special-quest.css?v=10.0.1">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.1</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -288,6 +288,11 @@
         <div class="choices-grid" id="tb-ui-choices">
             <!-- 選択肢ボタン (.choice-btn) が動的生成されます -->
         </div>
+    </div>
+
+    <!-- チームバトル開始時・敵変更時カウントダウンカットイン -->
+    <div id="tb-countdown-overlay" class="tb-countdown-overlay hidden">
+        <div id="tb-countdown-text" class="tb-countdown-text">3</div>
     </div>
 
     <!-- チームバトル用ポーズ画面 -->
@@ -691,9 +696,17 @@
             </div>
         </div>
 
-        <!-- 下部：手持ちキャラクター一覧 -->
+        <!-- 下部：手持ちキャラクター一覧 ＆ ソートセレクター -->
         <div class="party-select-list-title">
-            <span>📚 手持ちキャラクター一覧（タップして編成）</span>
+            <span>📚 手持ちキャラクター一覧</span>
+            <select id="party-sort-select" aria-label="キャラクター並び替え" class="select-box cat-select-sm" onchange="changePartySort(this.value)">
+                <option value="rarity_desc">レア度順（高い順）</option>
+                <option value="rarity_asc">レア度順（低い順）</option>
+                <option value="level_desc">レベル順（高い順）</option>
+                <option value="level_asc">レベル順（低い順）</option>
+                <option value="type">属性順</option>
+                <option value="default">図鑑番号順</option>
+            </select>
         </div>
         <div class="party-zukan-scroll">
             <div id="party-zukan-grid" class="zukan-grid">
@@ -809,6 +822,12 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.0.1</h4>
+            <ul>
+                <li>パーティー編成画面にキャラクターソート機能（レア度/レベル/属性/図鑑番号順）を実装</li>
+                <li>チームバトルの最大HP算出ロジックを改修（基礎値×補正値 ＋ (Lv-1)×50）</li>
+                <li>チームバトルの戦闘開始時＆敵キャラ変更時に3秒前カウントダウンカットイン演出を追加</li>
+            </ul>
             <h4>Ver 10.0.0（大型アップデート：チームバトルクエスト正式実装）</h4>
             <ul>
                 <li>✨ 新コンテンツ「チームバトルクエスト」正式リリース！（3体交代制リアルタイム高速バトル、属性3すくみ相性・複数属性/ALL転生完全対応、撃破モンスター獲得報酬）</li>
@@ -985,6 +1004,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=10.0.0"></script>
+<script type="module" src="js/main.js?v=10.0.1"></script>
 </body>
 </html>
