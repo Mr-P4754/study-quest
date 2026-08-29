@@ -653,8 +653,12 @@ export function handleTypingInput(e) {
                 } 
             }
         }
+        // 「ん」の入力補正: 直前が単独の 'n' かつ現在位置が 'n' 以外で、母音や'y'でない場合のみ1回だけ 'n' の追加入力を許容
         if (!isMatch && inputKey === 'n' && idx > 0) { 
-            if (targetStr[idx-1] === 'n') { 
+            const prevChar = targetStr[idx - 1];
+            const prevPrevChar = idx >= 2 ? targetStr[idx - 2] : null;
+            const currentChar = targetStr[idx];
+            if (prevChar === 'n' && prevPrevChar !== 'n' && currentChar !== 'n' && !['a','i','u','e','o','y'].includes(currentChar)) { 
                 const pre = targetStr.substring(0, idx); 
                 const post = targetStr.substring(idx); 
                 const newStr = pre + 'n' + post; 

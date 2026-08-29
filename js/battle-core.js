@@ -76,9 +76,9 @@ export function togglePause() {
         const infoBox = document.getElementById('pause-chara-info');
         if(!infoBox) return;
         const charaId = gameState.equipped;
-        const chara = rawData.characters ? rawData.characters.find(c => c.id == charaId) : null;
+        const chara = rawData.characters ? rawData.characters.find(c => String(c.id) == String(charaId)) : null;
         if(chara) {
-            const inv = gameState.charaInventory[charaId] || { level: 1 };
+            const inv = gameState.charaInventory[charaId] || (gameState.charaInventory[chara.id] || { level: 1 });
             const baseVal = (inv.isEvolved && inv.customValue) ? inv.customValue : chara.value;
             const r = inv.currentRarity || chara.rarity;
             const name = getDisplayName(chara, inv);
@@ -227,34 +227,48 @@ export function startTimer() {
 }
 
 export function getCharaStats() { 
-    let atk = 1.0, exp = 1.0, time = 1.0; 
-    const equippedChara = (rawData.characters && rawData.characters.length > 0) ? rawData.characters.find(c => String(c.id) == String(gameState.equipped)) : null; 
-    if(equippedChara) { 
-        const inv = gameState.charaInventory[equippedChara.id] || (gameState.charaInventory[gameState.equipped] || { level: 1 }); 
-        const baseVal = (inv.isEvolved && inv.customValue) ? Number(inv.customValue) : Number(equippedChara.value); 
-        const val = baseVal + (inv.level * LV_BONUS_RATE); 
-        const activeSkills = (inv.skills && inv.skills.length > 0) ? inv.skills : [equippedChara.type]; 
-        activeSkills.forEach(type => { 
-            if(type === 'ATK') atk += (val - 1.0); 
-            if(type === 'EXP') exp += (val - 1.0); 
-            if(type === 'TIME') time += (val - 1.0); 
-        }); 
-    } 
-    if(rawData.shopItems && gameState.itemLevels) { 
-        rawData.shopItems.forEach(item => { 
-            const lv = gameState.itemLevels[item.id] || 0; 
-            if(lv > 0) { 
-                const add = item.value * lv; 
-                if(item.type === 'ATK') atk += add; 
-                if(item.type === 'EXP') exp += add; 
-                if(item.type === 'TIME') time += add; 
-            } 
-        }); 
-    } 
-    if(typeof rogueData !== 'undefined' && rogueData.active) {
-        if(rogueData.atkBuff) atk *= rogueData.atkBuff;
+    let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
+    if(rawData.characters && rawData.characters.length > 0) {
+        const charaData = rawData.characters.find(c => String(c.id) == String(gameState.equipped));
+        if(charaData) {
+            let userChara = gameState.charaInventory[gameState.equipped] || gameState.charaInventory[charaData.id];
+            let level = userChara ? userChara.level : 0;
+            let baseVal = (userChara && userChara.isEvolved && userChara.customValue) ? userChara.customValue : Number(charaData.value);
+            let finalVal = Number(baseVal) + (level * LV_BONUS_RATE);
+            let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type];
+            skills.forEach(type => { 
+                if(type === 'ALL') { 
+                    stats.atk = finalVal; 
+                    stats.time = finalVal; 
+                    stats.exp = finalVal; 
+                } else { 
+                    if(type === 'ATK') stats.atk = finalVal; 
+                    if(type === 'TIME') stats.time = finalVal; 
+                    if(type === 'EXP') stats.exp = finalVal; 
+                } 
+            });
+        }
     }
-    return { atk, exp, time }; 
+    if(gameState.itemLevels && rawData.shopItems) {
+        Object.keys(gameState.itemLevels).forEach(itemId => {
+            const item = rawData.shopItems.find(i => String(i.id) === String(itemId)); 
+            const level = gameState.itemLevels[itemId];
+            if(item && level > 0) { 
+                if(item.type === 'ATK') stats.atk += (Number(item.value) * level); 
+                if(item.type === 'TIME') stats.time += (Number(item.value) * level); 
+                if(item.type === 'EXP') stats.exp += (Number(item.value) * level); 
+            }
+        });
+    }
+    if (playData.activeOaths && playData.activeOaths.includes('weak') && !playData.isSurvival) stats.atk *= 0.5;
+    if (playData.activeReliefs && playData.activeReliefs.includes('power') && !playData.isSurvival) stats.atk *= 2.0;
+
+    if (typeof rogueData !== 'undefined' && rogueData.active) {
+        stats.atk *= rogueData.atkBuff;
+        stats.atk *= (1.0 + (rogueData.exploreLevel - 1) * 0.005);
+    }
+
+    return stats;
 }
 
 export function finishGame(isClear) { 
