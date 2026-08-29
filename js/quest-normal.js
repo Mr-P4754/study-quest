@@ -407,52 +407,78 @@ export function startSurvivalGame() {
 }
 
 export function startRandomGame() {
-    const g = document.getElementById('random-grade-select')?.value;
+    const g = document.getElementById('random-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
-    if(qList.length === 0) return alert("問題がありません");
+    const qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2); 
+    if(qList.length === 0) return alert("問題が見つかりません");
     
-    qList.sort(() => Math.random() - 0.5);
-    playData.questions = qList;
-    playData.isRandom = true;
-    playData.isRevenge = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
-    playData.isSurvival = false;
+    let possibleBosses = []; 
+    if (rawData.randomBosses) { 
+        possibleBosses = rawData.randomBosses.filter(b => b.grade == g || b.grade == '全学年'); 
+    }
+    let boss; 
+    if (possibleBosses.length > 0) { 
+        const b = possibleBosses[Math.floor(Math.random() * possibleBosses.length)]; 
+        boss = { name: b.name, hp: Number(b.hp) || 3000, icon: b.icon }; 
+    } else { 
+        boss = { name: "迷宮のヌシ", hp: 3000, icon: "🐲" }; 
+    }
+    
+    playData.questions = qList.sort(() => Math.random() - 0.5); 
+    playData.qIndex = 0; 
+    playData.currentBoss = boss;
+    playData.isRevenge = false; 
+    playData.activeOaths = []; 
+    playData.activeReliefs = []; 
+    playData.isRandom = true; 
+    playData.isTyping = false; 
+    playData.isCalculation = false; 
+    playData.isSurvival = false; 
     playData.context = null;
-    playData.activeOaths = [];
-    playData.activeReliefs = [];
+    runtimeState.currentCategory = null;
     
-    runtimeState.isGameActive = false;
+    const charaStats = getCharaStats();
+    gameState.score = 0; 
+    gameState.combo = 0; 
+    gameState.lives = 3; 
+    gameState.enemyHP = boss.hp; 
+    gameState.maxHP = boss.hp; 
+    gameState.maxTime = 10 * charaStats.time;
+    runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
-    gameState.lives = 3;
-    gameState.score = 0;
-    gameState.combo = 0;
-    playData.qIndex = 0;
-    gameState.maxTime = 10;
-    gameState.timeLeft = 10;
-
-    let b = null;
-    if (rawData.randomBosses && rawData.randomBosses.length > 0) {
-        b = rawData.randomBosses[Math.floor(Math.random() * rawData.randomBosses.length)];
-    }
-    gameState.maxHP = (b && b.hp) ? Number(b.hp) : 3000;
-    gameState.enemyHP = gameState.maxHP;
-    const uienemyName = document.getElementById('ui-enemy-name');
-    if(uienemyName) uienemyName.innerText = (b && b.name) ? b.name : "迷宮の覇者";
-    const enemyIcon = document.getElementById('ui-enemy-icon');
-    if(enemyIcon) {
-        const iconVal = (b && b.icon) ? b.icon : "🐉";
-        if (iconVal.startsWith('http')) enemyIcon.innerHTML = `<img src="${iconVal}" style="max-height:100%;max-width:100%;">`;
-        else enemyIcon.innerText = iconVal;
-    }
-
-    document.getElementById('random-overlay')?.classList.add('hidden');
-    document.getElementById('title-screen')?.classList.add('hidden');
+    
+    document.getElementById('random-overlay')?.classList.add('hidden'); 
+    document.getElementById('title-screen')?.classList.add('hidden'); 
     document.getElementById('game-screen')?.classList.remove('hidden');
     document.getElementById('cat-main-overlay')?.classList.add('hidden');
+    
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = '';
 
-    updateUI();
+    const enemyBox = document.querySelector('.enemy-visual-box'); 
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
+    if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); 
+    if(uienemyName) uienemyName.innerText = "【迷宮】" + boss.name;
+    if(enemyIcon) {
+        if(boss.icon && boss.icon.startsWith('http')) { 
+            enemyIcon.innerHTML = `<img src="${boss.icon}">`; 
+        } else { 
+            enemyIcon.innerHTML = boss.icon || "👾"; 
+        }
+    }
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+    updateUI(); 
     startCountdown();
 }
 
@@ -653,7 +679,6 @@ export function handleTypingInput(e) {
                 } 
             }
         }
-        // 「ん」の入力補正: 直前が単独の 'n' かつ現在位置が 'n' 以外で、母音や'y'でない場合のみ1回だけ 'n' の追加入力を許容
         if (!isMatch && inputKey === 'n' && idx > 0) { 
             const prevChar = targetStr[idx - 1];
             const prevPrevChar = idx >= 2 ? targetStr[idx - 2] : null;

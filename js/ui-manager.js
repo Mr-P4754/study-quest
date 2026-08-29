@@ -216,6 +216,12 @@ export function closeUnitSelection() {
 }
 
 export function openRandomMenu() { 
+    if(!rawData.questions) return;
+    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+    const sel = document.getElementById('random-grade-select'); 
+    if(!sel) return; 
+    sel.innerHTML = '<option value="">学年を選択...</option>';
+    grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     hideCurrentCategoryOverlay();
     document.getElementById('random-overlay')?.classList.remove('hidden'); 
 }
