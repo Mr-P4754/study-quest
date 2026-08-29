@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.6';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.6';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.6';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.7';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.7';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.7';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -788,7 +788,8 @@ export function tbGameLoop() {
             const tickDamage = calcTbTickDamage(tbState.enemy, activePlayer);
             activePlayer.hp = Math.max(0, activePlayer.hp - tickDamage);
 
-            // 被弾演出・SE
+            // ダメージポップアップ・被弾演出・SE
+            showTbDamagePopup(true, tickDamage);
             playSE('miss');
             showPlayerDamageFlash();
 
@@ -833,6 +834,8 @@ function applyTbPenalty(reason) {
 
     activePlayer.hp = Math.max(0, activePlayer.hp - penaltyDamage);
 
+    // ダメージポップアップ・被弾演出・SE
+    showTbDamagePopup(true, penaltyDamage);
     playSE('miss');
     showPlayerDamageFlash();
 
@@ -861,6 +864,31 @@ function applyTbPenalty(reason) {
             nextTbQuestion();
         }
     }, 600);
+}
+
+/**
+ * ダメージポップアップ演出の生成と自動削除
+ * @param {boolean} isPlayer 自キャラへのダメージか否か (true: 自キャラ, false: 敵キャラ)
+ * @param {number} damage ダメージ数値
+ */
+export function showTbDamagePopup(isPlayer, damage) {
+    if (!damage || damage <= 0) return;
+
+    const wrapperSelector = isPlayer ? '#team-battle-screen .tb-player-visual-wrapper' : '#team-battle-screen .tb-enemy-visual-wrapper';
+    const wrapper = document.querySelector(wrapperSelector);
+    if (!wrapper) return;
+
+    const popup = document.createElement('div');
+    popup.className = `tb-damage-popup ${isPlayer ? 'player-dmg' : 'enemy-dmg'}`;
+    popup.innerText = `-${damage}`;
+
+    wrapper.appendChild(popup);
+
+    setTimeout(() => {
+        if (popup && popup.parentNode) {
+            popup.parentNode.removeChild(popup);
+        }
+    }, 850);
 }
 
 /**
@@ -965,7 +993,8 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
 
         tbState.enemy.hp = Math.max(0, tbState.enemy.hp - finalDamage);
 
-        // 敵被弾演出
+        // ダメージポップアップ・敵被弾演出
+        showTbDamagePopup(false, finalDamage);
         showEnemyDamageFlash();
 
         // 敵HPバー更新

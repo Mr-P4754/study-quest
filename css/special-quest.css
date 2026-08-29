@@ -244,53 +244,23 @@
    3. チームバトル画面 (#team-battle-screen)
    ポケモン（GBA/DS時代）風 対角線バトルレイアウト
    ---------------------------------------------------- */
-.tb-screen-bg {
+#team-battle-screen {
     position: relative;
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    max-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
 }
 
-/* ヘッダーエリア */
-.tb-header {
-    position: relative;
-    flex-shrink: 0;
-    width: 100%;
-    height: 48px;
-    background: rgba(15, 23, 42, 0.88);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    z-index: 20;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-sizing: border-box;
-}
-
+/* ヘッダー内バッジ・ボタン */
 .tb-progress-badge {
     font-size: 0.82rem;
     font-weight: bold;
     color: #f1c40f;
     letter-spacing: 0.5px;
-}
-
-.tb-timer-container {
-    flex: 1;
-    max-width: 180px;
-    margin: 0 8px;
-}
-
-.tb-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
 }
 
 .tb-escape-btn {
@@ -320,6 +290,20 @@
     padding: 4px 10px;
     box-sizing: border-box;
     overflow: hidden;
+}
+
+/* フッター問題領域の中央揃え */
+#team-battle-screen .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+#tb-ui-question {
+    margin: 0 auto 10px auto;
+    text-align: center;
 }
 
 /* 敵エリア（右上配置 / 左上にステータスパネル） */
@@ -582,20 +566,50 @@
 }
 
 /* ----------------------------------------------------
-   クイズエリア（最下部・通常戦闘共通スタイル）
+   ダメージポップアップ演出
    ---------------------------------------------------- */
-.tb-quiz-area {
-    flex-shrink: 0;
-    width: 100%;
-    padding: 6px 10px 10px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    box-sizing: border-box;
-    background: rgba(15, 23, 42, 0.95);
-    border-top: 2px solid #3b82f6;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
-    z-index: 20;
+.tb-damage-popup {
+    position: absolute;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    font-size: 1.15rem;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 50;
+    white-space: nowrap;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 3px 6px rgba(0, 0, 0, 0.7);
+    animation: tbDamageFloat 0.85s ease-out forwards;
+}
+
+.tb-damage-popup.enemy-dmg {
+    color: #f1c40f;
+}
+
+.tb-damage-popup.player-dmg {
+    color: #ff4757;
+}
+
+@keyframes tbDamageFloat {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 10px) scale(0.6);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -5px) scale(1.15);
+    }
+    40% {
+        transform: translate(-50%, -12px) scale(1.0);
+    }
+    75% {
+        opacity: 1;
+        transform: translate(-50%, -25px) scale(0.95);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -38px) scale(0.85);
+    }
 }
 
 @keyframes tbFloat {
