@@ -349,10 +349,11 @@
     background: rgba(15, 23, 42, 0.9);
     border: 2px solid #475569;
     border-radius: 14px;
-    padding: clamp(7px, 1.2vh, 13px) clamp(10px, 1.6vw, 16px);
+    padding: clamp(8px, 1.2vh, 14px) clamp(12px, 1.8vw, 18px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    min-width: clamp(180px, 28vw, 290px);
-    max-width: 320px;
+    width: clamp(270px, 44vw, 400px);
+    max-width: 400px;
+    box-sizing: border-box;
     text-align: left;
     position: relative;
     transition: all 0.2s ease;
@@ -367,6 +368,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 4px;
+    gap: 8px;
 }
 
 .tb-status-name {
@@ -376,7 +378,9 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: clamp(110px, 18vw, 180px);
+    max-width: clamp(170px, 28vw, 270px);
+    flex: 1;
+    min-width: 0;
 }
 
 .tb-type-pill {
@@ -386,6 +390,7 @@
     border-radius: 4px;
     color: #fff;
     background: #64748b;
+    flex-shrink: 0;
 }
 
 .tb-hp-track {
@@ -487,15 +492,19 @@
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
 }
 
-/* 自陣ステータスパネル＆控えパネル（右下） */
+/* 自陣ステータスパネル＆控えパネル（右下・控え2体とステータスカードの幅を完全一致） */
 .tb-player-side-container {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    width: clamp(270px, 44vw, 400px);
+    max-width: 400px;
+    box-sizing: border-box;
     gap: clamp(5px, 1vh, 10px);
 }
 
 .tb-player-status {
+    width: 100%;
     border-left: 4px solid #3b82f6;
 }
 
@@ -523,9 +532,11 @@
     border: 1px solid #ef4444;
 }
 
-/* 控えキャラ交替パネル */
+/* 控えキャラ交替パネル（ステータスカードと同じ横幅いっぱいにフィット） */
 .tb-reserve-panel {
     display: flex;
+    width: 100%;
+    box-sizing: border-box;
     gap: clamp(4px, 0.8vw, 8px);
     background: rgba(15, 23, 42, 0.9);
     padding: clamp(4px, 0.6vh, 8px) clamp(6px, 1vw, 10px);
@@ -535,7 +546,10 @@
 
 .tb-reserve-card {
     display: flex;
+    flex: 1;
+    min-width: 0;
     align-items: center;
+    justify-content: space-between;
     gap: clamp(4px, 0.6vw, 8px);
     background: rgba(255, 255, 255, 0.08);
     border: 1.5px solid #64748b;
@@ -548,7 +562,7 @@
 .tb-reserve-card:hover {
     background: rgba(59, 130, 246, 0.25);
     border-color: #3b82f6;
-    transform: scale(1.04);
+    transform: scale(1.02);
 }
 
 .tb-reserve-card:active {
@@ -561,19 +575,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .tb-reserve-info {
     display: flex;
     flex-direction: column;
     text-align: left;
+    flex: 1;
+    min-width: 0;
 }
 
 .tb-reserve-name {
     font-size: clamp(0.72rem, 1.1vw, 0.88rem);
     font-weight: bold;
     color: #f1f5f9;
-    max-width: clamp(65px, 10vw, 100px);
+    max-width: clamp(75px, 12vw, 120px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
