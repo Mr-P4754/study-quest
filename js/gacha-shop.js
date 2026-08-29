@@ -459,8 +459,12 @@ export function openEnhanceMenu() {
 
 export function closeEnhanceMenu() {
     document.getElementById('material-select-overlay')?.classList.add('hidden');
-    document.getElementById('chara-detail-overlay')?.classList.remove('hidden');
     selectedMaterials = {};
+    if (viewingCharaId) {
+        openCharaDetail(viewingCharaId);
+    } else {
+        document.getElementById('chara-detail-overlay')?.classList.remove('hidden');
+    }
 }
 
 export function renderEnhanceList() {

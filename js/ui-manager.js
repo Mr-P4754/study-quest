@@ -175,6 +175,7 @@ export function updateCategoryBadges() {
 }
 
 export function openCategory(categoryId) {
+    closeAllCategoryModals();
     runtimeState.currentCategory = categoryId;
     document.getElementById('cat-' + categoryId + '-overlay')?.classList.remove('hidden');
 }
@@ -341,12 +342,14 @@ export function closeReliefMenu() {
 }
 
 export function openSyncMenu() {
+    hideCurrentCategoryOverlay();
     const idEl = document.getElementById('my-user-id');
     if (idEl) idEl.innerText = runtimeState.currentUserId || '--------';
     document.getElementById('sync-overlay')?.classList.remove('hidden');
 }
 export function closeSyncMenu() {
     document.getElementById('sync-overlay')?.classList.add('hidden');
+    returnToCurrentCategory();
 }
 
 export function openVersionHistory() { 
