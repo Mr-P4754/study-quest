@@ -281,6 +281,10 @@ export function closeOathMenu() {
     document.getElementById('oath-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
         openSurvivalMenu();
+    } else if (runtimeState.oathOrigin === 'random') {
+        openRandomMenu();
+    } else if (runtimeState.oathOrigin === 'typing') {
+        openTypingMenu();
     } else {
         openUnitSelection();
     }
@@ -295,6 +299,10 @@ export function closeReliefMenu() {
     document.getElementById('relief-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
         openSurvivalMenu();
+    } else if (runtimeState.oathOrigin === 'random') {
+        openRandomMenu();
+    } else if (runtimeState.oathOrigin === 'typing') {
+        openTypingMenu();
     } else {
         openUnitSelection();
     }

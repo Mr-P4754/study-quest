@@ -40,6 +40,9 @@ import {
     updateTitleInfo
 } from './ui-manager.js';
 
+// ==========================================
+// 通常クエスト
+// ==========================================
 export function startNormalGameCheck() { 
     const g = document.getElementById('grade-select')?.value; 
     const s = document.getElementById('subject-select')?.value; 
@@ -48,9 +51,55 @@ export function startNormalGameCheck() {
     if(!g || !s || !u) return alert("全て選択してください"); 
     let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2); 
     if(qList.length === 0) return alert("問題がありません"); 
-    playData.selectedBossHp = Number(hp); 
+    playData.selectedBossHp = hp ? Number(hp) : null; 
     runtimeState.oathOrigin = 'normal'; 
     startGame(); 
+}
+
+export function goToOathMenuCheck() {
+    const g = document.getElementById('grade-select')?.value;
+    const s = document.getElementById('subject-select')?.value;
+    const u = document.getElementById('unit-select')?.value;
+    const hp = document.getElementById('boss-hp-select')?.value;
+    if(!g || !s || !u) return alert("全て選択してください");
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
+    if(qList.length === 0) return alert("問題がありません");
+    
+    playData.questions = qList;
+    playData.isRevenge = false;
+    playData.isRandom = false;
+    playData.isTyping = false;
+    playData.isCalculation = false;
+    playData.isSurvival = false;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    playData.context = { grade: g, subject: s, unit: u };
+    
+    document.getElementById('unit-select-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'normal';
+    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+}
+
+export function goToReliefMenuCheck() {
+    const g = document.getElementById('grade-select')?.value;
+    const s = document.getElementById('subject-select')?.value;
+    const u = document.getElementById('unit-select')?.value;
+    const hp = document.getElementById('boss-hp-select')?.value;
+    if(!g || !s || !u) return alert("全て選択してください");
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
+    if(qList.length === 0) return alert("問題がありません");
+    
+    playData.questions = qList;
+    playData.isRevenge = false;
+    playData.isRandom = false;
+    playData.isTyping = false;
+    playData.isCalculation = false;
+    playData.isSurvival = false;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    playData.context = { grade: g, subject: s, unit: u };
+    
+    document.getElementById('unit-select-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'normal';
+    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
 }
 
 export function startGame() {
@@ -72,8 +121,13 @@ export function startGame() {
     playData.qIndex = 0; 
     playData.currentBoss = boss;
     playData.isRevenge = false; 
-    playData.activeOaths = []; 
-    playData.activeReliefs = []; 
+    if (runtimeState.oathOrigin === 'normal') {
+        playData.activeOaths = [...runtimeState.tempOaths];
+        playData.activeReliefs = [...runtimeState.tempReliefs];
+    } else {
+        playData.activeOaths = []; 
+        playData.activeReliefs = []; 
+    }
     playData.isRandom = false; 
     playData.isTyping = false; 
     playData.isCalculation = false; 
@@ -82,12 +136,20 @@ export function startGame() {
     runtimeState.currentCategory = null;
     
     const charaStats = getCharaStats();
+    let initialLives = 3;
+    if (playData.activeOaths.includes('backwater')) initialLives = 1;
+    else if (playData.activeReliefs.includes('life')) initialLives = 5;
+
+    let baseTime = 10;
+    if (playData.activeOaths.includes('rapid')) baseTime = 5;
+    else if (playData.activeReliefs.includes('time')) baseTime = 20;
+
     gameState.score = 0; 
     gameState.combo = 0; 
-    gameState.lives = 3; 
+    gameState.lives = initialLives; 
     gameState.enemyHP = Number(boss.hp) || 3000; 
     gameState.maxHP = gameState.enemyHP; 
-    gameState.maxTime = 10 * charaStats.time;
+    gameState.maxTime = baseTime * charaStats.time;
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
     
@@ -264,52 +326,9 @@ export function judge(isCorrect, btn) {
     }
 }
 
-export function goToOathMenuCheck() {
-    const g = document.getElementById('grade-select')?.value;
-    const s = document.getElementById('subject-select')?.value;
-    const u = document.getElementById('unit-select')?.value;
-    const hp = document.getElementById('boss-hp-select')?.value;
-    if(!g || !s || !u) return alert("全て選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
-    if(qList.length === 0) return alert("問題がありません");
-    
-    playData.questions = qList;
-    playData.isRevenge = false;
-    playData.isRandom = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
-    playData.isSurvival = false;
-    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
-    playData.context = { grade: g, subject: s, unit: u };
-    
-    document.getElementById('unit-select-overlay')?.classList.add('hidden');
-    runtimeState.oathOrigin = 'normal';
-    if (typeof window.openOathMenu === 'function') window.openOathMenu();
-}
-
-export function goToReliefMenuCheck() {
-    const g = document.getElementById('grade-select')?.value;
-    const s = document.getElementById('subject-select')?.value;
-    const u = document.getElementById('unit-select')?.value;
-    const hp = document.getElementById('boss-hp-select')?.value;
-    if(!g || !s || !u) return alert("全て選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
-    if(qList.length === 0) return alert("問題がありません");
-    
-    playData.questions = qList;
-    playData.isRevenge = false;
-    playData.isRandom = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
-    playData.isSurvival = false;
-    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
-    playData.context = { grade: g, subject: s, unit: u };
-    
-    document.getElementById('unit-select-overlay')?.classList.add('hidden');
-    runtimeState.oathOrigin = 'normal';
-    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
-}
-
+// ==========================================
+// サバイバルクエスト
+// ==========================================
 export function goToOathMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
@@ -373,7 +392,12 @@ export function startSurvivalGame() {
     
     runtimeState.isGameActive = false;
     runtimeState.isPaused = false;
-    gameState.lives = 3;
+    
+    let initialLives = 3;
+    if (playData.activeOaths.includes('backwater')) initialLives = 1;
+    else if (playData.activeReliefs.includes('life')) initialLives = 5;
+
+    gameState.lives = initialLives;
     gameState.score = 0;
     gameState.combo = 0;
     playData.qIndex = 0;
@@ -389,6 +413,15 @@ export function startSurvivalGame() {
     if(uienemyName) uienemyName.innerText = "WAVE: 0";
     const hpFrame = document.querySelector('.enemy-hp-frame');
     if(hpFrame) hpFrame.style.display = 'none';
+
+    // 敵アイコンの初期化（前回の敵画像が残らないよう修正）
+    const enemyBox = document.querySelector('.enemy-visual-box'); 
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
+    if(enemyIcon) {
+        enemyIcon.classList.remove('shake-anim');
+        enemyIcon.innerHTML = "🔥";
+    }
     
     const uiScoreSpan = document.getElementById('ui-score');
     if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) {
@@ -404,6 +437,46 @@ export function startSurvivalGame() {
     
     updateUI();
     startCountdown();
+}
+
+// ==========================================
+// ランダムクエスト（未知の迷宮）
+// ==========================================
+export function startRandomGameCheck() {
+    const g = document.getElementById('random-grade-select')?.value;
+    const hp = document.getElementById('random-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    if(qList.length === 0) return alert("問題が見つかりません");
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    runtimeState.oathOrigin = 'random';
+    startRandomGame();
+}
+
+export function goToOathMenuRandomCheck() {
+    const g = document.getElementById('random-grade-select')?.value;
+    const hp = document.getElementById('random-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    if(qList.length === 0) return alert("問題が見つかりません");
+    playData.questions = qList;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    document.getElementById('random-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'random';
+    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+}
+
+export function goToReliefMenuRandomCheck() {
+    const g = document.getElementById('random-grade-select')?.value;
+    const hp = document.getElementById('random-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    if(qList.length === 0) return alert("問題が見つかりません");
+    playData.questions = qList;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    document.getElementById('random-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'random';
+    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
 }
 
 export function startRandomGame() {
@@ -423,13 +496,19 @@ export function startRandomGame() {
     } else { 
         boss = { name: "迷宮のヌシ", hp: 3000, icon: "🐲" }; 
     }
+    if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
     
     playData.questions = qList.sort(() => Math.random() - 0.5); 
     playData.qIndex = 0; 
     playData.currentBoss = boss;
     playData.isRevenge = false; 
-    playData.activeOaths = []; 
-    playData.activeReliefs = []; 
+    if (runtimeState.oathOrigin === 'random') {
+        playData.activeOaths = [...runtimeState.tempOaths];
+        playData.activeReliefs = [...runtimeState.tempReliefs];
+    } else {
+        playData.activeOaths = []; 
+        playData.activeReliefs = []; 
+    }
     playData.isRandom = true; 
     playData.isTyping = false; 
     playData.isCalculation = false; 
@@ -438,12 +517,20 @@ export function startRandomGame() {
     runtimeState.currentCategory = null;
     
     const charaStats = getCharaStats();
+    let initialLives = 3;
+    if (playData.activeOaths.includes('backwater')) initialLives = 1;
+    else if (playData.activeReliefs.includes('life')) initialLives = 5;
+
+    let baseTime = 10;
+    if (playData.activeOaths.includes('rapid')) baseTime = 5;
+    else if (playData.activeReliefs.includes('time')) baseTime = 20;
+
     gameState.score = 0; 
     gameState.combo = 0; 
-    gameState.lives = 3; 
-    gameState.enemyHP = boss.hp; 
-    gameState.maxHP = boss.hp; 
-    gameState.maxTime = 10 * charaStats.time;
+    gameState.lives = initialLives; 
+    gameState.enemyHP = Number(boss.hp) || 3000; 
+    gameState.maxHP = gameState.enemyHP; 
+    gameState.maxTime = baseTime * charaStats.time;
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
     
@@ -482,6 +569,49 @@ export function startRandomGame() {
     startCountdown();
 }
 
+// ==========================================
+// タイピングクエスト
+// ==========================================
+export function startTypingGameCheck() {
+    const g = document.getElementById('typing-grade-select')?.value;
+    const hp = document.getElementById('typing-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    if(!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
+    const qList = rawData.typing.filter(t => t.grade == g);
+    if(qList.length === 0) return alert("選択した学年の問題がありません");
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    runtimeState.oathOrigin = 'typing';
+    startTypingGame();
+}
+
+export function goToOathMenuTypingCheck() {
+    const g = document.getElementById('typing-grade-select')?.value;
+    const hp = document.getElementById('typing-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    if(!rawData.typing) return alert("タイピングデータが読み込めていません");
+    const qList = rawData.typing.filter(t => t.grade == g);
+    if(qList.length === 0) return alert("選択した学年の問題がありません");
+    playData.questions = qList;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    document.getElementById('typing-menu-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'typing';
+    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+}
+
+export function goToReliefMenuTypingCheck() {
+    const g = document.getElementById('typing-grade-select')?.value;
+    const hp = document.getElementById('typing-boss-hp-select')?.value;
+    if(!g) return alert("学年を選択してください");
+    if(!rawData.typing) return alert("タイピングデータが読み込めていません");
+    const qList = rawData.typing.filter(t => t.grade == g);
+    if(qList.length === 0) return alert("選択した学年の問題がありません");
+    playData.questions = qList;
+    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
+    document.getElementById('typing-menu-overlay')?.classList.add('hidden');
+    runtimeState.oathOrigin = 'typing';
+    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
+}
+
 export function startTypingGame() {
     const g = document.getElementById('typing-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
@@ -506,13 +636,19 @@ export function startTypingGame() {
             } 
         } 
     } catch(e) {}
+    if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
     
     playData.questions = qList.sort(() => Math.random() - 0.5); 
     playData.qIndex = 0; 
     playData.currentBoss = boss;
     playData.isRevenge = false; 
-    playData.activeOaths = []; 
-    playData.activeReliefs = []; 
+    if (runtimeState.oathOrigin === 'typing') {
+        playData.activeOaths = [...runtimeState.tempOaths];
+        playData.activeReliefs = [...runtimeState.tempReliefs];
+    } else {
+        playData.activeOaths = []; 
+        playData.activeReliefs = []; 
+    }
     playData.isRandom = false; 
     playData.isTyping = true; 
     playData.isCalculation = false; 
@@ -521,12 +657,20 @@ export function startTypingGame() {
     runtimeState.currentCategory = null;
     
     const charaStats = getCharaStats();
+    let initialLives = 5;
+    if (playData.activeOaths.includes('backwater')) initialLives = 1;
+    else if (playData.activeReliefs.includes('life')) initialLives = 7;
+
+    let baseTime = 10;
+    if (playData.activeOaths.includes('rapid')) baseTime = 5;
+    else if (playData.activeReliefs.includes('time')) baseTime = 20;
+
     gameState.score = 0; 
     gameState.combo = 0; 
-    gameState.lives = 5; 
+    gameState.lives = initialLives; 
     gameState.enemyHP = Number(boss.hp) || 3000; 
     gameState.maxHP = gameState.enemyHP; 
-    gameState.maxTime = 10 * charaStats.time; 
+    gameState.maxTime = baseTime * charaStats.time; 
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
     
@@ -751,6 +895,9 @@ export function handleTypingInput(e) {
     }
 }
 
+// ==========================================
+// 計算クエスト
+// ==========================================
 export function startCalcGame() {
     const calcType = document.getElementById('calc-type-select')?.value;
     const calcMode = document.getElementById('calc-mode-select')?.value;
@@ -935,6 +1082,9 @@ export function startCalcTimer() {
     }, 100);
 }
 
+// ==========================================
+// リベンジモード
+// ==========================================
 export function startRevengeMode() {
     const list = gameState.revengeList || [];
     if (list.length === 0) return alert("リベンジ対象の問題はありません！");
@@ -981,6 +1131,9 @@ export function startRevengeMode() {
     startCountdown();
 }
 
+// ==========================================
+// 誓約・救済
+// ==========================================
 export function toggleOath(type) {
     const opt = document.getElementById(`oath-${type}`);
     if (!opt) return;
@@ -1012,6 +1165,10 @@ export function startOathGame() {
     document.getElementById('oath-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
         startSurvivalGame();
+    } else if (runtimeState.oathOrigin === 'random') {
+        startRandomGame();
+    } else if (runtimeState.oathOrigin === 'typing') {
+        startTypingGame();
     } else {
         startGame();
     }
@@ -1024,6 +1181,10 @@ export function startReliefGame() {
     document.getElementById('relief-overlay')?.classList.add('hidden');
     if (runtimeState.oathOrigin === 'survival') {
         startSurvivalGame();
+    } else if (runtimeState.oathOrigin === 'random') {
+        startRandomGame();
+    } else if (runtimeState.oathOrigin === 'typing') {
+        startTypingGame();
     } else {
         startGame();
     }

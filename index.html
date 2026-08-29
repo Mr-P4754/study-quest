@@ -505,17 +505,31 @@
 </div>
 
 <div id="random-overlay" class="overlay overlay-z290 hidden">
-    <div class="modal modal-w350">
+    <div class="modal modal-w400">
         <div class="modal-header-row">
             <h2 class="text-navy m-0">🎲 未知の迷宮</h2>
             <button class="help-btn" onclick="GuideModule.open('random')">❓</button>
         </div>
         <p class="text-sm text-left">学年のみを指定し、全範囲からランダムに出題される問題に挑戦します。<br><br>🔥 <b>報酬EXP 1.5倍</b></p>
-        <div class="my-20">
-            <label class="font-bold text-dark">挑戦する学年</label>
-            <select id="random-grade-select" aria-label="挑戦する学年を選択" class="select-box cat-select-large"><option value="">学年を選択...</option></select>
+        <div class="cat-box-gray">
+            <label class="font-bold text-dark text-sm">挑戦する学年</label>
+            <select id="random-grade-select" aria-label="挑戦する学年を選択" class="select-box cat-select-full mb-10"><option value="">学年を選択...</option></select>
+            <label class="font-bold text-dark text-sm">ボスHP</label>
+            <select id="random-boss-hp-select" aria-label="ボスHPを選択" class="select-box cat-select-full">
+                <option value="">ボスデフォルトHP</option>
+                <option value="1000">ボスHP: 1000</option>
+                <option value="2000">ボスHP: 2000</option>
+                <option value="3000">ボスHP: 3000</option>
+                <option value="4000">ボスHP: 4000</option>
+                <option value="5000">ボスHP: 5000</option>
+                <option value="10000">ボスHP: 10000</option>
+            </select>
         </div>
-        <button class="menu-btn btn-navy" onclick="startRandomGame()">探索開始</button>
+        <button class="menu-btn btn-navy btn-full-w mb-10" onclick="startRandomGameCheck()">探索開始</button>
+        <div class="modal-btn-grid">
+            <button class="menu-btn oath" onclick="goToOathMenuRandomCheck()">😈 誓約へ</button>
+            <button class="menu-btn relief btn-blue" onclick="goToReliefMenuRandomCheck()">🕊️ 救済へ</button>
+        </div>
         <button class="menu-btn mt-10 btn-gray" onclick="closeRandomMenu()">やめる</button>
     </div>
 </div>
@@ -530,11 +544,25 @@
             <div class="font-bold text-crimson">⚠️ PC・キーボード専用</div>
             <div class="text-xs text-left mt-5 text-crimson">このモードは物理キーボードが必要です。<br>スマホ・タブレットのフリック入力では動作しません。</div>
         </div>
-        <div class="my-15">
-            <label class="font-bold text-dark">挑戦する学年</label>
-            <select id="typing-grade-select" aria-label="挑戦する学年を選択" class="select-box cat-select-large"><option value="">学年を選択...</option></select>
+        <div class="cat-box-gray my-15">
+            <label class="font-bold text-dark text-sm">挑戦する学年</label>
+            <select id="typing-grade-select" aria-label="挑戦する学年を選択" class="select-box cat-select-full mb-10"><option value="">学年を選択...</option></select>
+            <label class="font-bold text-dark text-sm">ボスHP</label>
+            <select id="typing-boss-hp-select" aria-label="ボスHPを選択" class="select-box cat-select-full">
+                <option value="">ボスデフォルトHP</option>
+                <option value="1000">ボスHP: 1000</option>
+                <option value="2000">ボスHP: 2000</option>
+                <option value="3000">ボスHP: 3000</option>
+                <option value="4000">ボスHP: 4000</option>
+                <option value="5000">ボスHP: 5000</option>
+                <option value="10000">ボスHP: 10000</option>
+            </select>
         </div>
-        <button class="menu-btn btn-purple" onclick="startTypingGame()">キーボードで出撃</button>
+        <button class="menu-btn btn-purple btn-full-w mb-10" onclick="startTypingGameCheck()">キーボードで出撃</button>
+        <div class="modal-btn-grid">
+            <button class="menu-btn oath" onclick="goToOathMenuTypingCheck()">😈 誓約へ</button>
+            <button class="menu-btn relief btn-blue" onclick="goToReliefMenuTypingCheck()">🕊️ 救済へ</button>
+        </div>
         <button class="menu-btn mt-10 btn-gray" onclick="closeTypingMenu()">やめる</button>
     </div>
 </div>

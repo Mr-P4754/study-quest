@@ -121,6 +121,8 @@ export async function retryGame() {
         if (typeof window.startCalcGame === 'function') window.startCalcGame(); 
     }
     else if (playData.isTyping) { 
+        if (playData.activeOaths && playData.activeOaths.length > 0) { runtimeState.tempOaths = [...playData.activeOaths]; runtimeState.oathOrigin = 'typing'; }
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) { runtimeState.tempReliefs = [...playData.activeReliefs]; runtimeState.oathOrigin = 'typing'; }
         if (typeof window.startTypingGame === 'function') window.startTypingGame(); 
     }
     else if (playData.isSurvival) {
@@ -129,14 +131,18 @@ export async function retryGame() {
         if (typeof window.startSurvivalGame === 'function') window.startSurvivalGame(); 
     }
     else if (playData.isRandom) { 
+        if (playData.activeOaths && playData.activeOaths.length > 0) { runtimeState.tempOaths = [...playData.activeOaths]; runtimeState.oathOrigin = 'random'; }
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) { runtimeState.tempReliefs = [...playData.activeReliefs]; runtimeState.oathOrigin = 'random'; }
         if (typeof window.startRandomGame === 'function') window.startRandomGame(); 
     }
     else if (playData.activeOaths && playData.activeOaths.length > 0) {
         runtimeState.tempOaths = [...playData.activeOaths];
+        runtimeState.oathOrigin = 'normal';
         if (typeof window.startOathGame === 'function') window.startOathGame(); 
     }
     else if (playData.activeReliefs && playData.activeReliefs.length > 0) {
         runtimeState.tempReliefs = [...playData.activeReliefs];
+        runtimeState.oathOrigin = 'normal';
         if (typeof window.startReliefGame === 'function') window.startReliefGame(); 
     }
     else if (playData.isRevenge) { 
