@@ -10,25 +10,25 @@ import {
     runtimeState,
     ROGUE_TILES,
     saveGame
-} from './state.js';
+} from './state.js?v=9.1.8';
 
 import {
     playSE,
     playBGM
-} from './utils.js';
+} from './utils.js?v=9.1.8';
 
 import {
     updateUI,
     startCountdown,
     getCharaStats,
     backToTitle
-} from './battle-core.js';
+} from './battle-core.js?v=9.1.8';
 
 import {
     showAppModal,
     showConfirm,
     updateTitleInfo
-} from './ui-manager.js';
+} from './ui-manager.js?v=9.1.8';
 
 export function addRogueLog(text) {
     if (!rogueData.logs) rogueData.logs = [];

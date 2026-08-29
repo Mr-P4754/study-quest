@@ -31,7 +31,7 @@ import {
     initUserId,
     loadSaveData,
     saveGame
-} from './state.js';
+} from './state.js?v=9.1.8';
 
 import {
     getRarityIndex,
@@ -46,13 +46,13 @@ import {
     stopBGM,
     playMmlBGM,
     BGM_MML
-} from './utils.js';
+} from './utils.js?v=9.1.8';
 
 import {
     uploadData,
     downloadData,
     fetchData
-} from './api.js';
+} from './api.js?v=9.1.8';
 
 import {
     showCutIn,
@@ -67,7 +67,7 @@ import {
     finishGame,
     handleResultClose,
     backToTitle
-} from './battle-core.js';
+} from './battle-core.js?v=9.1.8';
 
 import {
     startNormalGameCheck,
@@ -102,7 +102,7 @@ import {
     toggleRelief,
     startOathGame,
     startReliefGame
-} from './quest-normal.js';
+} from './quest-normal.js?v=9.1.8';
 
 import {
     addRogueLog,
@@ -125,7 +125,7 @@ import {
     updateRogueUI,
     escapeRogueConfirm,
     exitRogueSystem
-} from './quest-explore.js';
+} from './quest-explore.js?v=9.1.8';
 
 import {
     openGacha,
@@ -172,7 +172,7 @@ import {
     checkLoginBonus,
     closeLoginBonus,
     checkMissionDate
-} from './gacha-shop.js';
+} from './gacha-shop.js?v=9.1.8';
 
 import {
     initTitle,
@@ -218,7 +218,7 @@ import {
     showAlert,
     showConfirm,
     GuideModule
-} from './ui-manager.js';
+} from './ui-manager.js?v=9.1.8';
 
 // ==========================================
 // インライン onclick / 動的UI互換用 window 一括バインド
