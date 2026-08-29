@@ -44,13 +44,6 @@ export function initTitle() {
         grades.forEach(g => randSelect.innerHTML += `<option value="${g}">${g}</option>`);
     }
 
-    // タイピング用初期化
-    const typeSelect = document.getElementById('typing-grade-select');
-    if(typeSelect) {
-        typeSelect.innerHTML = '<option value="">学年を選択...</option>';
-        grades.forEach(g => typeSelect.innerHTML += `<option value="${g}">${g}</option>`);
-    }
-
     // 探索用初期化
     const rogueSelect = document.getElementById('rogue-grade-select');
     if(rogueSelect) {
@@ -232,6 +225,12 @@ export function closeRandomMenu() {
 }
 
 export function openTypingMenu() { 
+    if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データが見つかりません");
+    const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g => g);
+    const sel = document.getElementById('typing-grade-select'); 
+    if(!sel) return; 
+    sel.innerHTML = '<option value="">学年を選択...</option>';
+    grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
     hideCurrentCategoryOverlay();
     document.getElementById('typing-menu-overlay')?.classList.remove('hidden'); 
 }

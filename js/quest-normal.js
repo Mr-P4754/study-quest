@@ -457,61 +457,98 @@ export function startRandomGame() {
 }
 
 export function startTypingGame() {
-    const g = document.getElementById('typing-grade-select')?.value;
+    const g = document.getElementById('typing-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
-    let tList = (rawData.typing || []).filter(t => t.grade == g);
-    if(tList.length === 0) return alert("この学年のタイピング問題はありません");
+    if (!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
+    const qList = rawData.typing.filter(t => t.grade == g); 
+    if(qList.length === 0) return alert("選択した学年の問題がありません");
     
-    tList.sort(() => Math.random() - 0.5);
-    playData.questions = tList;
-    playData.isTyping = true;
-    playData.isCalculation = false;
-    playData.isRandom = false;
-    playData.isRevenge = false;
-    playData.isSurvival = false;
+    let boss = { name: "キーボードの魔人", hp: qList.length * 50, icon: "⌨️" };
+    try { 
+        if(rawData.bosses) { 
+            const specificBoss = rawData.bosses.find(b => b.grade == g && b.unit == 'タイピング'); 
+            if(specificBoss) { 
+                boss = { ...specificBoss }; 
+                if(!boss.hp) boss.hp = qList.length * 50; 
+            } else { 
+                const gradeBoss = rawData.bosses.find(b => b.grade == g); 
+                if(gradeBoss) { 
+                    boss = { ...gradeBoss }; 
+                    boss.hp = qList.length * 50; 
+                    boss.name = "【打鍵】" + boss.name; 
+                } 
+            } 
+        } 
+    } catch(e) {}
+    
+    playData.questions = qList.sort(() => Math.random() - 0.5); 
+    playData.qIndex = 0; 
+    playData.currentBoss = boss;
+    playData.isRevenge = false; 
+    playData.activeOaths = []; 
+    playData.activeReliefs = []; 
+    playData.isRandom = false; 
+    playData.isTyping = true; 
+    playData.isCalculation = false; 
+    playData.isSurvival = false; 
     playData.context = null;
-    playData.activeOaths = [];
-    playData.activeReliefs = [];
+    runtimeState.currentCategory = null;
     
-    document.getElementById('typing-menu-overlay')?.classList.add('hidden');
-    document.getElementById('title-screen')?.classList.add('hidden');
+    const charaStats = getCharaStats();
+    gameState.score = 0; 
+    gameState.combo = 0; 
+    gameState.lives = 5; 
+    gameState.enemyHP = Number(boss.hp) || 3000; 
+    gameState.maxHP = gameState.enemyHP; 
+    gameState.maxTime = 10 * charaStats.time; 
+    runtimeState.isGameActive = false; 
+    runtimeState.isPaused = false;
+    
+    document.getElementById('typing-menu-overlay')?.classList.add('hidden'); 
+    document.getElementById('title-screen')?.classList.add('hidden'); 
     document.getElementById('game-screen')?.classList.remove('hidden');
     document.getElementById('cat-main-overlay')?.classList.add('hidden');
     
-    document.getElementById('ui-choices')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.add('hidden'); 
+    document.getElementById('ui-typing-area')?.classList.remove('hidden'); 
     document.getElementById('ui-question')?.classList.add('hidden');
-    document.getElementById('ui-typing-area')?.classList.remove('hidden');
-    
-    runtimeState.isGameActive = false;
-    runtimeState.isPaused = false;
-    gameState.lives = 3;
-    gameState.score = 0;
-    gameState.combo = 0;
-    playData.qIndex = 0;
-    gameState.maxTime = 10;
-    gameState.timeLeft = 10;
-    
-    let b = null;
-    if (rawData.randomBosses && rawData.randomBosses.length > 0) {
-        b = rawData.randomBosses[Math.floor(Math.random() * rawData.randomBosses.length)];
-    }
-    gameState.maxHP = (b && b.hp) ? Number(b.hp) : 3000;
-    gameState.enemyHP = gameState.maxHP;
-    const uienemyName = document.getElementById('ui-enemy-name');
-    if(uienemyName) uienemyName.innerText = (b && b.name) ? b.name : "タイピング・マスター";
+    document.getElementById('ui-calc-answer')?.classList.add('hidden'); 
+    document.getElementById('calc-keypad')?.classList.add('hidden'); 
+    document.getElementById('calc-layout')?.classList.add('hidden'); 
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = '';
+
+    const enemyBox = document.querySelector('.enemy-visual-box'); 
     const enemyIcon = document.getElementById('ui-enemy-icon');
-    if(enemyIcon) {
-        const iconVal = (b && b.icon) ? b.icon : "⌨️";
-        if (iconVal.startsWith('http')) enemyIcon.innerHTML = `<img src="${iconVal}" style="max-height:100%;max-width:100%;">`;
-        else enemyIcon.innerText = iconVal;
-    }
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
+    if(enemyIcon) enemyIcon.classList.remove('shake-anim');
     
+    const uiEnemyName = document.getElementById('ui-enemy-name'); 
+    if(uiEnemyName) uiEnemyName.innerText = boss.name;
+    if(enemyIcon) {
+        if(boss.icon && boss.icon.startsWith('http')) { 
+            enemyIcon.innerHTML = `<img src="${boss.icon}">`; 
+        } else { 
+            enemyIcon.innerHTML = boss.icon || "👾"; 
+        }
+    }
+
     if (typeof window !== 'undefined') {
-        document.removeEventListener('keydown', handleTypingInput);
+        document.removeEventListener('keydown', handleTypingInput); 
         document.addEventListener('keydown', handleTypingInput);
     }
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
     
-    updateUI();
+    const uiTypingJp = document.getElementById('ui-typing-jp'); 
+    if(uiTypingJp) uiTypingJp.innerText = "READY..."; 
+    const uiTypingRomaji = document.getElementById('ui-typing-romaji'); 
+    if(uiTypingRomaji) uiTypingRomaji.innerHTML = "";
+
+    updateUI(); 
     startCountdown();
 }
 
