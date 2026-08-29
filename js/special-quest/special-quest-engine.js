@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.8';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.8';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.8';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.9';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.9';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.9';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -770,28 +770,34 @@ export function getTbAffinityInfo(playerSkills, enemySkills) {
 }
 
 /**
- * 敵キャラクターの基礎攻撃力を算出（内部的に全属性ATK扱いとして基本攻撃力を計算）
- * 計算式: Math.floor(100 * 敵の補正値(value) * 敵のレベル補正)
+ * 敵キャラクターの基礎攻撃力を算出（内部計算上は全キャラ一律でATK属性扱いとして基本攻撃力を計算）
  * @param {Object} enemy
  * @returns {number}
  */
 export function calcTbEnemyAtk(enemy) {
-    if (!enemy) return 100;
-    const val = Number(enemy.value) || 1.0;
-    const lv = Number(enemy.level) || 1;
-    const lvScale = 1 + (lv - 1) * 0.05;
-    return Math.max(10, Math.floor(100 * val * lvScale));
+    if (!enemy) return 120;
+    const baseAtk = 120;
+    const val = Number(enemy.value || enemy.val) || 1.0;
+    const lv = Number(enemy.level || enemy.lv) || 1;
+    
+    // レベル補正
+    const levelFactor = 1 + ((lv - 1) * 0.02);
+    
+    // 内部計算上は常にATK属性のステータス倍率（攻撃特化ボーナス 1.5倍）を適用
+    const atkBonus = 1.5; 
+    
+    return Math.max(10, Math.floor(baseAtk * val * levelFactor * atkBonus));
 }
 
 /**
- * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.2倍 ＋ 相性補正）計算
- * 計算式: Math.max(1, Math.floor(baseAtk * 0.2 * affinity))
+ * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.5倍 ＋ 相性補正）計算
+ * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.5 * affinity))
  * @param {Object} enemy
  * @param {Object} [activePlayer]
  * @returns {number}
  */
 export function calcTbTickDamage(enemy, activePlayer) {
-    if (!enemy) return 20;
+    if (!enemy) return 50;
     const baseAtk = calcTbEnemyAtk(enemy);
     let affinity = 1.0;
     if (activePlayer) {
@@ -799,7 +805,7 @@ export function calcTbTickDamage(enemy, activePlayer) {
         const playerSkills = activePlayer.skills || ['ATK'];
         affinity = getTbAffinityMultiplier(enemySkills, playerSkills, true);
     }
-    return Math.max(1, Math.floor(baseAtk * 0.2 * affinity));
+    return Math.max(1, Math.floor(baseAtk * 0.5 * affinity));
 }
 
 // ----------------------------------------------------
