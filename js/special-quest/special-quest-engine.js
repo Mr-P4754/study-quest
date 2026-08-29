@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.6';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.6';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.6';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.7';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.7';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.7';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -388,11 +388,10 @@ function renderPartyZukanGrid() {
 
         card.innerHTML = `
             ${badgeHtml}
-            <div class="char-cost-badge">Cost ${cost}</div>
             <div class="char-lvl-badge">Lv.${lv}</div>
             ${visual}
             <div style="font-weight:bold;font-size:0.75rem;margin-top:2px;"><span class="rarity-${currentR}">${currentR}</span> / ${c.type}</div>
-            <div style="font-size:0.68rem; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${decoName}</div>
+            <div style="font-size:0.72rem; font-weight:bold; color:#0284c7; margin-top:2px;">Cost ${cost}</div>
         `;
 
         card.onclick = () => setPartyMember(c.id);
