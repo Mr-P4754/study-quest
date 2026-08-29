@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.3.3">
-    <link rel="stylesheet" href="css/layout.css?v=9.3.3">
-    <link rel="stylesheet" href="css/components.css?v=9.3.3">
-    <link rel="stylesheet" href="css/quests.css?v=9.3.3">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.3.3">
+    <link rel="stylesheet" href="css/base.css?v=9.3.4">
+    <link rel="stylesheet" href="css/layout.css?v=9.3.4">
+    <link rel="stylesheet" href="css/components.css?v=9.3.4">
+    <link rel="stylesheet" href="css/quests.css?v=9.3.4">
+    <link rel="stylesheet" href="css/special-quest.css?v=9.3.4">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.3.3</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.3.4</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -216,17 +216,17 @@
     </div>
 </div>
 
-<div id="team-battle-screen" class="screen field-screen-bg tb-screen-bg hidden">
+<div id="team-battle-screen" class="screen field-screen-bg hidden">
     <!-- ヘッダー（進行度、タイマー、撤退、ポーズ） -->
-    <div class="tb-header">
-        <div id="tb-progress-text" class="tb-progress-badge">⚔️ STAGE 1/3</div>
-        <div class="timer-container tb-timer-container">
-            <div id="tb-timer" class="timer-bar-fill"></div>
-            <div id="tb-timer-text">READY</div>
+    <div class="header">
+        <div id="tb-progress-text" class="tb-progress-badge font-bold">⚔️ STAGE 1/3</div>
+        <div class="timer-container">
+            <div id="ui-timer" class="timer-bar-fill"></div>
+            <div id="ui-timer-text">10.0</div>
         </div>
-        <div class="tb-header-actions">
-            <button id="tb-escape-btn" class="tb-escape-btn" type="button">🏃 撤退</button>
-            <button class="header-pause-btn" type="button" onclick="toggleTbPause()">⏸</button>
+        <div class="header-actions flex gap-5">
+            <button id="tb-escape-btn" class="tb-escape-btn" type="button" onclick="escapeTeamBattle()">🏃 撤退</button>
+            <button id="ui-pause-btn" class="header-pause-btn" type="button" onclick="toggleTbPause()">⏸</button>
         </div>
     </div>
 
@@ -298,10 +298,10 @@
         </div>
     </div>
 
-    <!-- クイズエリア (最下部・通常戦闘と同じクラス構造) -->
-    <div class="tb-quiz-area">
-        <div id="tb-question" class="question-box question-box-wrap">READY?</div>
-        <div id="tb-choices" class="choices-grid">
+    <!-- 下部フッター問題領域 (通常戦闘と完全共通の footer 構造) -->
+    <div class="footer">
+        <div id="ui-question" class="question-box question-box-wrap">READY?</div>
+        <div class="choices-grid" id="ui-choices">
             <!-- 選択肢ボタン (.choice-btn) が動的生成されます -->
         </div>
     </div>
@@ -825,6 +825,10 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.3.4</h4>
+            <ul>
+                <li>チームバトルクエストのUI完全共通化とバグ修正（通常戦闘ヘッダー・フッター構造との完全統一、問題文・選択肢のID統一、回答時発光エフェクト＋500msディレイ待機、撤退・終了後の画面消失バグ解消）</li>
+            </ul>
             <h4>Ver 9.3.3</h4>
             <ul>
                 <li>チームバトルクエストのバグ修正・仕様更新（通常戦闘背景共通化、問題文・選択肢の描画バグ解消、タイムリミット10秒化、時間切れ・不正解時の10倍ペナルティ、通常クエスト共通の属性特化ボーナス適用）</li>
@@ -945,6 +949,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.3.3"></script>
+<script type="module" src="js/main.js?v=9.3.4"></script>
 </body>
 </html>

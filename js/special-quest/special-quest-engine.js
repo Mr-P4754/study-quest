@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.3';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.3';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.3';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.4';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.4';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.4';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -754,8 +754,8 @@ export function tbGameLoop() {
     tbState.timeLeft = Math.max(0, tbState.timeLeft - 0.1);
 
     // タイマーバーとテキストの更新
-    const timerFill = document.getElementById('tb-timer');
-    const timerText = document.getElementById('tb-timer-text');
+    const timerFill = document.querySelector('#team-battle-screen #ui-timer') || document.getElementById('ui-timer') || document.getElementById('tb-timer');
+    const timerText = document.querySelector('#team-battle-screen #ui-timer-text') || document.getElementById('ui-timer-text') || document.getElementById('tb-timer-text');
     const ratio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
 
     if (timerFill) {
@@ -823,7 +823,11 @@ function applyTbPenalty(reason) {
     }
 
     // 即座に次の問題へ移行（タイマーリセット）
-    nextTbQuestion();
+    setTimeout(() => {
+        if (tbState.isActive && !tbState.isPaused) {
+            nextTbQuestion();
+        }
+    }, 600);
 }
 
 /**
@@ -863,10 +867,10 @@ export function nextTbQuestion() {
     tbState.maxTime = 10 * (stats.time || 1.0);
     tbState.timeLeft = tbState.maxTime;
 
-    const qBox = document.getElementById('tb-question');
+    const qBox = document.querySelector('#team-battle-screen #ui-question') || document.getElementById('ui-question') || document.getElementById('tb-question');
     if (qBox) qBox.innerText = q.question || '問題文';
 
-    const choicesGrid = document.getElementById('tb-choices');
+    const choicesGrid = document.querySelector('#team-battle-screen #ui-choices') || document.getElementById('ui-choices') || document.getElementById('tb-choices');
     if (choicesGrid && q.choices) {
         choicesGrid.innerHTML = '';
         const shuffledChoices = [...q.choices].sort(() => Math.random() - 0.5);
@@ -875,22 +879,32 @@ export function nextTbQuestion() {
             btn.className = 'choice-btn';
             btn.type = 'button';
             btn.innerText = choice;
-            btn.onclick = () => judgeTbAnswer(choice);
+            btn.onclick = () => judgeTbAnswer(choice, btn);
             choicesGrid.appendChild(btn);
         });
     }
 }
 
 /**
- * クイズ回答判定と自陣攻撃（通常クエスト共通のATK/TIME補正・属性相性を適用）
+ * クイズ回答判定と自陣攻撃（発光エフェクト・500msディレイ・属性補正適用）
  * @param {string} selectedChoice
+ * @param {HTMLButtonElement} [buttonElement]
  */
-export function judgeTbAnswer(selectedChoice) {
+export function judgeTbAnswer(selectedChoice, buttonElement) {
     if (!tbState.isActive || tbState.isPaused || !tbState.currentQuestion) return;
 
     const q = tbState.currentQuestion;
     const isCorrect = (String(selectedChoice).trim() === String(q.answer).trim());
     const activePlayer = tbState.party[tbState.activeSlot];
+
+    // 全ての選択肢ボタンを非活性化
+    const allBtns = document.querySelectorAll('#team-battle-screen .choice-btn');
+    allBtns.forEach(b => b.disabled = true);
+
+    // クリックされたボタンに発光クラスを付与
+    if (buttonElement) {
+        buttonElement.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
+    }
 
     if (isCorrect) {
         // 正解！自陣から敵への攻撃
@@ -924,22 +938,36 @@ export function judgeTbAnswer(selectedChoice) {
             const earned = Math.floor(baseExp * stats.exp);
             tbState.earnedXp += earned;
 
-            if (tbState.stage < tbState.maxStage) {
-                // 次のステージへ進行
-                showAlert(`🎉 STAGE ${tbState.stage} CLEAR!<br>次の敵が現れた！`);
-                setupTbStage(tbState.stage + 1);
-                nextTbQuestion();
-            } else {
-                // 全ステージ制覇・完全勝利！
-                finishTeamBattle(true);
-            }
+            setTimeout(() => {
+                if (!tbState.isActive) return;
+                if (tbState.stage < tbState.maxStage) {
+                    // 次のステージへ進行
+                    showAlert(`🎉 STAGE ${tbState.stage} CLEAR!<br>次の敵が現れた！`);
+                    setupTbStage(tbState.stage + 1);
+                    nextTbQuestion();
+                } else {
+                    // 全ステージ制覇・完全勝利！
+                    finishTeamBattle(true);
+                }
+            }, 800);
             return;
         }
 
-        // 次の問題へ
-        nextTbQuestion();
+        // 次の問題へ（発光エフェクトを確認できるように500ms待機）
+        setTimeout(() => {
+            if (tbState.isActive && !tbState.isPaused) {
+                nextTbQuestion();
+            }
+        }, 500);
     } else {
-        // 不正解：10倍ペナルティ発動！
+        // 不正解：正解ボタンを可視化
+        allBtns.forEach(b => {
+            if (String(b.innerText).trim() === String(q.answer).trim()) {
+                b.classList.add('btn-miss-answer');
+            }
+        });
+
+        // 10倍ペナルティ発動
         applyTbPenalty('✕ 不正解！');
     }
 }
@@ -1199,8 +1227,12 @@ export function finishTeamBattle(isWin, isEscape = false) {
     }
     stopBGM();
 
+    // チームバトル画面・ポーズ画面を隠す
     document.getElementById('tb-pause-overlay')?.classList.add('hidden');
     document.getElementById('team-battle-screen')?.classList.add('hidden');
+
+    // 確実にタイトル画面を表示
+    document.getElementById('title-screen')?.classList.remove('hidden');
 
     if (isEscape) {
         returnToCurrentCategory();
@@ -1221,5 +1253,6 @@ export function finishTeamBattle(isWin, isEscape = false) {
 
     returnToCurrentCategory();
 }
+
 
 
