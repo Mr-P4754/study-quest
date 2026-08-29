@@ -5,16 +5,76 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.2';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.2';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.2';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.3';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.3';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.3';
 
 // ----------------------------------------------------
-// 内部状態管理
+// 内部状態管理 & コスト定義
 // ----------------------------------------------------
+export const TB_MAX_COST = 10;
+export const TB_RARITY_COST = {
+    'N': 2,
+    'R': 3,
+    'SR': 4,
+    'SSR': 5,
+    'UR': 6
+};
+
 let selectedPartySlot = 0; // 現在選択中の編成スロット (0: 前衛, 1: 後衛1, 2: 後衛2)
 let tempParty = [null, null, null]; // 編成画面内での一時パーティー状態
 let partySortMode = 'rarity_desc'; // 手持ちキャラクター一覧のソート順
+
+/**
+ * キャラクターマスターとインベントリデータからコストを取得
+ * @param {Object} charMaster
+ * @param {Object} [invData]
+ * @returns {number}
+ */
+export function getTbCharaCost(charMaster, invData) {
+    if (!charMaster) return 0;
+    const rarity = (invData && invData.currentRarity) ? invData.currentRarity : (charMaster.rarity || 'N');
+    return TB_RARITY_COST[rarity] || 2;
+}
+
+/**
+ * 指定されたパーティー配列（キャラID）の合計コストを計算
+ * @param {Array<string|null>} partyIds
+ * @returns {number}
+ */
+export function calcTbPartyTotalCost(partyIds) {
+    if (!partyIds || !rawData.characters) return 0;
+    let total = 0;
+    for (const charId of partyIds) {
+        if (!charId) continue;
+        const charMaster = rawData.characters.find(c => String(c.id) === String(charId));
+        const invData = gameState.charaInventory[charId];
+        total += getTbCharaCost(charMaster, invData);
+    }
+    return total;
+}
+
+/**
+ * パーティー編成画面のコストメーター表示を更新
+ */
+export function updatePartyCostMeter() {
+    const currentCostEl = document.getElementById('party-current-cost');
+    const remainCostEl = document.getElementById('party-remain-cost');
+    const meterEl = document.getElementById('party-cost-meter');
+    if (!currentCostEl || !remainCostEl || !meterEl) return;
+
+    const totalCost = calcTbPartyTotalCost(tempParty);
+    const remain = TB_MAX_COST - totalCost;
+
+    currentCostEl.innerText = totalCost;
+    remainCostEl.innerText = remain;
+
+    if (totalCost > TB_MAX_COST) {
+        meterEl.classList.add('over-limit');
+    } else {
+        meterEl.classList.remove('over-limit');
+    }
+}
 
 /**
  * パーティー編成画面の手持ちキャラソート順を変更
@@ -71,9 +131,23 @@ export function closePartyFormation() {
 }
 
 /**
- * パーティー編成を保存して閉じる
+ * パーティー編成を保存して閉じる（バリデーション付き）
  */
 export function savePartyFormation() {
+    // 3体選ばれているかチェック
+    const selectedCount = tempParty.filter(id => !!id).length;
+    if (selectedCount < 3) {
+        showAlert("⚠️ チームメンバーを3体選出してください！");
+        return;
+    }
+
+    // コスト上限チェック
+    const totalCost = calcTbPartyTotalCost(tempParty);
+    if (totalCost > TB_MAX_COST) {
+        showAlert("⚠️ チームの合計コストが上限（10）を超えています！\nコスト10以内に収まるように編成してください。");
+        return;
+    }
+
     gameState.teamParty = [
         tempParty[0] || null,
         tempParty[1] || null,
@@ -161,6 +235,7 @@ export function renderPartyFormation() {
         const rarityEl = document.getElementById(`party-slot-${i}-rarity`);
         const typeEl = document.getElementById(`party-slot-${i}-type`);
         const lvEl = document.getElementById(`party-slot-${i}-lv`);
+        const costEl = document.getElementById(`party-slot-${i}-cost`);
 
         if (charMaster && invData) {
             slotEl.classList.add('filled');
@@ -170,6 +245,7 @@ export function renderPartyFormation() {
             const currentRarity = invData.currentRarity || charMaster.rarity || 'N';
             const lv = (typeof invData.level === 'number' && invData.level >= 1) ? invData.level : 1;
             const displayName = getDisplayName(charMaster, invData, false);
+            const cost = getTbCharaCost(charMaster, invData);
 
             if (imgEl) {
                 if (charMaster.imageUrl && charMaster.imageUrl.startsWith('http')) {
@@ -189,11 +265,13 @@ export function renderPartyFormation() {
                 typeEl.innerText = getTypeEmoji(charMaster.type) + ' ' + (charMaster.type || 'ATK');
             }
             if (lvEl) lvEl.innerText = `Lv.${lv}`;
+            if (costEl) costEl.innerText = `Cost ${cost}`;
         } else {
             slotEl.classList.remove('filled');
             if (emptyEl) emptyEl.classList.remove('hidden');
             if (infoEl) infoEl.classList.add('hidden');
             if (imgEl) imgEl.classList.add('hidden');
+            if (costEl) costEl.innerText = `Cost 0`;
         }
 
         // スロットクリック時のハンドラを登録
@@ -207,6 +285,7 @@ export function renderPartyFormation() {
     }
 
     updatePartySlotHighlights();
+    updatePartyCostMeter();
 
     // 2. 下部手持ちキャラ一覧の描画
     renderPartyZukanGrid();
@@ -292,6 +371,7 @@ function renderPartyZukanGrid() {
         const currentR = (inv && inv.currentRarity) ? inv.currentRarity : c.rarity;
         const lv = (inv && typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
         const decoName = getDisplayName(c, inv, false);
+        const cost = getTbCharaCost(c, inv);
 
         let badgeHtml = '';
         if (partyIndex === 0) {
@@ -308,6 +388,7 @@ function renderPartyZukanGrid() {
 
         card.innerHTML = `
             ${badgeHtml}
+            <div class="char-cost-badge">Cost ${cost}</div>
             <div class="char-lvl-badge">Lv.${lv}</div>
             ${visual}
             <div style="font-weight:bold;font-size:0.75rem;margin-top:2px;"><span class="rarity-${currentR}">${currentR}</span> / ${c.type}</div>
@@ -344,6 +425,7 @@ export function updateTeamBattleSetupPreview() {
             const currentR = invData.currentRarity || charMaster.rarity || 'N';
             const lv = (typeof invData.level === 'number' && invData.level >= 1) ? invData.level : 1;
             const displayName = getDisplayName(charMaster, invData, false);
+            const cost = getTbCharaCost(charMaster, invData);
             const imgTag = (charMaster.imageUrl && charMaster.imageUrl.startsWith('http'))
                 ? `<img src="${charMaster.imageUrl}" class="tb-mini-slot-img">`
                 : `<div style="font-size:1.6rem;line-height:36px;">📦</div>`;
@@ -353,7 +435,7 @@ export function updateTeamBattleSetupPreview() {
                     <div style="font-size:0.6rem; font-weight:bold; color:#64748b;">${labels[i]}</div>
                     ${imgTag}
                     <div class="tb-mini-slot-name">${displayName}</div>
-                    <div style="font-size:0.62rem; color:#64748b;"><span class="rarity-${currentR}">${currentR}</span> Lv.${lv}</div>
+                    <div style="font-size:0.62rem; color:#64748b;"><span class="rarity-${currentR}">${currentR}</span> Lv.${lv} <span style="color:#0284c7;font-weight:bold;">C${cost}</span></div>
                 </div>
             `;
         } else {
@@ -369,10 +451,12 @@ export function updateTeamBattleSetupPreview() {
 
     container.innerHTML = slotsHtml;
 
-    // 出撃ボタンの活性・非活性制御（3体セット完了しているか）
+    // 出撃ボタンの活性・非活性制御（3体セット完了 & コスト10以下）
+    const totalCost = calcTbPartyTotalCost(gameState.teamParty || []);
+    const isCostOk = totalCost <= TB_MAX_COST;
     const startBtn = document.getElementById('tb-start-battle-btn');
     if (startBtn) {
-        if (readyCount === 3) {
+        if (readyCount === 3 && isCostOk) {
             startBtn.removeAttribute('disabled');
             startBtn.style.opacity = '1.0';
             startBtn.style.cursor = 'pointer';
@@ -729,10 +813,18 @@ export function startTeamBattle() {
     }
     if (qList.length === 0) return alert("該当する問題がありません。");
 
-    // パーティーのチェック（3体揃っているか）
-    const partyIds = gameState.teamParty;
-    if (!partyIds[0] || !partyIds[1] || !partyIds[2]) {
-        return alert("パーティーを3体編成してください。");
+    // パーティーのチェック（3体揃っているか ＆ 合計コスト10以下か）
+    const partyIds = gameState.teamParty || [];
+    const validParty = partyIds.filter(id => !!id && !!gameState.charaInventory[id]);
+    if (validParty.length < 3) {
+        showAlert("⚠️ チームメンバーを3体選出してください！\n「👥 パーティー編成」から3体セットしてください。");
+        return;
+    }
+
+    const totalPartyCost = calcTbPartyTotalCost(partyIds);
+    if (totalPartyCost > TB_MAX_COST) {
+        showAlert("⚠️ チームの合計コストが上限（10）を超えています！\n「👥 パーティー編成」からコスト10以内に収まるように編成してください。");
+        return;
     }
 
     // 味方3体の戦闘データ初期化
@@ -768,6 +860,9 @@ export function startTeamBattle() {
             isAlive: true
         });
     }
+
+    // 敵チーム3体を合計コスト10以下ルールで事前生成
+    tbState.enemyTeam = generateTbEnemyTeam();
 
     // バトル状態初期化
     tbState.isActive = true;
@@ -873,72 +968,107 @@ export function showTbCountdownCutIn(stageNum) {
 }
 
 /**
- * チームバトル用：ステージ番号に応じた敵キャラクターのレア度決定
+ * チームバトル用：各ステージの出現レア度確率テーブル
  * STAGE 1: N: 70% / R: 25% / SR: 5% / SSR: 0% / UR: 0%
  * STAGE 2: N: 30% / R: 50% / SR: 18% / SSR: 2% / UR: 0%
  * STAGE 3: N: 0% / R: 40% / SR: 45% / SSR: 13% / UR: 2%
- * @param {number} stageNum
+ */
+export const TB_STAGE_ENEMY_PROBS = {
+    1: [ { rarity: 'N', p: 0.70 }, { rarity: 'R', p: 0.25 }, { rarity: 'SR', p: 0.05 }, { rarity: 'SSR', p: 0.00 }, { rarity: 'UR', p: 0.00 } ],
+    2: [ { rarity: 'N', p: 0.30 }, { rarity: 'R', p: 0.50 }, { rarity: 'SR', p: 0.18 }, { rarity: 'SSR', p: 0.02 }, { rarity: 'UR', p: 0.00 } ],
+    3: [ { rarity: 'N', p: 0.00 }, { rarity: 'R', p: 0.40 }, { rarity: 'SR', p: 0.45 }, { rarity: 'SSR', p: 0.13 }, { rarity: 'UR', p: 0.02 } ]
+};
+
+/**
+ * 確率テーブルに従ってレア度を1体抽選
+ * @param {Array<{rarity: string, p: number}>} probList
  * @returns {string}
  */
-export function getTbStageEnemyRarity(stageNum) {
+function sampleRarityFromTable(probList) {
     const rand = Math.random();
-    if (stageNum === 1) {
-        if (rand < 0.05) return 'SR';
-        if (rand < 0.30) return 'R';
-        return 'N';
-    } else if (stageNum === 2) {
-        if (rand < 0.02) return 'SSR';
-        if (rand < 0.20) return 'SR';
-        if (rand < 0.70) return 'R';
-        return 'N';
-    } else {
-        // STAGE 3
-        if (rand < 0.02) return 'UR';
-        if (rand < 0.15) return 'SSR';
-        if (rand < 0.60) return 'SR';
-        return 'R';
+    let cum = 0;
+    for (const item of probList) {
+        cum += item.p;
+        if (rand < cum) return item.rarity;
     }
+    return probList[probList.length - 1].rarity;
 }
 
 /**
- * 指定ステージの敵キャラクターを生成・配置（図鑑キャラからランダム抽出）
+ * チームバトル用：合計コスト10以下ルール内で敵チーム3体を事前生成
+ * @returns {Array<Object>}
+ */
+export function generateTbEnemyTeam() {
+    const maxRetries = 100;
+    let chosenRarities = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const r1 = sampleRarityFromTable(TB_STAGE_ENEMY_PROBS[1]);
+        const r2 = sampleRarityFromTable(TB_STAGE_ENEMY_PROBS[2]);
+        const r3 = sampleRarityFromTable(TB_STAGE_ENEMY_PROBS[3]);
+        const cost1 = TB_RARITY_COST[r1] || 2;
+        const cost2 = TB_RARITY_COST[r2] || 2;
+        const cost3 = TB_RARITY_COST[r3] || 2;
+        if (cost1 + cost2 + cost3 <= TB_MAX_COST) {
+            chosenRarities = [r1, r2, r3];
+            break;
+        }
+    }
+
+    if (!chosenRarities) {
+        // 安全用フォールバック (N:2 + R:3 + SR:4 = 9 <= 10)
+        chosenRarities = ['N', 'R', 'SR'];
+    }
+
+    const availableCharas = (rawData.characters && rawData.characters.length > 0) ? rawData.characters : [];
+    const enemyTeam = [];
+
+    for (let s = 1; s <= 3; s++) {
+        const stageNum = s;
+        const targetRarity = chosenRarities[s - 1];
+        const candidates = availableCharas.filter(c => c.rarity === targetRarity);
+        const pool = (candidates.length > 0) ? candidates : availableCharas;
+        const pickedChar = pool[Math.floor(Math.random() * pool.length)];
+
+        const enemyLevel = stageNum * 5 + 5;
+        const enemyName = pickedChar ? pickedChar.name : `モンスター Lv.${enemyLevel}`;
+        const assignedType = pickedChar ? (pickedChar.type || 'ATK') : ['ATK', 'TIME', 'EXP'][stageNum - 1];
+        const enemyValue = (pickedChar ? Number(pickedChar.value || 1.0) : 1.0) * (0.8 + stageNum * 0.25);
+        const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
+
+        enemyTeam.push({
+            name: enemyName,
+            level: enemyLevel,
+            type: assignedType,
+            skills: [assignedType],
+            rarity: pickedChar ? pickedChar.rarity : targetRarity,
+            cost: TB_RARITY_COST[targetRarity] || 2,
+            value: enemyValue,
+            maxHp: enemyMaxHp,
+            hp: enemyMaxHp,
+            imageUrl: pickedChar ? pickedChar.imageUrl : '',
+            icon: '👾',
+            master: pickedChar
+        });
+    }
+
+    return enemyTeam;
+}
+
+/**
+ * 指定ステージの敵キャラクターを配置（事前選出チームから読み出し）
  * @param {number} stageNum
  */
 function setupTbStage(stageNum) {
     tbState.stage = stageNum;
 
-    // 敵レベルと補正倍率の計算
-    const enemyLevel = stageNum * 5 + 5; // Stage 1: Lv.10, Stage 2: Lv.15, Stage 3: Lv.20
-
-    // rawData.characters からステージ別レア度確率テーブルに従ってキャラクターを抽出
-    const availableCharas = (rawData.characters && rawData.characters.length > 0) ? rawData.characters : [];
-    let pickedChar = null;
-    if (availableCharas.length > 0) {
-        // ステージ別のレア度抽選
-        const targetRarity = getTbStageEnemyRarity(stageNum);
-        const candidates = availableCharas.filter(c => c.rarity === targetRarity);
-        const pool = (candidates.length > 0) ? candidates : availableCharas;
-        pickedChar = pool[Math.floor(Math.random() * pool.length)];
+    if (tbState.enemyTeam && tbState.enemyTeam[stageNum - 1]) {
+        tbState.enemy = tbState.enemyTeam[stageNum - 1];
+    } else {
+        // フォールバック
+        const singleTeam = generateTbEnemyTeam();
+        tbState.enemy = singleTeam[stageNum - 1];
     }
-
-    const enemyName = pickedChar ? pickedChar.name : `モンスター Lv.${enemyLevel}`;
-    const assignedType = pickedChar ? (pickedChar.type || 'ATK') : ['ATK', 'TIME', 'EXP'][stageNum - 1];
-    const enemyValue = (pickedChar ? Number(pickedChar.value || 1.0) : 1.0) * (0.8 + stageNum * 0.25);
-    const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
-
-    tbState.enemy = {
-        name: enemyName,
-        level: enemyLevel,
-        type: assignedType,
-        skills: [assignedType],
-        rarity: pickedChar ? pickedChar.rarity : 'N',
-        value: enemyValue,
-        maxHp: enemyMaxHp,
-        hp: enemyMaxHp,
-        imageUrl: pickedChar ? pickedChar.imageUrl : '',
-        icon: '👾',
-        master: pickedChar
-    };
 
     // UI更新
     const progressEl = document.getElementById('tb-progress-text');

@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=10.0.2">
-    <link rel="stylesheet" href="css/layout.css?v=10.0.2">
-    <link rel="stylesheet" href="css/components.css?v=10.0.2">
-    <link rel="stylesheet" href="css/quests.css?v=10.0.2">
-    <link rel="stylesheet" href="css/special-quest.css?v=10.0.2">
+    <link rel="stylesheet" href="css/base.css?v=10.0.3">
+    <link rel="stylesheet" href="css/layout.css?v=10.0.3">
+    <link rel="stylesheet" href="css/components.css?v=10.0.3">
+    <link rel="stylesheet" href="css/quests.css?v=10.0.3">
+    <link rel="stylesheet" href="css/special-quest.css?v=10.0.3">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.2</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.3</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -632,8 +632,11 @@
 <div id="party-formation-overlay" class="overlay overlay-z300 hidden">
     <div class="modal party-formation-modal">
         <div class="party-formation-header">
-            <h2 class="party-formation-title">⚔️ パーティー編成</h2>
-            <div class="party-formation-desc">手持ちキャラクターから前衛1体・後衛2体の計3体を編成してください</div>
+            <div class="party-formation-header-row">
+                <h2 class="party-formation-title">⚔️ パーティー編成</h2>
+                <div id="party-cost-meter" class="party-cost-meter">チームコスト: <span id="party-current-cost">0</span> / 10 (残り: <span id="party-remain-cost">10</span>)</div>
+            </div>
+            <div class="party-formation-desc">手持ちキャラクターから前衛1体・後衛2体の計3体を編成（コスト上限10以内）</div>
         </div>
 
         <!-- 上部：現在セットされている3体のスロット -->
@@ -641,6 +644,7 @@
             <!-- 前衛スロット (メイン) -->
             <div id="party-slot-0" class="party-slot-card main-slot filled">
                 <span class="party-slot-badge">👑 前衛</span>
+                <span id="party-slot-0-cost" class="party-slot-cost-badge">Cost 0</span>
                 <button class="party-slot-remove-btn" type="button">×</button>
                 <img id="party-slot-0-img" src="" class="party-slot-img hidden" alt="前衛キャラ">
                 <div id="party-slot-0-empty" class="party-slot-empty">
@@ -660,6 +664,7 @@
             <!-- 後衛スロット 1 (サポート) -->
             <div id="party-slot-1" class="party-slot-card">
                 <span class="party-slot-badge">🛡️ 後衛1</span>
+                <span id="party-slot-1-cost" class="party-slot-cost-badge">Cost 0</span>
                 <button class="party-slot-remove-btn" type="button">×</button>
                 <img id="party-slot-1-img" src="" class="party-slot-img hidden" alt="後衛1キャラ">
                 <div id="party-slot-1-empty" class="party-slot-empty">
@@ -679,6 +684,7 @@
             <!-- 後衛スロット 2 (サポート) -->
             <div id="party-slot-2" class="party-slot-card">
                 <span class="party-slot-badge">🛡️ 後衛2</span>
+                <span id="party-slot-2-cost" class="party-slot-cost-badge">Cost 0</span>
                 <button class="party-slot-remove-btn" type="button">×</button>
                 <img id="party-slot-2-img" src="" class="party-slot-img hidden" alt="後衛2キャラ">
                 <div id="party-slot-2-empty" class="party-slot-empty">
@@ -822,6 +828,13 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.0.3</h4>
+            <ul>
+                <li>チームバトルクエストの編成コスト制（上限10・レア度別コスト N:2/R:3/SR:4/SSR:5/UR:6）を完全実装</li>
+                <li>パーティー編成画面にリアルタイムコストメーター（残コスト・超過警告）および全キャラのコストバッジ表示を追加</li>
+                <li>敵チームの合計コスト10以下公平選出ロジック（各ステージ重み付け確率テーブル）を実装</li>
+                <li>3体選出＆コスト10以内を満たしていない場合の出撃バリデーションを追加</li>
+            </ul>
             <h4>Ver 10.0.2</h4>
             <ul>
                 <li>チームバトルの相性補正を攻撃時のみに特化＆ステータスカード相性ナビを「相性:○ ⚔×○」表記に最適化</li>
@@ -1009,6 +1022,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=10.0.2"></script>
+<script type="module" src="js/main.js?v=10.0.3"></script>
 </body>
 </html>

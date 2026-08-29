@@ -22,6 +22,14 @@
     flex-shrink: 0;
 }
 
+.party-formation-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .party-formation-title {
     margin: 0;
     color: #f39c12;
@@ -30,8 +38,31 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
+.party-cost-meter {
+    font-size: clamp(0.75rem, 2vw, 0.88rem);
+    font-weight: bold;
+    color: #0284c7;
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    padding: 2px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.party-cost-meter.over-limit {
+    color: #ef4444;
+    background: #fee2e2;
+    border-color: #f87171;
+    animation: tbCostAlertPulse 1s infinite alternate;
+}
+
+@keyframes tbCostAlertPulse {
+    0% { transform: scale(1.0); }
+    100% { transform: scale(1.03); box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+}
+
 .party-formation-desc {
-    font-size: clamp(0.7rem, 2vw, 0.82rem);
+    font-size: clamp(0.68rem, 1.8vw, 0.78rem);
     color: #7f8c8d;
     margin: 2px 0 6px 0;
     line-height: 1.3;
@@ -175,6 +206,40 @@
 
 .party-slot-card.filled .party-slot-remove-btn {
     display: block; /* スマホでも解除ボタンを常に表示 */
+}
+
+.party-slot-cost-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: clamp(0.52rem, 1.1vw, 0.62rem);
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #fff;
+    background: #0284c7;
+    line-height: 1.2;
+    z-index: 2;
+    white-space: nowrap;
+    display: none;
+}
+
+.party-slot-card.filled .party-slot-cost-badge {
+    display: block;
+}
+
+.char-cost-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #fff;
+    background: #0284c7;
+    line-height: 1.2;
+    z-index: 2;
 }
 
 /* 下部：キャラ選択リスト ＆ ソート */
