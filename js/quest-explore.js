@@ -42,7 +42,7 @@ export function startRogueMode() {
     playData.isRandom = false;
     playData.isRevenge = false;
     
-    if (typeof window.handleTypingInput === 'function') {
+    if (typeof window !== 'undefined' && typeof window.handleTypingInput === 'function') {
         document.removeEventListener('keydown', window.handleTypingInput);
     }
 
@@ -59,10 +59,11 @@ export function startRogueMode() {
     
     document.getElementById('rogue-menu-overlay')?.classList.add('hidden');
     document.getElementById('title-screen')?.classList.add('hidden');
+    document.getElementById('game-screen')?.classList.add('hidden');
     document.getElementById('field-screen')?.classList.remove('hidden');
     document.getElementById('cat-special-overlay')?.classList.add('hidden');
     
-    if (!window.rogueKeyHandlerRegistered) {
+    if (typeof window !== 'undefined' && !window.rogueKeyHandlerRegistered) {
         window.addEventListener('keydown', (e) => {
             if (!rogueData.active || 
                 !document.getElementById('game-screen')?.classList.contains('hidden') ||
