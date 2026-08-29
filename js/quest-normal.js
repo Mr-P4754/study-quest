@@ -185,6 +185,15 @@ export function startGame() {
             enemyIcon.innerHTML = boss.icon || '👾'; 
         }
     }
+    const uiScoreSpan = document.getElementById('ui-score');
+    if (uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) {
+        uiScoreSpan.previousSibling.nodeValue = "SCORE ";
+    }
+    const uiComboSpan = document.getElementById('ui-combo');
+    if (uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) {
+        uiComboSpan.previousSibling.nodeValue = "COMBO ";
+    }
+
     const timerBar = document.getElementById('ui-timer'); 
     if(timerBar) timerBar.style.width = '100%'; 
     const timerText = document.getElementById('ui-timer-text'); 
@@ -370,72 +379,76 @@ export function goToReliefMenuSurvivalCheck() {
 export function startSurvivalGame() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
+    
     let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
-    qList.sort(() => Math.random() - 0.5);
-    playData.questions = qList;
-    playData.isSurvival = true;
-    playData.isRevenge = false;
-    playData.isRandom = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
+    let boss = { name: "エンドレス特訓", hp: 999999, icon: "🔥" };
+    
+    playData.questions = qList.sort(() => Math.random() - 0.5); 
+    playData.qIndex = 0; 
+    playData.currentBoss = boss;
+    playData.isRevenge = false; 
+    playData.activeOaths = runtimeState.oathOrigin === 'survival' ? [...runtimeState.tempOaths] : []; 
+    playData.activeReliefs = runtimeState.oathOrigin === 'survival' ? [...runtimeState.tempReliefs] : [];
+    playData.isRandom = false; 
+    playData.isTyping = false; 
+    playData.isCalculation = false; 
+    playData.isSurvival = true; 
     playData.context = null;
+    runtimeState.currentCategory = null;
     
-    if (runtimeState.oathOrigin === 'survival') {
-        playData.activeOaths = [...runtimeState.tempOaths];
-        playData.activeReliefs = [...runtimeState.tempReliefs];
-    } else {
-        playData.activeOaths = [];
-        playData.activeReliefs = [];
-    }
+    const charaStats = getCharaStats();
+    gameState.score = 0; 
+    gameState.combo = 0; 
+    gameState.lives = playData.activeOaths.includes('backwater') ? 1 : (playData.activeReliefs.includes('life') ? 5 : 3); 
+    gameState.enemyHP = boss.hp; 
+    gameState.maxHP = boss.hp; 
     
-    runtimeState.isGameActive = false;
+    let timeMulti = playData.activeOaths.includes('rapid') ? 0.5 : (playData.activeReliefs.includes('time') ? 2.0 : 1.0); 
+    gameState.maxTime = 10 * charaStats.time * timeMulti;
+    gameState.timeLeft = gameState.maxTime;
+    runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
     
-    let initialLives = 3;
-    if (playData.activeOaths.includes('backwater')) initialLives = 1;
-    else if (playData.activeReliefs.includes('life')) initialLives = 5;
-
-    gameState.lives = initialLives;
-    gameState.score = 0;
-    gameState.combo = 0;
-    playData.qIndex = 0;
+    document.getElementById('survival-overlay')?.classList.add('hidden');
+    document.getElementById('oath-overlay')?.classList.add('hidden'); 
+    document.getElementById('relief-overlay')?.classList.add('hidden'); 
+    document.getElementById('title-screen')?.classList.add('hidden'); 
+    document.getElementById('game-screen')?.classList.remove('hidden'); 
+    document.getElementById('cat-special-overlay')?.classList.add('hidden');
     
-    let baseTime = 10;
-    if (playData.activeOaths.includes('rapid')) baseTime = 5;
-    else if (playData.activeReliefs.includes('time')) baseTime = 20;
-
-    gameState.maxTime = baseTime;
-    gameState.timeLeft = baseTime;
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
     
-    const uienemyName = document.getElementById('ui-enemy-name');
-    if(uienemyName) uienemyName.innerText = "WAVE: 0";
-    const hpFrame = document.querySelector('.enemy-hp-frame');
-    if(hpFrame) hpFrame.style.display = 'none';
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = 'none';
 
-    // 敵アイコンの初期化（前回の敵画像が残らないよう修正）
     const enemyBox = document.querySelector('.enemy-visual-box'); 
     const enemyIcon = document.getElementById('ui-enemy-icon');
     if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
-    if(enemyIcon) {
-        enemyIcon.classList.remove('shake-anim');
-        enemyIcon.innerHTML = "🔥";
-    }
+    if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    
+    const uienemyName = document.getElementById('ui-enemy-name'); 
+    if(uienemyName) uienemyName.innerText = "WAVE: 0";
+    if(enemyIcon) enemyIcon.innerHTML = boss.icon; 
     
     const uiScoreSpan = document.getElementById('ui-score');
     if(uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) {
         uiScoreSpan.previousSibling.nodeValue = "WAVE ";
     }
     
-    document.getElementById('survival-overlay')?.classList.add('hidden');
-    document.getElementById('oath-overlay')?.classList.add('hidden');
-    document.getElementById('relief-overlay')?.classList.add('hidden');
-    document.getElementById('title-screen')?.classList.add('hidden');
-    document.getElementById('game-screen')?.classList.remove('hidden');
-    document.getElementById('cat-special-overlay')?.classList.add('hidden');
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
     
-    updateUI();
+    runtimeState.oathOrigin = 'normal';
+    updateUI(); 
     startCountdown();
 }
 
@@ -561,6 +574,15 @@ export function startRandomGame() {
             enemyIcon.innerHTML = boss.icon || "👾"; 
         }
     }
+    const uiScoreSpan = document.getElementById('ui-score');
+    if (uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) {
+        uiScoreSpan.previousSibling.nodeValue = "SCORE ";
+    }
+    const uiComboSpan = document.getElementById('ui-combo');
+    if (uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) {
+        uiComboSpan.previousSibling.nodeValue = "COMBO ";
+    }
+
     const timerBar = document.getElementById('ui-timer'); 
     if(timerBar) timerBar.style.width = '100%'; 
     const timerText = document.getElementById('ui-timer-text'); 
@@ -702,6 +724,15 @@ export function startTypingGame() {
         } else { 
             enemyIcon.innerHTML = boss.icon || "👾"; 
         }
+    }
+
+    const uiScoreSpan = document.getElementById('ui-score');
+    if (uiScoreSpan && uiScoreSpan.previousSibling && uiScoreSpan.previousSibling.nodeType === 3) {
+        uiScoreSpan.previousSibling.nodeValue = "SCORE ";
+    }
+    const uiComboSpan = document.getElementById('ui-combo');
+    if (uiComboSpan && uiComboSpan.previousSibling && uiComboSpan.previousSibling.nodeType === 3) {
+        uiComboSpan.previousSibling.nodeValue = "COMBO ";
     }
 
     if (typeof window !== 'undefined') {

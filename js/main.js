@@ -105,6 +105,8 @@ import {
 } from './quest-normal.js';
 
 import {
+    addRogueLog,
+    renderRogueLogs,
     startRogueMode,
     generateRogueFloor,
     drawRogueMap,
@@ -321,6 +323,8 @@ Object.assign(globalScope, {
     startReliefGame,
 
     // 探索
+    addRogueLog,
+    renderRogueLogs,
     startRogueMode,
     generateRogueFloor,
     drawRogueMap,

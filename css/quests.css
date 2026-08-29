@@ -48,6 +48,10 @@
 .rogue-floor-text { font-weight: bold; font-size: 0.9em; text-align: right; }
 .rogue-steps-text { font-weight: bold; font-size: 0.9em; text-align: left; }
 .rogue-stats-text { font-weight: bold; font-size: 0.9em; text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
+.rogue-log-container { width: 92%; max-width: 350px; margin: 4px auto; background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 4px 8px; min-height: 44px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; font-size: 0.78em; line-height: 1.35; color: #ecf0f1; text-align: left; overflow: hidden; flex-shrink: 0; }
+.rogue-log-list { display: flex; flex-direction: column; gap: 2px; }
+.rogue-log-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: fadeInLog 0.2s ease-out; }
+@keyframes fadeInLog { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
 .rogue-canvas-box { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; overflow: hidden; position: relative; background: #111; }
 .rogue-ctrl-panel { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 5px auto 15px auto; flex-shrink: 0; width: 100%; max-width: 350px; }
 .rogue-dpad-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 160px; height: 130px; }

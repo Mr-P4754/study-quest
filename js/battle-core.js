@@ -327,51 +327,85 @@ export function finishGame(isClear) {
         }
         if(resXpSpan) resXpSpan.innerHTML = `+${earned} (探索中)`;
     } else if (playData.isSurvival) {
-        if(isClear) playSE('win'); else playSE('lose');
+        const correctCount = gameState.score; 
+        let oathMultiplier = 1;
+        if (playData.activeOaths.length === 1) oathMultiplier = 2;
+        else if (playData.activeOaths.length >= 2) oathMultiplier = 3;
+
+        const eqInv = gameState.charaInventory[gameState.equipped];
+        const cMaster = rawData.characters ? rawData.characters.find(c => String(c.id) == String(gameState.equipped)) : null;
         
-        const equippedId = gameState.equipped;
-        const chara = rawData.characters ? rawData.characters.find(c => c.id == equippedId) : null;
-        let charaName = "装備キャラ";
+        let isMax = false;
+        if (eqInv && cMaster) {
+            const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
+            if (eqInv.level >= maxL) isMax = true;
+        }
+
+        let milestoneBonus = isMax ? 0 : Math.floor(correctCount / 50) * 50;
+        const currentGrade = playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '';
+        const gradeMultiplier = getGradeMultiplier(currentGrade);
+        let earnedExp = Math.floor(((correctCount * oathMultiplier) + milestoneBonus) * gradeMultiplier);
         
-        if (chara) {
-            const inv = gameState.charaInventory[equippedId] || { level: 1, exp: 0 };
-            const r = inv.currentRarity || chara.rarity;
-            charaName = getDisplayName(chara, inv);
-            
-            const expPerWave = 100;
-            let directExp = gameState.score * expPerWave;
-            
-            if (playData.activeOaths && playData.activeOaths.length > 0) {
-                const count = playData.activeOaths.length;
-                let boost = count >= 3 ? 2.0 : (count === 2 ? 1.75 : 1.5);
-                directExp = Math.floor(directExp * boost);
-            }
-            if (playData.activeReliefs && playData.activeReliefs.length > 0) {
-                const count = playData.activeReliefs.length;
-                let penalty = count >= 3 ? 0.5 : (count === 2 ? 0.7 : 0.9);
-                directExp = Math.floor(directExp * penalty);
-            }
-            
-            inv.exp = (Number(inv.exp) || 0) + directExp;
-            const maxL = { 'N':10, 'R':15, 'SR':20, 'SSR':20, 'UR':30 }[r] || 10;
-            const EXP_REQ = 100;
-            let lvUpCount = 0;
-            while(inv.exp >= EXP_REQ && inv.level < maxL) {
-                inv.exp -= EXP_REQ;
-                inv.level++;
-                lvUpCount++;
-            }
-            if(inv.level >= maxL) inv.exp = 0;
-            gameState.charaInventory[equippedId] = inv;
-            earned = directExp;
+        if (playData.activeReliefs && playData.activeReliefs.length > 0) {
+            const rCount = playData.activeReliefs.length;
+            const penalty = rCount >= 3 ? 0.5 : (rCount === 2 ? 0.7 : 0.9);
+            earnedExp = Math.floor(earnedExp * penalty);
         }
         
-        const resDetails = document.getElementById('res-details');
-        if(resXpSpan) resXpSpan.innerHTML = `+${earned} EXP`;
-        if(resDetails) resDetails.innerHTML = `${charaName} に直接経験値が付与されました！`;
+        let growthResultText = "なし";
+        
+        if (eqInv && cMaster) {
+            const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
+            let startLv = eqInv.level;
+            let startExp = Number(eqInv.exp) || 0;
+            let startStock = eqInv.count || 0;
+            
+            eqInv.exp = startExp + earnedExp;
+            while (eqInv.exp >= EXP_REQ) {
+                eqInv.exp -= EXP_REQ;
+                if (eqInv.level < maxL) { eqInv.level++; } 
+                else { eqInv.count = (eqInv.count || 0) + 1; }
+            }
+            
+            if (eqInv.level >= maxL && (eqInv.count || 0) > startStock) {
+                growthResultText = `<div style="font-size:0.4em; color:#7f8c8d;">Lv.MAX ストック ${startStock}</div><div style="color:#bdc3c7; font-size:0.4em; margin:5px 0;">↓</div><div style="font-size:0.5em; color:#e67e22;">Lv.MAX ストック ${eqInv.count}</div>`;
+            } else {
+                growthResultText = `<div style="font-size:0.45em; color:#7f8c8d; line-height:1.2;">Lv.${startLv} ${startExp}EXP</div><div style="color:#bdc3c7; font-size:0.4em; margin:2px 0;">↓</div><div style="font-size:0.5em; color:#e67e22; line-height:1.2;">Lv.${eqInv.level} ${eqInv.exp}EXP</div>`;
+            }
+        }
         
         gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
         if (typeof updateMissionProgress === 'function') updateMissionProgress('play', 1);
+        saveGame();
+
+        playSE('win');
+        const resTitle = document.getElementById('res-title'); if(resTitle) { resTitle.innerText="SURVIVAL END"; resTitle.style.color="#e74c3c"; }
+        const resIcon = document.getElementById('res-icon'); if(resIcon) resIcon.innerText="🔥"; 
+        
+        const resScoreSpan = document.getElementById('res-score');
+        if (resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) resScoreSpan.previousSibling.nodeValue = "到達WAVE: ";
+        if(resScoreSpan) resScoreSpan.innerText = correctCount; 
+        
+        const resDetails = document.getElementById('res-details');
+        if(resDetails) {
+            resDetails.innerHTML = `<div style="font-size: 1.2em; font-weight: bold; color: #2c3e50;">特訓EXP +${earnedExp}</div>`;
+            resDetails.style.display = 'block';
+        }
+        
+        if (resDrop) resDrop.style.display = 'none';
+        
+        const resXpLabel = document.getElementById('res-xp-label');
+        if (resXpLabel) resXpLabel.innerText = "成長結果";
+        
+        if(resXpSpan) {
+            resXpSpan.style.lineHeight = "1.1";
+            resXpSpan.innerHTML = growthResultText;
+        }
+        
+        document.getElementById('game-screen')?.classList.add('hidden'); 
+        document.getElementById('result-overlay')?.classList.remove('hidden'); 
+        if (typeof checkTitles === 'function') checkTitles();
+        return;
     } else if (playData.isCalculation) {
         playSE('win');
         const count = playData.calcCorrect;

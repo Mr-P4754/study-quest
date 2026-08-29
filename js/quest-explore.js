@@ -30,6 +30,29 @@ import {
     updateTitleInfo
 } from './ui-manager.js';
 
+export function addRogueLog(text) {
+    if (!rogueData.logs) rogueData.logs = [];
+    rogueData.logs.push(text);
+    if (rogueData.logs.length > 3) {
+        rogueData.logs.shift(); // 直前3件を保持
+    }
+    renderRogueLogs();
+}
+
+export function renderRogueLogs() {
+    const list = document.getElementById('rogue-log-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!rogueData.logs || rogueData.logs.length === 0) {
+        list.innerHTML = '<div class="rogue-log-item" style="color:#7f8c8d;">探索を開始しました。</div>';
+        return;
+    }
+    rogueData.logs.forEach((msg, idx) => {
+        const isLatest = (idx === rogueData.logs.length - 1);
+        list.innerHTML += `<div class="rogue-log-item" style="${isLatest ? 'color:#f1c40f; font-weight:bold;' : 'color:#bdc3c7;'}">${msg}</div>`;
+    });
+}
+
 export function startRogueMode() {
     const g = document.getElementById('rogue-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
@@ -56,6 +79,7 @@ export function startRogueMode() {
     rogueData.active = true;
     rogueData.isAnimating = false;
     rogueData.shopBought = false;
+    rogueData.logs = [`🚩 1F の探索を開始`];
     gameState.lives = rogueData.maxLives;
     
     document.getElementById('rogue-menu-overlay')?.classList.add('hidden');
@@ -82,6 +106,7 @@ export function startRogueMode() {
     }
     
     generateRogueFloor();
+    renderRogueLogs();
     playBGM();
 }
 
@@ -113,6 +138,7 @@ export function generateRogueFloor() {
         rogueData.map[h - 2][w - 2] = ROGUE_TILES.STAIRS;
     }
 
+    addRogueLog(`🚩 ${rogueData.floor}F に到達した`);
     updateRogueUI();
     drawRogueMap();
 }
@@ -194,6 +220,7 @@ export function triggerRogueRNGEvent() {
     if (Math.random() < enemyChance) {
         rogueData.isAnimating = true; // 敵出現時は操作をロック
         showRogueCutIn("敵出現⚠️");
+        addRogueLog("⚠️ モンスターが現れた！");
         setTimeout(() => {
             rogueData.isAnimating = false; // ロック解除してバトル開始
             triggerRogueBattle(false);
@@ -208,34 +235,41 @@ export function triggerRogueRNGEvent() {
 export function processRogueTile(tile) {
     switch (tile) {
         case ROGUE_TILES.STAIRS:
+            addRogueLog(`🚪 ${rogueData.floor}F ボス扉に到達！`);
             triggerRogueBattle(true);
             break;
         case ROGUE_TILES.FOUNTAIN:
             if (!rogueData.maxLives) rogueData.maxLives = 3;
             gameState.lives = Math.min(rogueData.maxLives, gameState.lives + 1);
             showRogueCutIn("ライフ❤️ +1");
+            addRogueLog("⛲ 癒しの泉でライフが回復した (❤️+1)");
             break;
         case ROGUE_TILES.BOOK:
             rogueData.exploreLevel++;
             showRogueCutIn("探索レベル📜UP");
+            addRogueLog(`📜 古文書を発見！探索Lvが上昇 (Lv.${rogueData.exploreLevel})`);
             break;
         case ROGUE_TILES.TRAP:
             rogueData.exploreLevel = Math.max(1, rogueData.exploreLevel - 1);
             showRogueCutIn("探索レベル📜DOWN");
+            addRogueLog(`🕸️ 罠にかかった！探索Lvが低下 (Lv.${rogueData.exploreLevel})`);
             break;
         case ROGUE_TILES.STATUE: {
             const buff = Math.floor(Math.random() * 5) + 1;
             rogueData.atkBuff += (buff / 100);
             showRogueCutIn(`攻撃力⚔️ +${buff}％`);
+            addRogueLog(`🗿 女神像の加護を受けた (攻撃力+${buff}%)`);
             break;
         }
         case ROGUE_TILES.CURSE: {
             const debuff = Math.floor(Math.random() * 5) + 1;
             rogueData.atkBuff = Math.max(0.1, rogueData.atkBuff - (debuff / 100));
             showRogueCutIn(`攻撃力⚔️ -${debuff}％`);
+            addRogueLog(`💀 呪いを受けた (攻撃力-${debuff}%)`);
             break;
         }
         case ROGUE_TILES.SHOP:
+            addRogueLog("🛍️ 中間ショップを発見した！");
             triggerRogueShop();
             break;
     }
@@ -299,6 +333,7 @@ export function buyRogueHeal(price) {
     gameState.lives += 1;
     
     playSE('hit');
+    addRogueLog("💊 ライフ上限UP薬を購入 (❤️最大+1)");
     renderRogueShopContents();
     updateRogueUI();
 }
@@ -309,6 +344,7 @@ export function buyRogueAtk(price) {
     rogueData.shopBought = true;
     rogueData.atkBuff += 0.5;
     playSE('hit');
+    addRogueLog("⚔️ 攻撃の秘薬を購入 (攻撃力+0.5)");
     renderRogueShopContents();
     updateRogueUI();
 }
@@ -321,6 +357,7 @@ export function buyRogueSteps(price) {
     rogueData.maxSteps += 10;
     rogueData.steps += 10;
     playSE('hit');
+    addRogueLog("👟 韋駄天の靴を購入 (歩数+10)");
     renderRogueShopContents();
     updateRogueUI();
 }
