@@ -23,13 +23,13 @@ import {
     MISSIONS,
     MISSION_ALL_CLEAR,
     saveGame
-} from './state.js?v=10.0.11';
+} from './state.js?v=10.0.12';
 
 import {
     getRarityIndex,
     getDisplayName,
     playSE
-} from './utils.js?v=10.0.11';
+} from './utils.js?v=10.0.12';
 
 import {
     showAppModal,
@@ -40,7 +40,7 @@ import {
     returnToCurrentCategory,
     closeAllCategoryModals,
     updateCategoryBadges
-} from './ui-manager.js?v=10.0.11';
+} from './ui-manager.js?v=10.0.12';
 
 let selectedMaterials = {};
 let viewingCharaId = null;

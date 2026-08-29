@@ -2,7 +2,7 @@
 // js/utils.js (計算ロジック・チャート描画・音響制御)
 // ==========================================
 
-import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.11';
+import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.12';
 
 export const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 
@@ -296,7 +296,9 @@ export function playMmlBGM() {
     let tempo = 120;
 
     const scheduleNote = () => {
-        const canPlay = runtimeState.isGameActive || (typeof rogueData !== 'undefined' && rogueData.active);
+        const isTbActive = (typeof tbState !== 'undefined' && tbState.isActive) ||
+                           (typeof window !== 'undefined' && window.tbState && window.tbState.isActive);
+        const canPlay = runtimeState.isGameActive || (typeof rogueData !== 'undefined' && rogueData.active) || isTbActive;
         if (!canPlay) return;
         try {
             while (nextTime < audioCtx.currentTime + 2.0 && index < mml.length) {

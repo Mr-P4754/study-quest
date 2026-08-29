@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.11';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.11';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.11';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.12';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.12';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.12';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -939,6 +939,7 @@ export function showTbCountdownCutIn(stageNum) {
 
         // バトル一時停止（タイマー・ダメージをロック）
         tbState.isPaused = true;
+        updateTbTimerUI(); // タイマーバーを満タン状態に即座に描画
         overlay.classList.remove('hidden');
 
         // 選択肢ボタンを一時非活性化
@@ -1137,20 +1138,14 @@ function setupTbStage(stageNum) {
 // ----------------------------------------------------
 
 /**
- * 100msごとに実行されるリアルタイムバトル処理（タイムリミット監視＋1秒ごとのスリップダメージ）
+ * チームバトルのタイマーバーとテキストUIを即座に更新
  */
-export function tbGameLoop() {
-    // バトル非アクティブ、ポーズ中、敵が存在しない、または敵HPが0以下の場合は即座に完全停止
-    if (!tbState.isActive || tbState.isPaused || !tbState.enemy || tbState.enemy.hp <= 0) return;
-
-    // 100ms ごとに 0.1秒減少 & ティックインクリメント
-    tbState.timeLeft = Math.max(0, tbState.timeLeft - 0.1);
-    tbState.tickCount = (tbState.tickCount || 0) + 1;
-
-    // 1. タイマーバーとテキストの更新（チームバトル専用ID）
+export function updateTbTimerUI() {
     const timerFill = document.getElementById('tb-ui-timer');
     const timerText = document.getElementById('tb-ui-timer-text');
-    const ratio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
+    const maxTime = tbState.maxTime || 10;
+    const timeLeft = (typeof tbState.timeLeft === 'number') ? tbState.timeLeft : maxTime;
+    const ratio = Math.max(0, timeLeft / maxTime);
 
     if (timerFill) {
         timerFill.style.width = `${ratio * 100}%`;
@@ -1164,13 +1159,28 @@ export function tbGameLoop() {
     }
 
     if (timerText) {
-        timerText.innerText = `${tbState.timeLeft.toFixed(1)}s`;
+        timerText.innerText = `${timeLeft.toFixed(1)}s`;
         if (ratio < 0.25) {
             timerText.style.color = '#ef4444';
         } else {
             timerText.style.color = '#ffffff';
         }
     }
+}
+
+/**
+ * 100msごとに実行されるリアルタイムバトル処理（タイムリミット監視＋1秒ごとのスリップダメージ）
+ */
+export function tbGameLoop() {
+    // バトル非アクティブ、ポーズ中、敵が存在しない、または敵HPが0以下の場合は即座に完全停止
+    if (!tbState.isActive || tbState.isPaused || !tbState.enemy || tbState.enemy.hp <= 0) return;
+
+    // 100ms ごとに 0.1秒減少 & ティックインクリメント
+    tbState.timeLeft = Math.max(0, tbState.timeLeft - 0.1);
+    tbState.tickCount = (tbState.tickCount || 0) + 1;
+
+    // 1. タイマーバーとテキストの更新
+    updateTbTimerUI();
 
     // 2. 1秒ごと（10カウントごと）のスリップダメージ（敵の通常攻撃）
     if (tbState.tickCount % 10 === 0) {
@@ -1341,6 +1351,9 @@ export function nextTbQuestion() {
     const stats = getTbCharaStats(activePlayer);
     tbState.maxTime = 10 * (stats.time || 1.0);
     tbState.timeLeft = tbState.maxTime;
+
+    // タイマーバーを即座に満タン状態にリセット・描画
+    updateTbTimerUI();
 
     // 通常クエストと完全共通の問題文プロパティ (q.q または q.question)
     const questionText = (q.q !== undefined && q.q !== null) ? q.q : (q.question || '問題文');
@@ -1520,6 +1533,7 @@ export function updateTbBattleUI() {
     updateTbPlayerStatusUI();
     updateTbEnemyStatusUI();
     updateTbReserveUI();
+    updateTbTimerUI();
 }
 
 /**
