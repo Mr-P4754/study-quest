@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS } from '../state.js?v=9.3.1';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.1';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.1';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS } from '../state.js?v=9.3.2';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.2';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.2';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -427,6 +427,7 @@ function getTypeEmoji(type) {
  */
 export const tbState = {
     isActive: false,
+    isPaused: false,
     stage: 1,
     maxStage: 3,
     activeSlot: 0, // 現在戦っている味方スロット (0: 前衛, 1: 後衛1, 2: 後衛2)
@@ -607,6 +608,7 @@ export function startTeamBattle() {
 
     // バトル状態初期化
     tbState.isActive = true;
+    tbState.isPaused = false;
     tbState.stage = 1;
     tbState.maxStage = 3;
     tbState.activeSlot = 0;
@@ -619,6 +621,7 @@ export function startTeamBattle() {
     // 画面切り替え
     document.getElementById('team-battle-setup-modal')?.classList.add('hidden');
     document.getElementById('title-screen')?.classList.add('hidden');
+    document.getElementById('tb-pause-overlay')?.classList.add('hidden');
     document.getElementById('team-battle-screen')?.classList.remove('hidden');
 
     // 撤退ボタンのイベント紐付け
@@ -642,38 +645,47 @@ export function startTeamBattle() {
 }
 
 /**
- * 指定ステージの敵キャラクターを生成・配置
+ * 指定ステージの敵キャラクターを生成・配置（図鑑キャラからランダム抽出）
  * @param {number} stageNum
  */
 function setupTbStage(stageNum) {
     tbState.stage = stageNum;
     tbState.tickCount = 0; // 思考猶予リセット
 
-    // 敵の生成（ステージ数に応じて強化）
-    const enemyTypes = ['ATK', 'TIME', 'EXP'];
-    const assignedType = enemyTypes[(stageNum - 1) % enemyTypes.length];
-    const enemyNames = [
-        ['スライムウォリアー', 'フォレストウルフ', 'フレイムリザード'],
-        ['アイアンゴーレム', 'アクアサーペント', 'サンダーバード'],
-        ['ダークキメラ', '冥界の魔導士', 'シャドウドラゴン']
-    ];
-    const stageNameList = enemyNames[stageNum - 1] || enemyNames[0];
-    const enemyName = stageNameList[Math.floor(Math.random() * stageNameList.length)];
+    // 敵レベルと補正倍率の計算
     const enemyLevel = stageNum * 5 + 5; // Stage 1: Lv.10, Stage 2: Lv.15, Stage 3: Lv.20
-    const enemyValue = 0.9 + stageNum * 0.25; // 1.15, 1.4, 1.65
-    const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
 
-    const enemyIcons = ['👾', '🐉', '👿', '👺', '👹', '💀'];
-    const enemyIcon = enemyIcons[(stageNum - 1) % enemyIcons.length];
+    // rawData.characters からランダムにキャラクターを抽出
+    const availableCharas = (rawData.characters && rawData.characters.length > 0) ? rawData.characters : [];
+    let pickedChar = null;
+    if (availableCharas.length > 0) {
+        // ステージに応じたレア度優先（ステージ1: N/R, ステージ2: R/SR, ステージ3: SR/SSR/UR）
+        const stageRarities = [
+            ['N', 'R'],
+            ['R', 'SR'],
+            ['SR', 'SSR', 'UR']
+        ];
+        const targetRarities = stageRarities[stageNum - 1] || ['SR', 'SSR'];
+        const candidates = availableCharas.filter(c => targetRarities.includes(c.rarity));
+        const pool = candidates.length > 0 ? candidates : availableCharas;
+        pickedChar = pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    const enemyName = pickedChar ? pickedChar.name : `モンスター Lv.${enemyLevel}`;
+    const assignedType = pickedChar ? (pickedChar.type || 'ATK') : ['ATK', 'TIME', 'EXP'][stageNum - 1];
+    const enemyValue = (pickedChar ? Number(pickedChar.value || 1.0) : 1.0) * (0.8 + stageNum * 0.25);
+    const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
 
     tbState.enemy = {
         name: enemyName,
         level: enemyLevel,
         type: assignedType,
+        rarity: pickedChar ? pickedChar.rarity : 'N',
         value: enemyValue,
         maxHp: enemyMaxHp,
         hp: enemyMaxHp,
-        icon: enemyIcon
+        imageUrl: pickedChar ? pickedChar.imageUrl : '',
+        icon: '👾'
     };
 
     // UI更新
@@ -691,19 +703,27 @@ function setupTbStage(stageNum) {
  * 100msごとに実行されるリアルタイムバトル処理
  */
 export function tbGameLoop() {
-    if (!tbState.isActive) return;
+    if (!tbState.isActive || tbState.isPaused) return;
 
     tbState.tickCount++;
 
-    const timerFill = document.getElementById('tb-timer-fill');
+    const timerFill = document.getElementById('tb-timer');
+    const timerText = document.getElementById('tb-timer-text');
     const activePlayer = tbState.party[tbState.activeSlot];
 
     // 1. 思考猶予時間（最初の2秒 = 20カウント）
     if (tbState.tickCount <= tbState.graceTicks) {
+        const remainingTicks = tbState.graceTicks - tbState.tickCount;
+        const remainingSec = (remainingTicks / 10).toFixed(1);
         const remainingRatio = 1 - (tbState.tickCount / tbState.graceTicks);
+
         if (timerFill) {
             timerFill.style.width = `${Math.max(0, remainingRatio * 100)}%`;
             timerFill.style.background = 'linear-gradient(90deg, #38bdf8, #22c55e)';
+        }
+        if (timerText) {
+            timerText.innerText = `${remainingSec}s`;
+            timerText.style.color = '#ffffff';
         }
     } 
     // 2. 猶予終了後：スリップダメージ発生
@@ -711,6 +731,10 @@ export function tbGameLoop() {
         if (timerFill) {
             timerFill.style.width = '100%';
             timerFill.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
+        }
+        if (timerText) {
+            timerText.innerText = 'DANGER!';
+            timerText.style.color = '#ef4444';
         }
 
         // 10カウント (1.0秒) ごとにスリップダメージ発生
@@ -777,16 +801,16 @@ export function nextTbQuestion() {
     tbState.currentQuestion = q;
     tbState.tickCount = 0; // 猶予時間カウントをリセット
 
-    const qBox = document.getElementById('tb-question-text');
+    const qBox = document.getElementById('tb-question');
     if (qBox) qBox.innerText = q.question || '問題文';
 
-    const choicesGrid = document.getElementById('tb-choices-grid');
+    const choicesGrid = document.getElementById('tb-choices');
     if (choicesGrid && q.choices) {
         choicesGrid.innerHTML = '';
         const shuffledChoices = [...q.choices].sort(() => Math.random() - 0.5);
         shuffledChoices.forEach(choice => {
             const btn = document.createElement('button');
-            btn.className = 'tb-choice-btn';
+            btn.className = 'choice-btn';
             btn.type = 'button';
             btn.innerText = choice;
             btn.onclick = () => judgeTbAnswer(choice);
@@ -800,7 +824,7 @@ export function nextTbQuestion() {
  * @param {string} selectedChoice
  */
 export function judgeTbAnswer(selectedChoice) {
-    if (!tbState.isActive || !tbState.currentQuestion) return;
+    if (!tbState.isActive || tbState.isPaused || !tbState.currentQuestion) return;
 
     const q = tbState.currentQuestion;
     const isCorrect = (String(selectedChoice).trim() === String(q.answer).trim());
@@ -874,7 +898,7 @@ function showEnemyDamageFlash() {
  * @param {number} slotIndex (0: 前衛, 1: 後衛1, 2: 後衛2)
  */
 export function switchTbActiveChar(slotIndex) {
-    if (!tbState.isActive) return;
+    if (!tbState.isActive || tbState.isPaused) return;
     if (slotIndex < 0 || slotIndex >= tbState.party.length) return;
     const targetChar = tbState.party[slotIndex];
     if (!targetChar || !targetChar.isAlive) {
@@ -942,9 +966,9 @@ export function updateTbPlayerStatusUI() {
     // グラフィック
     if (visualEl) {
         if (activePlayer.imageUrl && activePlayer.imageUrl.startsWith('http')) {
-            visualEl.innerHTML = `<img src="${activePlayer.imageUrl}" style="width:100%;height:100%;object-fit:contain;">`;
+            visualEl.innerHTML = `<img src="${activePlayer.imageUrl}" class="tb-player-sprite">`;
         } else {
-            visualEl.innerHTML = `<div style="font-size:3.5rem;line-height:96px;">✏️</div>`;
+            visualEl.innerHTML = `<div class="tb-player-sprite" style="font-size:3.5rem;line-height:88px;text-align:center;">✏️</div>`;
         }
     }
 }
@@ -981,7 +1005,11 @@ export function updateTbEnemyStatusUI() {
     }
 
     if (visualEl) {
-        visualEl.innerHTML = `<div style="font-size:3.2rem;line-height:88px;">${enemy.icon || '👾'}</div>`;
+        if (enemy.imageUrl && enemy.imageUrl.startsWith('http')) {
+            visualEl.innerHTML = `<img src="${enemy.imageUrl}" class="tb-enemy-sprite">`;
+        } else {
+            visualEl.innerHTML = `<div class="tb-enemy-sprite" style="font-size:3.2rem;line-height:80px;text-align:center;">👾</div>`;
+        }
     }
 }
 
@@ -1003,8 +1031,8 @@ export function updateTbReserveUI() {
 
         if (iconEl) {
             iconEl.innerHTML = (char.imageUrl && char.imageUrl.startsWith('http'))
-                ? `<img src="${char.imageUrl}" style="width:24px;height:24px;object-fit:contain;">`
-                : `<span>${getTypeEmoji(char.type)}</span>`;
+                ? `<img src="${char.imageUrl}" style="width:22px;height:22px;object-fit:contain;">`
+                : `<span style="font-size:1rem;">${getTypeEmoji(char.type)}</span>`;
         }
 
         if (nameEl) {
@@ -1031,6 +1059,43 @@ export function updateTbReserveUI() {
 }
 
 // ----------------------------------------------------
+// ポーズ機能
+// ----------------------------------------------------
+
+/**
+ * チームバトルのポーズ切り替え
+ */
+export function toggleTbPause() {
+    if (!tbState.isActive) return;
+    tbState.isPaused = !tbState.isPaused;
+    const overlay = document.getElementById('tb-pause-overlay');
+    if (overlay) {
+        if (tbState.isPaused) {
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+        }
+    }
+}
+
+/**
+ * ポーズから再開
+ */
+export function resumeTbGame() {
+    tbState.isPaused = false;
+    document.getElementById('tb-pause-overlay')?.classList.add('hidden');
+}
+
+/**
+ * ポーズ画面から撤退
+ */
+export async function escapeTeamBattleFromPause() {
+    document.getElementById('tb-pause-overlay')?.classList.add('hidden');
+    tbState.isPaused = false;
+    finishTeamBattle(false, true);
+}
+
+// ----------------------------------------------------
 // 撤退と勝敗リザルト
 // ----------------------------------------------------
 
@@ -1039,7 +1104,13 @@ export function updateTbReserveUI() {
  */
 export async function escapeTeamBattle() {
     if (!tbState.isActive) return;
-    if (!(await showConfirm("チームバトルから撤退しますか？<br>（獲得予定の経験値は破棄されます）"))) return;
+    const wasPaused = tbState.isPaused;
+    tbState.isPaused = true;
+
+    if (!(await showConfirm("チームバトルから撤退しますか？<br>（獲得予定の経験値は破棄されます）"))) {
+        tbState.isPaused = wasPaused;
+        return;
+    }
 
     finishTeamBattle(false, true);
 }
@@ -1051,12 +1122,14 @@ export async function escapeTeamBattle() {
  */
 export function finishTeamBattle(isWin, isEscape = false) {
     tbState.isActive = false;
+    tbState.isPaused = false;
     if (tbState.timerId) {
         clearInterval(tbState.timerId);
         tbState.timerId = null;
     }
     stopBGM();
 
+    document.getElementById('tb-pause-overlay')?.classList.add('hidden');
     document.getElementById('team-battle-screen')?.classList.add('hidden');
 
     if (isEscape) {
@@ -1078,4 +1151,5 @@ export function finishTeamBattle(isWin, isEscape = false) {
 
     returnToCurrentCategory();
 }
+
 

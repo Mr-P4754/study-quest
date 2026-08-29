@@ -247,41 +247,61 @@
 .tb-screen-bg {
     background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
     position: relative;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     overflow: hidden;
 }
 
 /* ヘッダーエリア */
 .tb-header {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: relative;
+    flex-shrink: 0;
     width: 100%;
-    height: 44px;
-    background: rgba(15, 23, 42, 0.85);
+    height: 48px;
+    background: rgba(15, 23, 42, 0.88);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 12px;
+    padding: 0 10px;
     z-index: 20;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
 }
 
 .tb-progress-badge {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: bold;
     color: #f1c40f;
     letter-spacing: 0.5px;
 }
 
+.tb-timer-container {
+    flex: 1;
+    max-width: 180px;
+    margin: 0 8px;
+}
+
+.tb-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .tb-escape-btn {
-    padding: 4px 10px;
-    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-size: 0.72rem;
     background: rgba(231, 76, 60, 0.2);
     border: 1px solid #e74c3c;
     color: #ff7675;
     border-radius: 6px;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
@@ -290,17 +310,16 @@
     color: #ffffff;
 }
 
-/* 対戦フィールド（対角線エリア） */
+/* 対戦フィールド（中央アリーナ・flex: 1 で余白吸収） */
 .tb-arena-area {
-    position: absolute;
-    top: 44px;
-    bottom: 170px;
-    left: 0;
+    flex: 1;
+    min-height: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 10px 14px;
+    justify-content: space-around;
+    padding: 4px 10px;
+    box-sizing: border-box;
     overflow: hidden;
 }
 
@@ -308,19 +327,19 @@
 .tb-enemy-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
-    min-height: 100px;
+    min-height: 90px;
 }
 
 .tb-status-card {
     background: rgba(15, 23, 42, 0.88);
     border: 2px solid #475569;
     border-radius: 12px;
-    padding: 8px 12px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-    min-width: 180px;
-    max-width: 220px;
+    padding: 6px 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    min-width: 160px;
+    max-width: 200px;
     text-align: left;
     position: relative;
 }
@@ -333,23 +352,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .tb-status-name {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: bold;
     color: #f8fafc;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 110px;
 }
 
 .tb-type-pill {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: bold;
-    padding: 1px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
     color: #fff;
     background: #64748b;
@@ -357,9 +376,9 @@
 
 .tb-hp-track {
     width: 100%;
-    height: 9px;
+    height: 8px;
     background: #334155;
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
     position: relative;
     border: 1px solid #1e293b;
@@ -383,9 +402,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: #94a3b8;
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 /* 敵グラフィック（右上） */
@@ -394,25 +413,25 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-right: 10px;
+    padding-right: 6px;
 }
 
 .tb-enemy-platform {
-    width: 110px;
-    height: 28px;
-    background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.4) 0%, rgba(0, 0, 0, 0) 75%);
+    width: 96px;
+    height: 24px;
+    background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.45) 0%, rgba(0, 0, 0, 0) 75%);
     border-radius: 50%;
     position: absolute;
-    bottom: -6px;
+    bottom: -4px;
     z-index: 1;
 }
 
 .tb-enemy-sprite {
-    width: 88px;
-    height: 88px;
+    width: 80px;
+    height: 80px;
     object-fit: contain;
     z-index: 2;
-    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
     animation: tbFloat 3s ease-in-out infinite;
 }
 
@@ -420,9 +439,9 @@
 .tb-player-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     width: 100%;
-    min-height: 110px;
+    min-height: 100px;
 }
 
 /* 自キャラグラフィック（左下） */
@@ -431,25 +450,25 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-left: 10px;
+    padding-left: 6px;
 }
 
 .tb-player-platform {
-    width: 120px;
-    height: 32px;
+    width: 100px;
+    height: 26px;
     background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.45) 0%, rgba(0, 0, 0, 0) 75%);
     border-radius: 50%;
     position: absolute;
-    bottom: -6px;
+    bottom: -4px;
     z-index: 1;
 }
 
 .tb-player-sprite {
-    width: 96px;
-    height: 96px;
+    width: 88px;
+    height: 88px;
     object-fit: contain;
     z-index: 2;
-    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
 }
 
 /* 自陣ステータスパネル＆控えパネル（右下） */
@@ -457,7 +476,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
+    gap: 6px;
 }
 
 .tb-player-status {
@@ -467,23 +486,23 @@
 /* 相性ナビバッジ */
 .tb-affinity-badge {
     display: inline-block;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: bold;
-    padding: 2px 6px;
+    padding: 1px 5px;
     border-radius: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     background: #334155;
     color: #94a3b8;
 }
 
 .tb-affinity-badge.advantage {
-    background: rgba(34, 197, 94, 0.2);
+    background: rgba(34, 197, 94, 0.25);
     color: #4ade80;
     border: 1px solid #22c55e;
 }
 
 .tb-affinity-badge.disadvantage {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.25);
     color: #f87171;
     border: 1px solid #ef4444;
 }
@@ -491,9 +510,9 @@
 /* 控えキャラ交替パネル */
 .tb-reserve-panel {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     background: rgba(15, 23, 42, 0.75);
-    padding: 4px 6px;
+    padding: 3px 5px;
     border-radius: 8px;
     border: 1px solid #475569;
 }
@@ -505,7 +524,7 @@
     background: rgba(255, 255, 255, 0.08);
     border: 1.5px solid #64748b;
     border-radius: 6px;
-    padding: 3px 6px;
+    padding: 2px 5px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -521,9 +540,11 @@
 }
 
 .tb-reserve-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .tb-reserve-info {
@@ -533,17 +554,17 @@
 }
 
 .tb-reserve-name {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: bold;
     color: #f1f5f9;
-    max-width: 60px;
+    max-width: 55px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .tb-reserve-hp-track {
-    width: 44px;
+    width: 40px;
     height: 4px;
     background: #334155;
     border-radius: 2px;
@@ -561,96 +582,25 @@
     font-weight: bold;
 }
 
-
 /* ----------------------------------------------------
-   クイズエリア（最下部・コマンドボックス風）
+   クイズエリア（最下部・通常戦闘共通スタイル）
    ---------------------------------------------------- */
-.tb-quiz-container {
-    position: absolute;
-    bottom: 0;
-    left: 0;
+.tb-quiz-area {
+    flex-shrink: 0;
     width: 100%;
-    height: 170px;
-    background: #0f172a;
-    border-top: 3px solid #3b82f6;
+    padding: 6px 10px 10px 10px;
     display: flex;
     flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+    background: rgba(15, 23, 42, 0.95);
+    border-top: 2px solid #3b82f6;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
     z-index: 20;
 }
 
-/* タイマーバー */
-.tb-timer-track {
-    width: 100%;
-    height: 6px;
-    background: #1e293b;
-    position: relative;
-    overflow: hidden;
-}
-
-.tb-timer-fill {
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(90deg, #f59e0b, #e11d48);
-    transition: width 0.1s linear;
-}
-
-.tb-quiz-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 8px 10px;
-    gap: 8px;
-}
-
-.tb-question-box {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 0.88rem;
-    font-weight: bold;
-    color: #f8fafc;
-    text-align: left;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-}
-
-.tb-choices-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    flex: 1;
-}
-
-.tb-choice-btn {
-    background: linear-gradient(135deg, #1e293b, #334155);
-    border: 1.5px solid #475569;
-    border-radius: 8px;
-    color: #f8fafc;
-    font-size: 0.85rem;
-    font-weight: bold;
-    padding: 6px 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.tb-choice-btn:hover {
-    background: linear-gradient(135deg, #334155, #475569);
-    border-color: #38bdf8;
-    transform: translateY(-1px);
-}
-
-.tb-choice-btn:active {
-    transform: translateY(1px);
-}
-
 @keyframes tbFloat {
     0% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
+    50% { transform: translateY(-5px); }
     100% { transform: translateY(0px); }
 }
