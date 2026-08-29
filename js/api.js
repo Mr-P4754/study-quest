@@ -2,7 +2,7 @@
 // js/api.js (GASバックエンド通信・クラウド同期)
 // ==========================================
 
-import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=9.2.3';
+import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=9.2.4';
 
 export async function uploadData() {
     if (typeof window.showConfirm === 'function') {
@@ -79,6 +79,14 @@ export async function downloadData() {
             gameState.equipped = String(data.equipped || '1');
             gameState.itemLevels = forceObj(data.itemLevels);
             gameState.charaInventory = forceObj(data.charaInventory);
+            Object.keys(gameState.charaInventory).forEach(id => {
+                const item = gameState.charaInventory[id];
+                if (item) {
+                    if (typeof item.level !== 'number' || item.level < 1) item.level = 1;
+                    if (typeof item.count !== 'number' || item.count < 1) item.count = 1;
+                    if (typeof item.exp !== 'number' || item.exp < 0) item.exp = 0;
+                }
+            });
             
             const m = forceObj(data.missions);
             dailyMissions.date = m.date || "";

@@ -404,6 +404,18 @@ export function loadSaveData() {
         }
     }
     
+    // 全所持キャラクターのレベル最低値保証（Lv.1未満または未設定ならLv.1に補正）
+    if (gameState.charaInventory) {
+        Object.keys(gameState.charaInventory).forEach(id => {
+            const item = gameState.charaInventory[id];
+            if (item) {
+                if (typeof item.level !== 'number' || item.level < 1) item.level = 1;
+                if (typeof item.count !== 'number' || item.count < 1) item.count = 1;
+                if (typeof item.exp !== 'number' || item.exp < 0) item.exp = 0;
+            }
+        });
+    }
+    
     gameState.stats = safeParse('sq_stats', {
         totalPlay: 0,
         totalKill: 0,

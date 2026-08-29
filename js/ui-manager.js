@@ -9,13 +9,13 @@ import {
     runtimeState,
     GUIDE_DATA,
     saveGame
-} from './state.js?v=9.2.3';
+} from './state.js?v=9.2.4';
 
 import {
     getDisplayName,
     drawRadarChart,
     playSE
-} from './utils.js?v=9.2.3';
+} from './utils.js?v=9.2.4';
 
 // ==========================================
 // タイトル初期化・カテゴリー制御
@@ -106,7 +106,7 @@ export function filterUnits() {
 export function updateTitleInfo() {
     const chara = (rawData.characters && rawData.characters.length > 0) ? rawData.characters.find(c => String(c.id) == String(gameState.equipped)) : null;
     const inv = gameState.charaInventory[gameState.equipped] || (chara ? gameState.charaInventory[chara.id] : null);
-    let lv = (inv && inv.level) ? inv.level : 0;
+    let lv = (inv && typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
     const displayName = (chara && typeof getDisplayName === 'function') ? getDisplayName(chara, inv) : (chara ? chara.name : "なし");
     const tEquippedName = document.getElementById('title-equipped-name'); 
     if(tEquippedName) tEquippedName.innerHTML = displayName + (chara ? " Lv." + lv : "");

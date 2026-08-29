@@ -11,7 +11,7 @@ import {
     runtimeState,
     LV_BONUS_RATE,
     saveGame
-} from './state.js?v=9.2.3';
+} from './state.js?v=9.2.4';
 
 import {
     getDisplayName,
@@ -19,12 +19,12 @@ import {
     playSE,
     playBGM,
     stopBGM
-} from './utils.js?v=9.2.3';
+} from './utils.js?v=9.2.4';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=9.2.3';
+} from './gacha-shop.js?v=9.2.4';
 
 import {
     showAppModal,
@@ -32,7 +32,7 @@ import {
     showConfirm,
     updateTitleInfo,
     addCalcRecord
-} from './ui-manager.js?v=9.2.3';
+} from './ui-manager.js?v=9.2.4';
 
 export function showCutIn(t) { 
     const str = String(t);
@@ -239,7 +239,7 @@ export function getCharaStats() {
         const charaData = rawData.characters.find(c => String(c.id) == String(gameState.equipped));
         if(charaData) {
             let userChara = gameState.charaInventory[gameState.equipped] || gameState.charaInventory[charaData.id];
-            let level = userChara ? userChara.level : 0;
+            let level = (userChara && typeof userChara.level === 'number' && userChara.level >= 1) ? userChara.level : 1;
             let baseVal = (userChara && userChara.isEvolved && userChara.customValue) ? userChara.customValue : Number(charaData.value);
             let finalVal = Number(baseVal) + (level * LV_BONUS_RATE);
             let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type];
@@ -304,15 +304,17 @@ export function finishGame(isClear) {
             earned = gained;
 
             if (playData.rogueEnemyCharId) {
-                const charId = playData.rogueEnemyCharId;
+                const charId = String(playData.rogueEnemyCharId);
+                const cMaster = rawData.characters ? rawData.characters.find(c => String(c.id) === charId) : null;
+                const r = cMaster ? cMaster.rarity : 'N';
                 if (!gameState.charaInventory[charId]) {
-                    const cMaster = rawData.characters ? rawData.characters.find(c => c.id == charId) : null;
-                    const r = cMaster ? cMaster.rarity : 'N';
                     gameState.charaInventory[charId] = { level: 1, count: 1, exp: 0, currentRarity: r };
                 } else {
-                    gameState.charaInventory[charId].count++;
+                    if (typeof gameState.charaInventory[charId].level !== 'number' || gameState.charaInventory[charId].level < 1) {
+                        gameState.charaInventory[charId].level = 1;
+                    }
+                    gameState.charaInventory[charId].count = (gameState.charaInventory[charId].count || 0) + 1;
                 }
-                const cMaster = rawData.characters ? rawData.characters.find(c => c.id == charId) : null;
                 const cName = cMaster ? cMaster.name : '仲間';
                 const cRarity = cMaster ? cMaster.rarity : 'N';
                 dropInfo = { count: 1, icon: '📦', name: cName, rarity: cRarity, isRogueChar: true };
@@ -340,6 +342,7 @@ export function finishGame(isClear) {
         
         let isMax = false;
         if (eqInv && cMaster) {
+            if (typeof eqInv.level !== 'number' || eqInv.level < 1) eqInv.level = 1;
             const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
             if (eqInv.level >= maxL) isMax = true;
         }
@@ -358,6 +361,7 @@ export function finishGame(isClear) {
         let growthResultText = "なし";
         
         if (eqInv && cMaster) {
+            if (typeof eqInv.level !== 'number' || eqInv.level < 1) eqInv.level = 1;
             const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
             let startLv = eqInv.level;
             let startExp = Number(eqInv.exp) || 0;

@@ -23,13 +23,13 @@ import {
     MISSIONS,
     MISSION_ALL_CLEAR,
     saveGame
-} from './state.js?v=9.2.3';
+} from './state.js?v=9.2.4';
 
 import {
     getRarityIndex,
     getDisplayName,
     playSE
-} from './utils.js?v=9.2.3';
+} from './utils.js?v=9.2.4';
 
 import {
     showAppModal,
@@ -40,7 +40,7 @@ import {
     returnToCurrentCategory,
     closeAllCategoryModals,
     updateCategoryBadges
-} from './ui-manager.js?v=9.2.3';
+} from './ui-manager.js?v=9.2.4';
 
 let selectedMaterials = {};
 let viewingCharaId = null;
@@ -111,7 +111,10 @@ export function executeGacha(times, guaranteedRarity) {
         if (!gameState.charaInventory[c.id]) {
             gameState.charaInventory[c.id] = { level: 1, count: 1, exp: 0, currentRarity: c.rarity };
         } else {
-            gameState.charaInventory[c.id].count++;
+            if (typeof gameState.charaInventory[c.id].level !== 'number' || gameState.charaInventory[c.id].level < 1) {
+                gameState.charaInventory[c.id].level = 1;
+            }
+            gameState.charaInventory[c.id].count = (gameState.charaInventory[c.id].count || 0) + 1;
         }
     }
     
@@ -205,6 +208,7 @@ export function renderZukan() {
         let visual, nameText, lvlBadge = '', stockBadge = ''; 
         let decoName = "???"; 
         if(isOwned) {
+            if (typeof data.level !== 'number' || data.level < 1) data.level = 1;
             visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
             const currentRarity = data.currentRarity || c.rarity; 
             decoName = getDisplayName(c, data); 
@@ -236,6 +240,7 @@ export function openCharaDetail(id) {
     const c = rawData.characters ? rawData.characters.find(x => String(x.id) == String(id)) : null; 
     const o = gameState.charaInventory[id] || gameState.charaInventory[String(id)] || (c ? gameState.charaInventory[c.id] : null); 
     if(!c || !o) return; 
+    if (typeof o.level !== 'number' || o.level < 1) o.level = 1;
     const currentR = o.currentRarity || c.rarity; 
     const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
     const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
