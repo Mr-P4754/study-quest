@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.10';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.10';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.10';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.11';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.11';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.11';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -375,11 +375,11 @@ function renderPartyZukanGrid() {
 
         let badgeHtml = '';
         if (partyIndex === 0) {
-            badgeHtml = '<span class="party-slot-badge-mini" style="background:#f39c12; color:#fff; padding:1px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold; line-height:1.1;">前衛</span>';
+            badgeHtml = '<div class="char-party-badge slot-0">前衛</div>';
         } else if (partyIndex === 1) {
-            badgeHtml = '<span class="party-slot-badge-mini" style="background:#3b82f6; color:#fff; padding:1px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold; line-height:1.1;">後衛1</span>';
+            badgeHtml = '<div class="char-party-badge slot-1">後衛1</div>';
         } else if (partyIndex === 2) {
-            badgeHtml = '<span class="party-slot-badge-mini" style="background:#8b5cf6; color:#fff; padding:1px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold; line-height:1.1;">後衛2</span>';
+            badgeHtml = '<div class="char-party-badge slot-2">後衛2</div>';
         }
 
         const visual = (c.imageUrl && c.imageUrl.startsWith('http')) 
@@ -387,13 +387,11 @@ function renderPartyZukanGrid() {
             : `<div style="font-size:2em;line-height:50px">📦</div>`;
 
         card.innerHTML = `
+            ${badgeHtml}
             <div class="char-lvl-badge">Lv.${lv}</div>
             ${visual}
             <div style="font-weight:bold;font-size:0.75rem;margin-top:2px;"><span class="rarity-${currentR}">${currentR}</span> / ${c.type}</div>
-            <div style="display:flex; justify-content:center; align-items:center; gap:4px; margin-top:3px; min-height:16px;">
-                ${badgeHtml}
-                <span style="font-size:0.72rem; font-weight:bold; color:#0284c7;">Cost ${cost}</span>
-            </div>
+            <div style="font-size:0.75rem; font-weight:bold; color:#0284c7; margin-top:2px;">Cost ${cost}</div>
         `;
 
         card.onclick = () => setPartyMember(c.id);
