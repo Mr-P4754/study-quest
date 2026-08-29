@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.1';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.1';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.1';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.2';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.2';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.2';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -560,16 +560,16 @@ function normalizeType(type) {
  * 相性ナビUI用のテキストとクラスを返すヘルパー
  * @param {string} playerType
  * @param {string} enemyType
- * @returns {{ text: string, className: string }}
+ * @returns {{ text: string, className: string, visible: boolean }}
  */
 export function getTbAffinityInfo(playerType, enemyType) {
     const multi = getTbAffinityMultiplier(playerType, enemyType);
     if (multi > 1.0) {
-        return { text: `有利 ⚔️ ${multi}倍`, className: 'advantage' };
+        return { text: `相性:○ ×${multi}`, className: 'advantage', visible: true };
     } else if (multi < 1.0) {
-        return { text: `不利 💧 ${multi}倍`, className: 'disadvantage' };
+        return { text: `相性:△ ×${multi}`, className: 'disadvantage', visible: true };
     } else {
-        return { text: '相性 ⚖️ 等倍 (1.0倍)', className: '' };
+        return { text: '', className: '', visible: false }; // 等倍の時は非表示
     }
 }
 
@@ -1128,6 +1128,9 @@ export function updateTbBattleUI() {
 /**
  * 自陣アクティブキャラのステータス・グラフィック更新
  */
+/**
+ * 自陣アクティブキャラのステータス・グラフィック更新
+ */
 export function updateTbPlayerStatusUI() {
     const activePlayer = tbState.party[tbState.activeSlot];
     if (!activePlayer) return;
@@ -1142,7 +1145,8 @@ export function updateTbPlayerStatusUI() {
     const visualEl = document.getElementById('tb-player-visual');
 
     if (nameEl) nameEl.innerText = activePlayer.name;
-    if (typeEl) typeEl.innerText = getTypeEmoji(activePlayer.type) + ' ' + activePlayer.type;
+    // 「💧」ではなくレア度「SSR / ATK」を表示
+    if (typeEl) typeEl.innerText = `${activePlayer.rarity || 'N'} / ${activePlayer.type}`;
     if (lvEl) lvEl.innerText = `Lv.${activePlayer.level}`;
     if (hpTextEl) hpTextEl.innerText = `${activePlayer.hp} / ${activePlayer.maxHp}`;
 
@@ -1158,11 +1162,20 @@ export function updateTbPlayerStatusUI() {
         }
     }
 
-    // 相性ナビ
-    if (affinityBadge && tbState.enemy) {
-        const aff = getTbAffinityInfo(activePlayer.type, tbState.enemy.type);
-        affinityBadge.innerText = aff.text;
-        affinityBadge.className = `tb-affinity-badge ${aff.className}`;
+    // 相性ナビ（等倍時は非表示、有利/不利のみ「相性:○ ×1.5」「相性:△ ×0.5」を表示）
+    if (affinityBadge) {
+        if (tbState.enemy) {
+            const aff = getTbAffinityInfo(activePlayer.type, tbState.enemy.type);
+            if (aff.visible) {
+                affinityBadge.style.display = 'inline-block';
+                affinityBadge.innerText = aff.text;
+                affinityBadge.className = `tb-affinity-badge ${aff.className}`;
+            } else {
+                affinityBadge.style.display = 'none';
+            }
+        } else {
+            affinityBadge.style.display = 'none';
+        }
     }
 
     // グラフィック
@@ -1217,7 +1230,7 @@ export function updateTbEnemyStatusUI() {
 }
 
 /**
- * 控えキャラ交替パネルの更新
+ * 控えキャラ交替パネルの更新（控えキャラ相性バッジ表示対応）
  */
 export function updateTbReserveUI() {
     const reserveSlots = [0, 1, 2].filter(idx => idx !== tbState.activeSlot);
@@ -1247,6 +1260,36 @@ export function updateTbReserveUI() {
             const ratio = Math.max(0, char.hp / char.maxHp);
             hpFillEl.style.width = `${ratio * 100}%`;
             hpFillEl.style.background = char.isAlive ? '#22c55e' : '#64748b';
+        }
+
+        // 控えキャラの相性バッジを動的に表示/更新
+        let affBadge = slotEl.querySelector('.tb-reserve-aff-badge');
+        if (!affBadge) {
+            affBadge = document.createElement('span');
+            affBadge.className = 'tb-reserve-aff-badge';
+            // tagElの前に挿入
+            if (tagEl && tagEl.parentNode) {
+                tagEl.parentNode.insertBefore(affBadge, tagEl);
+            } else {
+                slotEl.appendChild(affBadge);
+            }
+        }
+
+        if (tbState.enemy && char.isAlive) {
+            const multi = getTbAffinityMultiplier(char.type, tbState.enemy.type);
+            if (multi > 1.0) {
+                affBadge.style.display = 'inline-block';
+                affBadge.innerText = '相性:○';
+                affBadge.className = 'tb-reserve-aff-badge advantage';
+            } else if (multi < 1.0) {
+                affBadge.style.display = 'inline-block';
+                affBadge.innerText = '相性:△';
+                affBadge.className = 'tb-reserve-aff-badge disadvantage';
+            } else {
+                affBadge.style.display = 'none'; // 等倍は非表示
+            }
+        } else {
+            affBadge.style.display = 'none';
         }
 
         if (tagEl) {

@@ -251,18 +251,9 @@
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: space-between;
     overflow: hidden;
     background: #1a252f;
-}
-
-/* ヘッダーの中央集約（最大幅720px） */
-#team-battle-screen .header {
-    width: 100%;
-    max-width: 720px;
-    margin: 0 auto;
-    box-sizing: border-box;
 }
 
 /* タイムバー上のテキスト（バーの上に重ねて中央配置） */
@@ -285,7 +276,7 @@
 
 /* ヘッダー内バッジ・ボタン */
 .tb-progress-badge {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     font-weight: bold;
     color: #f1c40f;
     letter-spacing: 0.5px;
@@ -307,16 +298,15 @@
     color: #ffffff;
 }
 
-/* 対戦フィールド（中央アリーナ・最大幅720pxで中央集約・flex: 1 で余白吸収・通常戦闘と同じドット背景） */
+/* 対戦フィールド（中央アリーナ・全幅ドット背景・内部コンテンツを中央集約） */
 .tb-arena-area {
     flex: 1;
     min-height: 0;
     width: 100%;
-    max-width: 720px;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
+    align-items: center;
     padding: clamp(6px, 1.5vh, 16px) clamp(10px, 2vw, 24px);
     box-sizing: border-box;
     overflow: hidden;
@@ -327,14 +317,12 @@
     background-position: 0 0, 10px 10px;
 }
 
-/* フッター問題領域の中央揃え（最大幅720px） */
+/* フッター問題領域の中央揃え */
 #team-battle-screen .footer {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 720px;
-    margin: 0 auto;
     flex-shrink: 0;
     box-sizing: border-box;
 }
@@ -343,26 +331,28 @@
     margin: 0 auto 10px auto;
     text-align: center;
     width: 95%;
-    max-width: 600px;
+    max-width: 650px;
 }
 
-/* 敵エリア（右上配置 / 左上にステータスパネル） */
+/* 敵エリア（右上配置 / 左上にステータスパネル・幅を中央寄りに集約） */
 .tb-enemy-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    min-height: clamp(80px, 14vh, 130px);
+    max-width: 860px;
+    margin: 0 auto;
+    min-height: clamp(95px, 17vh, 150px);
 }
 
 .tb-status-card {
     background: rgba(15, 23, 42, 0.9);
     border: 2px solid #475569;
-    border-radius: 12px;
-    padding: clamp(5px, 1vh, 10px) clamp(8px, 1.5vw, 14px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-    min-width: clamp(160px, 26vw, 240px);
-    max-width: 270px;
+    border-radius: 14px;
+    padding: clamp(7px, 1.2vh, 13px) clamp(10px, 1.6vw, 16px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    min-width: clamp(180px, 28vw, 290px);
+    max-width: 320px;
     text-align: left;
     position: relative;
     transition: all 0.2s ease;
@@ -376,23 +366,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .tb-status-name {
-    font-size: clamp(0.82rem, 1.4vw, 1.05rem);
+    font-size: clamp(0.92rem, 1.5vw, 1.2rem);
     font-weight: bold;
     color: #f8fafc;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: clamp(100px, 16vw, 160px);
+    max-width: clamp(110px, 18vw, 180px);
 }
 
 .tb-type-pill {
-    font-size: clamp(0.62rem, 1vw, 0.78rem);
+    font-size: clamp(0.7rem, 1.1vw, 0.85rem);
     font-weight: bold;
-    padding: 2px 6px;
+    padding: 3px 8px;
     border-radius: 4px;
     color: #fff;
     background: #64748b;
@@ -400,9 +390,9 @@
 
 .tb-hp-track {
     width: 100%;
-    height: clamp(8px, 1.2vh, 12px);
+    height: clamp(10px, 1.4vh, 14px);
     background: #334155;
-    border-radius: 6px;
+    border-radius: 7px;
     overflow: hidden;
     position: relative;
     border: 1px solid #1e293b;
@@ -426,12 +416,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: clamp(0.68rem, 1.1vw, 0.82rem);
+    font-size: clamp(0.76rem, 1.2vw, 0.92rem);
     color: #94a3b8;
-    margin-top: 3px;
+    margin-top: 4px;
 }
 
-/* 敵グラフィック（右上） */
+/* 敵グラフィック（右上・サイズ拡大） */
 .tb-enemy-visual-wrapper {
     position: relative;
     display: flex;
@@ -441,8 +431,8 @@
 }
 
 .tb-enemy-platform {
-    width: clamp(90px, 16vmin, 140px);
-    height: clamp(20px, 3.8vmin, 30px);
+    width: clamp(115px, 22vmin, 175px);
+    height: clamp(24px, 4.5vmin, 38px);
     background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.45) 0%, rgba(0, 0, 0, 0) 75%);
     border-radius: 50%;
     position: absolute;
@@ -451,24 +441,26 @@
 }
 
 .tb-enemy-sprite {
-    width: clamp(75px, 14vmin, 120px);
-    height: clamp(75px, 14vmin, 120px);
+    width: clamp(95px, 18vmin, 150px);
+    height: clamp(95px, 18vmin, 150px);
     object-fit: contain;
     z-index: 2;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.55));
     animation: tbFloat 3s ease-in-out infinite;
 }
 
-/* 自陣前衛＆控えエリア（左下配置 / 右下にステータスパネル） */
+/* 自陣前衛＆控えエリア（左下配置 / 右下にステータスパネル・幅を中央寄りに集約） */
 .tb-player-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    min-height: clamp(90px, 16vh, 140px);
+    max-width: 860px;
+    margin: 0 auto;
+    min-height: clamp(105px, 19vh, 165px);
 }
 
-/* 自キャラグラフィック（左下） */
+/* 自キャラグラフィック（左下・サイズ拡大） */
 .tb-player-visual-wrapper {
     position: relative;
     display: flex;
@@ -478,8 +470,8 @@
 }
 
 .tb-player-platform {
-    width: clamp(96px, 18vmin, 150px);
-    height: clamp(22px, 4vmin, 32px);
+    width: clamp(125px, 24vmin, 190px);
+    height: clamp(26px, 5vmin, 42px);
     background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.45) 0%, rgba(0, 0, 0, 0) 75%);
     border-radius: 50%;
     position: absolute;
@@ -488,11 +480,11 @@
 }
 
 .tb-player-sprite {
-    width: clamp(82px, 15vmin, 130px);
-    height: clamp(82px, 15vmin, 130px);
+    width: clamp(105px, 20vmin, 165px);
+    height: clamp(105px, 20vmin, 165px);
     object-fit: contain;
     z-index: 2;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.55));
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
 }
 
 /* 自陣ステータスパネル＆控えパネル（右下） */
@@ -500,7 +492,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: clamp(4px, 0.8vh, 8px);
+    gap: clamp(5px, 1vh, 10px);
 }
 
 .tb-player-status {
@@ -510,11 +502,11 @@
 /* 相性ナビバッジ */
 .tb-affinity-badge {
     display: inline-block;
-    font-size: clamp(0.65rem, 1.1vw, 0.8rem);
+    font-size: clamp(0.72rem, 1.1vw, 0.88rem);
     font-weight: bold;
-    padding: 1px 6px;
-    border-radius: 4px;
-    margin-bottom: 2px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-bottom: 3px;
     background: #334155;
     color: #94a3b8;
 }
@@ -534,21 +526,21 @@
 /* 控えキャラ交替パネル */
 .tb-reserve-panel {
     display: flex;
-    gap: clamp(3px, 0.6vw, 6px);
-    background: rgba(15, 23, 42, 0.85);
-    padding: clamp(3px, 0.5vh, 6px) clamp(4px, 0.8vw, 8px);
-    border-radius: 8px;
+    gap: clamp(4px, 0.8vw, 8px);
+    background: rgba(15, 23, 42, 0.9);
+    padding: clamp(4px, 0.6vh, 8px) clamp(6px, 1vw, 10px);
+    border-radius: 10px;
     border: 1px solid #475569;
 }
 
 .tb-reserve-card {
     display: flex;
     align-items: center;
-    gap: clamp(3px, 0.5vw, 6px);
+    gap: clamp(4px, 0.6vw, 8px);
     background: rgba(255, 255, 255, 0.08);
     border: 1.5px solid #64748b;
-    border-radius: 6px;
-    padding: clamp(2px, 0.4vh, 5px) clamp(4px, 0.8vw, 8px);
+    border-radius: 7px;
+    padding: clamp(3px, 0.5vh, 6px) clamp(6px, 1vw, 10px);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -564,8 +556,8 @@
 }
 
 .tb-reserve-icon {
-    width: clamp(20px, 3.5vmin, 28px);
-    height: clamp(20px, 3.5vmin, 28px);
+    width: clamp(24px, 4vmin, 32px);
+    height: clamp(24px, 4vmin, 32px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -578,13 +570,35 @@
 }
 
 .tb-reserve-name {
-    font-size: 0.6rem;
+    font-size: clamp(0.72rem, 1.1vw, 0.88rem);
     font-weight: bold;
     color: #f1f5f9;
-    max-width: 55px;
+    max-width: clamp(65px, 10vw, 100px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* 控えキャラ相性バッジ */
+.tb-reserve-aff-badge {
+    font-size: clamp(0.62rem, 0.95vw, 0.75rem);
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.tb-reserve-aff-badge.advantage {
+    background: rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+    border: 1px solid #22c55e;
+}
+
+.tb-reserve-aff-badge.disadvantage {
+    background: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    border: 1px solid #ef4444;
 }
 
 .tb-reserve-hp-track {
