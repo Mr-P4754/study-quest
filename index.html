@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.4.3">
-    <link rel="stylesheet" href="css/layout.css?v=9.4.3">
-    <link rel="stylesheet" href="css/components.css?v=9.4.3">
-    <link rel="stylesheet" href="css/quests.css?v=9.4.3">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.4.3">
+    <link rel="stylesheet" href="css/base.css?v=9.4.4">
+    <link rel="stylesheet" href="css/layout.css?v=9.4.4">
+    <link rel="stylesheet" href="css/components.css?v=9.4.4">
+    <link rel="stylesheet" href="css/quests.css?v=9.4.4">
+    <link rel="stylesheet" href="css/special-quest.css?v=9.4.4">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.4.3</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.4.4</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -252,48 +252,33 @@
             </div>
         </div>
 
-        <!-- 自陣前衛＆控えエリア (左下グラフィック / 右下ステータス & 控え) -->
+        <!-- 自陣前衛エリア (左下グラフィック / 右下ステータス) -->
         <div class="tb-player-row">
             <div class="tb-player-visual-wrapper">
                 <div id="tb-player-visual" class="tb-player-sprite"></div>
                 <div class="tb-player-platform"></div>
             </div>
-            <div class="tb-player-side-container">
-                <!-- 控え2体交替パネル -->
-                <div class="tb-reserve-panel">
-                    <div id="tb-reserve-slot-1" class="tb-reserve-card">
-                        <div class="tb-reserve-icon"></div>
-                        <div class="tb-reserve-info">
-                            <div class="tb-reserve-name">控え1</div>
-                            <div class="tb-reserve-hp-track"><div class="tb-reserve-hp-fill"></div></div>
-                        </div>
-                        <span class="tb-swap-hint-tag">交替</span>
-                    </div>
-                    <div id="tb-reserve-slot-2" class="tb-reserve-card">
-                        <div class="tb-reserve-icon"></div>
-                        <div class="tb-reserve-info">
-                            <div class="tb-reserve-name">控え2</div>
-                            <div class="tb-reserve-hp-track"><div class="tb-reserve-hp-fill"></div></div>
-                        </div>
-                        <span class="tb-swap-hint-tag">交替</span>
-                    </div>
+            <!-- 自陣前衛ステータス -->
+            <div class="tb-status-card tb-player-status">
+                <div id="tb-affinity-badge" class="tb-affinity-badge advantage">相性:○ ×1.5</div>
+                <div class="tb-status-name-row">
+                    <span id="tb-player-name" class="tb-status-name">味方キャラクター</span>
+                    <span id="tb-player-type" class="tb-type-pill">SSR / ATK</span>
                 </div>
-                <!-- 自陣前衛ステータス -->
-                <div class="tb-status-card tb-player-status">
-                    <div id="tb-affinity-badge" class="tb-affinity-badge advantage">有利 ⚔️ 1.5倍</div>
-                    <div class="tb-status-name-row">
-                        <span id="tb-player-name" class="tb-status-name">味方キャラクター</span>
-                        <span id="tb-player-type" class="tb-type-pill">💧 水</span>
-                    </div>
-                    <div class="tb-hp-track">
-                        <div id="tb-player-hp-fill" class="tb-hp-fill"></div>
-                    </div>
-                    <div class="tb-status-meta">
-                        <span id="tb-player-lv">Lv.10</span>
-                        <span id="tb-player-hp-text">800 / 800</span>
-                    </div>
+                <div class="tb-hp-track">
+                    <div id="tb-player-hp-fill" class="tb-hp-fill"></div>
+                </div>
+                <div class="tb-status-meta">
+                    <span id="tb-player-lv">Lv.20</span>
+                    <span id="tb-player-hp-text">5000 / 5000</span>
                 </div>
             </div>
+        </div>
+
+        <!-- 控えキャラ交替パネル（自陣下・問題文上の独立エリア） -->
+        <div id="tb-reserve-panel" class="tb-reserve-panel">
+            <div id="tb-reserve-slot-1" class="tb-reserve-card"></div>
+            <div id="tb-reserve-slot-2" class="tb-reserve-card"></div>
         </div>
     </div>
 
@@ -824,6 +809,10 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.4.4</h4>
+            <ul>
+                <li>チームバトルクエストのUIレイアウト刷新（控えキャラパネルの自陣下独立配置、情報スリム化・相性/Lv/レア度/HPバー表示、戦闘不能時の「✕ 戦闘不能」表示）</li>
+            </ul>
             <h4>Ver 9.4.3</h4>
             <ul>
                 <li>チームバトルクエストのレイアウト最適化（ステータスカード横幅の拡大・控え2体分の表示スペースと完全統一、キャラクター名表示可能幅の大幅拡大）</li>
@@ -984,6 +973,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.4.3"></script>
+<script type="module" src="js/main.js?v=9.4.4"></script>
 </body>
 </html>

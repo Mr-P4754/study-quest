@@ -492,20 +492,12 @@
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
 }
 
-/* 自陣ステータスパネル＆控えパネル（右下・控え2体とステータスカードの幅を完全一致） */
-.tb-player-side-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+/* 自陣ステータスパネル（右下） */
+.tb-player-status {
+    border-left: 4px solid #3b82f6;
     width: clamp(270px, 44vw, 400px);
     max-width: 400px;
     box-sizing: border-box;
-    gap: clamp(5px, 1vh, 10px);
-}
-
-.tb-player-status {
-    width: 100%;
-    border-left: 4px solid #3b82f6;
 }
 
 /* 相性ナビバッジ */
@@ -532,37 +524,40 @@
     border: 1px solid #ef4444;
 }
 
-/* 控えキャラ交替パネル（ステータスカードと同じ横幅いっぱいにフィット） */
+/* 控えキャラ交替パネル（自陣下・問題文上の独立エリア・将来のキャラ数増加に対応） */
 .tb-reserve-panel {
     display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
+    max-width: 860px;
+    margin: 4px auto 0 auto;
+    gap: clamp(8px, 1.5vw, 16px);
     box-sizing: border-box;
-    gap: clamp(4px, 0.8vw, 8px);
-    background: rgba(15, 23, 42, 0.9);
-    padding: clamp(4px, 0.6vh, 8px) clamp(6px, 1vw, 10px);
-    border-radius: 10px;
-    border: 1px solid #475569;
+    padding: 0 8px;
 }
 
 .tb-reserve-card {
     display: flex;
-    flex: 1;
-    min-width: 0;
     align-items: center;
-    justify-content: space-between;
-    gap: clamp(4px, 0.6vw, 8px);
-    background: rgba(255, 255, 255, 0.08);
-    border: 1.5px solid #64748b;
-    border-radius: 7px;
-    padding: clamp(3px, 0.5vh, 6px) clamp(6px, 1vw, 10px);
+    gap: 8px;
+    flex: 1;
+    max-width: clamp(160px, 26vw, 240px);
+    min-width: 130px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 2px solid #475569;
+    border-radius: 10px;
+    padding: clamp(4px, 0.7vh, 8px) clamp(8px, 1.2vw, 12px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     cursor: pointer;
     transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
 .tb-reserve-card:hover {
-    background: rgba(59, 130, 246, 0.25);
+    background: rgba(30, 58, 138, 0.45);
     border-color: #3b82f6;
-    transform: scale(1.02);
+    transform: translateY(-2px);
 }
 
 .tb-reserve-card:active {
@@ -570,35 +565,51 @@
 }
 
 .tb-reserve-icon {
-    width: clamp(24px, 4vmin, 32px);
-    height: clamp(24px, 4vmin, 32px);
+    width: clamp(28px, 4.5vmin, 38px);
+    height: clamp(28px, 4.5vmin, 38px);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
 }
 
-.tb-reserve-info {
+.tb-reserve-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.tb-reserve-body {
     display: flex;
     flex-direction: column;
-    text-align: left;
+    justify-content: center;
+    gap: 3px;
     flex: 1;
     min-width: 0;
 }
 
-.tb-reserve-name {
-    font-size: clamp(0.72rem, 1.1vw, 0.88rem);
+.tb-reserve-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: clamp(0.72rem, 1.1vw, 0.85rem);
     font-weight: bold;
-    color: #f1f5f9;
-    max-width: clamp(75px, 12vw, 120px);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.tb-reserve-lv {
+    color: #94a3b8;
+}
+
+.tb-reserve-rarity {
+    font-size: clamp(0.68rem, 1vw, 0.8rem);
+    font-weight: 900;
+    color: #38bdf8;
 }
 
 /* 控えキャラ相性バッジ */
 .tb-reserve-aff-badge {
-    font-size: clamp(0.62rem, 0.95vw, 0.75rem);
+    font-size: clamp(0.6rem, 0.9vw, 0.72rem);
     font-weight: bold;
     padding: 1px 4px;
     border-radius: 4px;
@@ -619,22 +630,43 @@
 }
 
 .tb-reserve-hp-track {
-    width: 40px;
-    height: 4px;
+    width: 100%;
+    height: clamp(5px, 0.8vh, 7px);
     background: #334155;
-    border-radius: 2px;
+    border-radius: 4px;
     overflow: hidden;
+    border: 1px solid #1e293b;
 }
 
 .tb-reserve-hp-fill {
     height: 100%;
-    background: #22c55e;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.3s ease-out;
 }
 
-.tb-swap-hint-tag {
-    font-size: 0.55rem;
-    color: #38bdf8;
+.tb-reserve-hp-fill.danger {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.tb-reserve-hp-fill.warning {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+/* 控えキャラ戦闘不能時 */
+.tb-reserve-dead-icon {
+    filter: grayscale(100%) opacity(0.45);
+}
+
+.tb-reserve-dead-body {
+    display: flex;
+    align-items: center;
+}
+
+.tb-reserve-dead-text {
+    color: #ef4444;
     font-weight: bold;
+    font-size: clamp(0.72rem, 1.1vw, 0.85rem);
+    letter-spacing: 0.5px;
 }
 
 /* ----------------------------------------------------

@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.3';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.3';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.3';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.4';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.4';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.4';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -1230,7 +1230,7 @@ export function updateTbEnemyStatusUI() {
 }
 
 /**
- * 控えキャラ交替パネルの更新（控えキャラ相性バッジ表示対応）
+ * 控えキャラ交替パネルの更新（アイコン・Lv・レア度・相性・HPバー表示、戦闘不能時は✕戦闘不能）
  */
 export function updateTbReserveUI() {
     const reserveSlots = [0, 1, 2].filter(idx => idx !== tbState.activeSlot);
@@ -1240,67 +1240,54 @@ export function updateTbReserveUI() {
         const slotEl = document.getElementById(`tb-reserve-slot-${i + 1}`);
         if (!slotEl || !char) return;
 
-        const iconEl = slotEl.querySelector('.tb-reserve-icon');
-        const nameEl = slotEl.querySelector('.tb-reserve-name');
-        const hpFillEl = slotEl.querySelector('.tb-reserve-hp-fill');
-        const tagEl = slotEl.querySelector('.tb-swap-hint-tag');
+        // アイコン HTML
+        const iconHtml = (char.imageUrl && char.imageUrl.startsWith('http'))
+            ? `<img src="${char.imageUrl}" class="tb-reserve-img">`
+            : `<span style="font-size:1.3rem;">${getTypeEmoji(char.type)}</span>`;
 
-        if (iconEl) {
-            iconEl.innerHTML = (char.imageUrl && char.imageUrl.startsWith('http'))
-                ? `<img src="${char.imageUrl}" style="width:22px;height:22px;object-fit:contain;">`
-                : `<span style="font-size:1rem;">${getTypeEmoji(char.type)}</span>`;
-        }
-
-        if (nameEl) {
-            nameEl.innerText = char.isAlive ? char.name : '戦闘不能';
-            nameEl.style.color = char.isAlive ? '#f1f5f9' : '#ef4444';
-        }
-
-        if (hpFillEl) {
-            const ratio = Math.max(0, char.hp / char.maxHp);
-            hpFillEl.style.width = `${ratio * 100}%`;
-            hpFillEl.style.background = char.isAlive ? '#22c55e' : '#64748b';
-        }
-
-        // 控えキャラの相性バッジを動的に表示/更新
-        let affBadge = slotEl.querySelector('.tb-reserve-aff-badge');
-        if (!affBadge) {
-            affBadge = document.createElement('span');
-            affBadge.className = 'tb-reserve-aff-badge';
-            // tagElの前に挿入
-            if (tagEl && tagEl.parentNode) {
-                tagEl.parentNode.insertBefore(affBadge, tagEl);
-            } else {
-                slotEl.appendChild(affBadge);
+        if (char.isAlive) {
+            // 相性判定
+            let affBadgeHtml = '';
+            if (tbState.enemy) {
+                const multi = getTbAffinityMultiplier(char.type, tbState.enemy.type);
+                if (multi > 1.0) {
+                    affBadgeHtml = `<span class="tb-reserve-aff-badge advantage">相性:○</span>`;
+                } else if (multi < 1.0) {
+                    affBadgeHtml = `<span class="tb-reserve-aff-badge disadvantage">相性:△</span>`;
+                }
             }
-        }
 
-        if (tbState.enemy && char.isAlive) {
-            const multi = getTbAffinityMultiplier(char.type, tbState.enemy.type);
-            if (multi > 1.0) {
-                affBadge.style.display = 'inline-block';
-                affBadge.innerText = '相性:○';
-                affBadge.className = 'tb-reserve-aff-badge advantage';
-            } else if (multi < 1.0) {
-                affBadge.style.display = 'inline-block';
-                affBadge.innerText = '相性:△';
-                affBadge.className = 'tb-reserve-aff-badge disadvantage';
-            } else {
-                affBadge.style.display = 'none'; // 等倍は非表示
-            }
+            const hpRatio = Math.max(0, char.hp / char.maxHp);
+            const hpColorClass = (hpRatio < 0.25) ? 'danger' : (hpRatio < 0.5) ? 'warning' : '';
+
+            slotEl.innerHTML = `
+                <div class="tb-reserve-icon">${iconHtml}</div>
+                <div class="tb-reserve-body">
+                    <div class="tb-reserve-meta-row">
+                        <span class="tb-reserve-lv">Lv.${char.level}</span>
+                        <span class="tb-reserve-rarity rarity-${char.rarity}">${char.rarity || 'N'}</span>
+                        ${affBadgeHtml}
+                    </div>
+                    <div class="tb-reserve-hp-track">
+                        <div class="tb-reserve-hp-fill ${hpColorClass}" style="width: ${hpRatio * 100}%;"></div>
+                    </div>
+                </div>
+            `;
+            slotEl.style.opacity = '1.0';
+            slotEl.style.cursor = 'pointer';
+            slotEl.onclick = () => switchTbActiveChar(slotIdx, false);
         } else {
-            affBadge.style.display = 'none';
+            // 戦闘不能時の表示: アイコンと赤字で「✕ 戦闘不能」
+            slotEl.innerHTML = `
+                <div class="tb-reserve-icon tb-reserve-dead-icon">${iconHtml}</div>
+                <div class="tb-reserve-body tb-reserve-dead-body">
+                    <span class="tb-reserve-dead-text">✕ 戦闘不能</span>
+                </div>
+            `;
+            slotEl.style.opacity = '0.5';
+            slotEl.style.cursor = 'not-allowed';
+            slotEl.onclick = () => alert('そのキャラクターは戦闘不能です！');
         }
-
-        if (tagEl) {
-            tagEl.innerText = char.isAlive ? '交替' : '✕';
-            tagEl.style.color = char.isAlive ? '#38bdf8' : '#ef4444';
-        }
-
-        // クリックで手動交替
-        slotEl.onclick = () => switchTbActiveChar(slotIdx, false);
-        slotEl.style.opacity = char.isAlive ? '1.0' : '0.4';
-        slotEl.style.cursor = char.isAlive ? 'pointer' : 'not-allowed';
     });
 }
 
