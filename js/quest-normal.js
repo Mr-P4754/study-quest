@@ -9,7 +9,7 @@ import {
     rogueData,
     runtimeState,
     saveGame
-} from './state.js?v=9.2.2';
+} from './state.js?v=9.2.3';
 
 import {
     getGradeMultiplier,
@@ -17,7 +17,7 @@ import {
     playSE,
     playBGM,
     stopBGM
-} from './utils.js?v=9.2.2';
+} from './utils.js?v=9.2.3';
 
 import {
     showCutIn,
@@ -26,12 +26,12 @@ import {
     startTimer,
     getCharaStats,
     finishGame
-} from './battle-core.js?v=9.2.2';
+} from './battle-core.js?v=9.2.3';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=9.2.2';
+} from './gacha-shop.js?v=9.2.3';
 
 import {
     showAppModal,
@@ -40,7 +40,7 @@ import {
     updateTitleInfo,
     openOathMenu,
     openReliefMenu
-} from './ui-manager.js?v=9.2.2';
+} from './ui-manager.js?v=9.2.3';
 
 // ==========================================
 // 通常クエスト
@@ -399,6 +399,7 @@ export function startSurvivalGame() {
     playData.isSurvival = true; 
     playData.context = null;
     runtimeState.currentCategory = null;
+    runtimeState.oathOrigin = 'normal';
     
     const charaStats = getCharaStats();
     gameState.score = 0; 
@@ -1218,6 +1219,7 @@ export function toggleRelief(type) {
 
 export function startOathGame() {
     if (runtimeState.tempOaths.length === 0) return alert("誓約を1つ以上選択してください。");
+    runtimeState.tempReliefs = [];
     playData.activeOaths = [...runtimeState.tempOaths];
     playData.activeReliefs = [];
     document.getElementById('oath-overlay')?.classList.add('hidden');
@@ -1234,6 +1236,7 @@ export function startOathGame() {
 
 export function startReliefGame() {
     if (runtimeState.tempReliefs.length === 0) return alert("救済を1つ以上選択してください。");
+    runtimeState.tempOaths = [];
     playData.activeReliefs = [...runtimeState.tempReliefs];
     playData.activeOaths = [];
     document.getElementById('relief-overlay')?.classList.add('hidden');

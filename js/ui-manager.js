@@ -9,13 +9,13 @@ import {
     runtimeState,
     GUIDE_DATA,
     saveGame
-} from './state.js?v=9.2.2';
+} from './state.js?v=9.2.3';
 
 import {
     getDisplayName,
     drawRadarChart,
     playSE
-} from './utils.js?v=9.2.2';
+} from './utils.js?v=9.2.3';
 
 // ==========================================
 // タイトル初期化・カテゴリー制御
@@ -255,6 +255,9 @@ export function closeTypingMenu() {
 
 export function openSurvivalMenu() { 
     closeAllCategoryModals();
+    runtimeState.oathOrigin = 'normal';
+    runtimeState.tempOaths = [];
+    runtimeState.tempReliefs = [];
     if(rawData.questions && rawData.questions.length > 0) {
         const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
         const sel = document.getElementById('survival-grade-select'); 
@@ -333,6 +336,21 @@ export function closeOathMenu() {
 export function openReliefMenu() {
     runtimeState.tempReliefs = [];
     document.querySelectorAll('#relief-overlay .oath-option').forEach(el => el.classList.remove('selected'));
+    
+    const title = document.getElementById('relief-title');
+    const desc = document.getElementById('relief-desc');
+    const powerOption = document.getElementById('relief-power');
+    
+    if (runtimeState.oathOrigin === 'survival') {
+        if (title) title.innerText = "🕊️ 特訓の救済";
+        if (desc) desc.innerHTML = '加護を受け、特訓を継続しやすくする。<br>（獲得特訓EXP <span class="text-red font-bold">×0.9 ～ ×0.5</span>）';
+        if (powerOption) powerOption.style.display = 'none';
+    } else {
+        if (title) title.innerText = "🕊️ 救済の儀";
+        if (desc) desc.innerHTML = '加護を受け、確実に試練を乗り越える。<br>（報酬EXP <span class="text-red font-bold">×0.9 ～ ×0.5</span>）';
+        if (powerOption) powerOption.style.display = 'flex';
+    }
+    
     document.getElementById('relief-overlay')?.classList.remove('hidden');
 }
 
