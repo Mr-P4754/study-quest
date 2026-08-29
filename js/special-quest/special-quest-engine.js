@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.5';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.5';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.5';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.6';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.6';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.6';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -434,6 +434,7 @@ export const tbState = {
     enemy: null, // 現在の敵データ
     party: [], // 味方3体の戦闘用データ配列
     timerId: null,
+    tickCount: 0,
     timeLeft: 10, // 現在問題の残り時間（秒）
     maxTime: 10,  // 現在問題の最大制限時間（秒）
     currentQuestion: null,
@@ -663,6 +664,7 @@ export function startTeamBattle() {
     tbState.qIndex = 0;
     tbState.score = 0;
     tbState.earnedXp = 0;
+    tbState.tickCount = 0;
 
     // 画面切り替え
     document.getElementById('team-battle-setup-modal')?.classList.add('hidden');
@@ -745,17 +747,18 @@ function setupTbStage(stageNum) {
 // ----------------------------------------------------
 
 /**
- * 100msごとに実行されるリアルタイムバトル処理（タイムリミット監視）
+ * 100msごとに実行されるリアルタイムバトル処理（タイムリミット監視＋1秒ごとのスリップダメージ）
  */
 export function tbGameLoop() {
     if (!tbState.isActive || tbState.isPaused) return;
 
-    // 100ms ごとに 0.1秒減少
+    // 100ms ごとに 0.1秒減少 & ティックインクリメント
     tbState.timeLeft = Math.max(0, tbState.timeLeft - 0.1);
+    tbState.tickCount = (tbState.tickCount || 0) + 1;
 
-    // タイマーバーとテキストの更新
-    const timerFill = document.querySelector('#team-battle-screen #ui-timer') || document.getElementById('ui-timer') || document.getElementById('tb-timer');
-    const timerText = document.querySelector('#team-battle-screen #ui-timer-text') || document.getElementById('ui-timer-text') || document.getElementById('tb-timer-text');
+    // 1. タイマーバーとテキストの更新（チームバトル専用ID）
+    const timerFill = document.getElementById('tb-ui-timer');
+    const timerText = document.getElementById('tb-ui-timer-text');
     const ratio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
 
     if (timerFill) {
@@ -778,7 +781,37 @@ export function tbGameLoop() {
         }
     }
 
-    // タイムアップ判定（10倍ペナルティ発動）
+    // 2. 1秒ごと（10カウントごと）のスリップダメージ（敵の通常攻撃）
+    if (tbState.tickCount % 10 === 0) {
+        const activePlayer = tbState.party[tbState.activeSlot];
+        if (activePlayer && activePlayer.isAlive) {
+            const tickDamage = calcTbTickDamage(tbState.enemy, activePlayer);
+            activePlayer.hp = Math.max(0, activePlayer.hp - tickDamage);
+
+            // 被弾演出・SE
+            playSE('miss');
+            showPlayerDamageFlash();
+
+            // 味方HPバー・ステータス更新
+            updateTbPlayerStatusUI();
+            updateTbReserveUI();
+
+            // HP0判定
+            if (activePlayer.hp <= 0) {
+                activePlayer.isAlive = false;
+                const nextAliveIndex = tbState.party.findIndex(p => p.isAlive);
+                if (nextAliveIndex !== -1) {
+                    showAlert(`⚠️ ${activePlayer.name} が倒れた！\n${tbState.party[nextAliveIndex].name} が出撃！`);
+                    switchTbActiveChar(nextAliveIndex);
+                } else {
+                    finishTeamBattle(false);
+                    return;
+                }
+            }
+        }
+    }
+
+    // 3. タイムアップ判定（10倍ペナルティ発動）
     if (tbState.timeLeft <= 0) {
         applyTbPenalty('⏰ 時間切れ！');
     }
@@ -813,7 +846,7 @@ function applyTbPenalty(reason) {
         const nextAliveIndex = tbState.party.findIndex(p => p.isAlive);
         if (nextAliveIndex !== -1) {
             // 生きている控えキャラへ強制交替
-            showAlert(`⚠️ ${reason}<br>${activePlayer.name} が倒れた！<br>${tbState.party[nextAliveIndex].name} が出撃！`);
+            showAlert(`⚠️ ${reason}\n${activePlayer.name} が倒れた！\n${tbState.party[nextAliveIndex].name} が出撃！`);
             switchTbActiveChar(nextAliveIndex);
         } else {
             // 全滅・敗北
@@ -860,6 +893,7 @@ export function nextTbQuestion() {
 
     const q = tbState.questions[tbState.qIndex++];
     tbState.currentQuestion = q;
+    tbState.tickCount = 0; // 敵の攻撃周期（スリップダメージの1秒タイマー）をリセット
 
     // 前衛キャラのTIMEボーナスを適用したタイマー初期化（基本10秒 × TIME補正）
     const activePlayer = tbState.party[tbState.activeSlot];
@@ -869,11 +903,11 @@ export function nextTbQuestion() {
 
     // 通常クエストと完全共通の問題文プロパティ (q.q または q.question)
     const questionText = (q.q !== undefined && q.q !== null) ? q.q : (q.question || '問題文');
-    const qBox = document.querySelector('#team-battle-screen #ui-question') || document.getElementById('ui-question') || document.getElementById('tb-question');
+    const qBox = document.getElementById('tb-ui-question');
     if (qBox) qBox.innerText = questionText;
 
     // 選択肢のシャッフルとボタン生成 (通常クエスト共通の choices 配列)
-    const choicesGrid = document.querySelector('#team-battle-screen #ui-choices') || document.getElementById('ui-choices') || document.getElementById('tb-choices');
+    const choicesGrid = document.getElementById('tb-ui-choices');
     const choicesList = q.choices || q.c || [];
     if (choicesGrid && choicesList.length > 0) {
         choicesGrid.innerHTML = '';
@@ -904,8 +938,8 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
     const isCorrect = (String(selectedChoice).trim() === correctAnswer);
     const activePlayer = tbState.party[tbState.activeSlot];
 
-    // 全ての選択肢ボタンを非活性化
-    const allBtns = document.querySelectorAll('#team-battle-screen .choice-btn');
+    // チームバトル画面の選択肢ボタンを非活性化
+    const allBtns = document.querySelectorAll('#tb-ui-choices .choice-btn');
     allBtns.forEach(b => b.disabled = true);
 
     // クリックされたボタンに発光クラスを付与
@@ -949,7 +983,7 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
                 if (!tbState.isActive) return;
                 if (tbState.stage < tbState.maxStage) {
                     // 次のステージへ進行
-                    showAlert(`🎉 STAGE ${tbState.stage} CLEAR!<br>次の敵が現れた！`);
+                    showAlert(`🎉 STAGE ${tbState.stage} CLEAR!\n次の敵が現れた！`);
                     setupTbStage(tbState.stage + 1);
                     nextTbQuestion();
                 } else {
@@ -1218,7 +1252,7 @@ export async function escapeTeamBattle() {
     const wasPaused = tbState.isPaused;
     tbState.isPaused = true;
 
-    if (!(await showConfirm("チームバトルから撤退しますか？<br>（獲得予定の経験値は破棄されます）"))) {
+    if (!(await showConfirm("チームバトルから撤退しますか？\n（獲得予定の経験値は破棄されます）"))) {
         tbState.isPaused = wasPaused;
         return;
     }
@@ -1258,10 +1292,10 @@ export function finishTeamBattle(isWin, isEscape = false) {
         gameState.xp += finalExp;
         saveGame();
 
-        showAlert(`🏆 チームバトルクエスト 完全制覇！<br><br>獲得スコア: ${tbState.score}<br>獲得XP: <span style="color:#f39c12;font-weight:bold;">+${finalExp} XP</span>`);
+        showAlert(`🏆 チームバトルクエスト 完全制覇！\n\n獲得スコア: ${tbState.score}\n獲得XP: +${finalExp} XP`);
     } else {
         playSE('lose');
-        showAlert("💀 全滅してしまった...<br><br>パーティーの編成やレベル、属性相性を見直して再挑戦しよう！");
+        showAlert("💀 全滅してしまった...\n\nパーティーの編成やレベル、属性相性を見直して再挑戦しよう！");
     }
 
     returnToCurrentCategory();
