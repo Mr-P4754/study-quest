@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS } from '../state.js?v=9.3.0';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.0';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm, showCutIn } from '../ui-manager.js?v=9.3.0';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS } from '../state.js?v=9.3.1';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.1';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.1';
 
 // ----------------------------------------------------
 // 内部状態管理
