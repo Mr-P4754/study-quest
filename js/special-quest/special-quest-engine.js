@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.4';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.4';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.4';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.5';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.5';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.5';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -408,14 +408,30 @@ export function filterTbUnits() {
  * @param {string} type
  * @returns {string}
  */
-function getTypeEmoji(type) {
+export function getTypeEmoji(type) {
     if (!type) return '⚔️';
     const upper = type.toUpperCase();
     if (upper.includes('FIRE') || upper.includes('炎') || upper.includes('ATK')) return '🔥';
     if (upper.includes('WATER') || upper.includes('水') || upper.includes('TIME')) return '💧';
     if (upper.includes('THUNDER') || upper.includes('雷') || upper.includes('EXP')) return '⚡';
-    if (upper.includes('ALL')) return '✨';
+    if (upper.includes('ALL')) return '🌈';
     return '⚔️';
+}
+
+/**
+ * 属性スキル配列を絵文字なしのすっきりとした文字列にフォーマット
+ * 例: ['ATK', 'EXP'] -> 'ATK・EXP'
+ * 例: ['TIME'] -> 'TIME'
+ * 例: ['ALL'] -> 'ALL'
+ * @param {string|string[]} skills
+ * @returns {string}
+ */
+export function formatSkillsText(skills) {
+    const rawList = Array.isArray(skills) 
+        ? skills 
+        : (typeof skills === 'string' ? skills.split('・') : ['ATK']);
+    
+    return rawList.map(s => normalizeType(s)).join('・');
 }
 
 // ====================================================
@@ -430,23 +446,23 @@ export const tbState = {
     isPaused: false,
     stage: 1,
     maxStage: 3,
-    activeSlot: 0, // 現在戦っている味方スロット (0: 前衛, 1: 後衛1, 2: 後衛2)
-    enemy: null, // 現在の敵データ
-    party: [], // 味方3体の戦闘用データ配列
-    timerId: null,
-    tickCount: 0,
-    timeLeft: 10, // 現在問題の残り時間（秒）
-    maxTime: 10,  // 現在問題の最大制限時間（秒）
-    currentQuestion: null,
-    questions: [],
+    party: [],          // 3体の自陣キャラクター情報
+    activeSlot: 0,      // 現在戦闘中のキャラインデックス (0, 1, 2)
+    enemy: null,        // 現在の対戦相手
+    questions: [],      // クイズ問題プール
     qIndex: 0,
+    currentQuestion: null,
     score: 0,
     earnedXp: 0,
-    defeatedEnemies: [] // 倒した敵キャラクター一覧
+    defeatedEnemies: [],// 倒した敵キャラクター一覧
+    gameLoopTimer: null,
+    timeLeft: 10,
+    maxTime: 10,
+    tickCount: 0
 };
 
 /**
- * 通常クエストと完全共通化されたキャラクター属性・補正値計算
+ * キャラクターごとのステータス倍率（ATK, TIME, EXP）を算出する関数
  * @param {Object} partyMember
  * @returns {{ atk: number, time: number, exp: number }}
  */
@@ -510,27 +526,91 @@ export function calcTbMaxHp(target, isEnemy = false) {
 }
 
 /**
- * 属性相性倍率の決定
- * 【最優先】同一属性: 1.0倍
- * 【優先2】攻撃側が ALL: 1.25倍
- * 【優先2】防御側が ALL: 0.75倍
- * 【優先3】3すくみ判定: 有利 1.5倍 / 不利 0.5倍
+ * 属性リストの展開処理（ALL を ATK, TIME, EXP に展開）
+ * @param {string|string[]} skills
+ * @returns {{ expanded: string[], hasAll: boolean }}
+ */
+export function expandTbSkills(skills) {
+    const rawList = Array.isArray(skills) 
+        ? skills 
+        : (typeof skills === 'string' ? skills.split('・') : ['ATK']);
+    
+    let hasAll = false;
+    const expanded = [];
+
+    rawList.forEach(s => {
+        const norm = normalizeType(s);
+        if (norm === 'ALL') {
+            hasAll = true;
+            if (!expanded.includes('ATK')) expanded.push('ATK');
+            if (!expanded.includes('TIME')) expanded.push('TIME');
+            if (!expanded.includes('EXP')) expanded.push('EXP');
+        } else {
+            if (!expanded.includes(norm)) expanded.push(norm);
+        }
+    });
+
+    if (expanded.length === 0) expanded.push('ATK');
+    return { expanded, hasAll };
+}
+
+/**
+ * 属性相性倍率の決定（複数属性およびALL属性の相性計算・攻撃/防御対応）
+ * @param {string|string[]} attackerSkills
+ * @param {string|string[]} defenderSkills
+ * @param {boolean} [isAttacking=true] 攻撃時(true)か防御時(false)か
+ * @returns {number}
+ */
+export function getTbAffinityMultiplier(attackerSkills, defenderSkills, isAttacking = true) {
+    const a = expandTbSkills(attackerSkills);
+    const d = expandTbSkills(defenderSkills);
+
+    if (isAttacking) {
+        // 【攻撃時】全所持属性 vs 防御側の全属性で判定し、最も高い倍率（最大値）を採用
+        let maxMulti = 0;
+        for (const aType of a.expanded) {
+            for (const dType of d.expanded) {
+                const multi = calcSingleAffinityMultiplier(aType, dType);
+                if (multi > maxMulti) maxMulti = multi;
+            }
+        }
+        // 攻撃側に ALL が含まれる場合、1.25倍未満なら1.25倍に補正（1.5倍は維持）
+        if (a.hasAll && maxMulti < 1.25) {
+            maxMulti = 1.25;
+        }
+        return maxMulti > 0 ? maxMulti : 1.0;
+    } else {
+        // 【防御時（被ダメージ時）】敵の攻撃属性 vs 防御側の全属性で判定し、最も低い倍率（最小値・耐性）を採用
+        let minMulti = 999;
+        for (const aType of a.expanded) {
+            for (const dType of d.expanded) {
+                const multi = calcSingleAffinityMultiplier(aType, dType);
+                if (multi < minMulti) minMulti = multi;
+            }
+        }
+        if (minMulti === 999) minMulti = 1.0;
+        // 防御側に ALL が含まれる場合、0.75倍を超えていれば0.75倍に抑制（0.5倍は維持）
+        if (d.hasAll && minMulti > 0.75) {
+            minMulti = 0.75;
+        }
+        return minMulti;
+    }
+}
+
+/**
+ * 単一属性同士の相性倍率計算（3すくみ基本ルール）
  * @param {string} attackerType
  * @param {string} defenderType
  * @returns {number}
  */
-export function getTbAffinityMultiplier(attackerType, defenderType) {
+function calcSingleAffinityMultiplier(attackerType, defenderType) {
     const a = normalizeType(attackerType);
     const d = normalizeType(defenderType);
 
-    // 【最優先】同一属性
+    // 同一属性
     if (a === d) return 1.0;
 
-    // 【優先2】ALL判定
-    if (a === 'ALL') return 1.25;
-    if (d === 'ALL') return 0.75;
-
-    // 【優先3】3すくみ判定 (ATK(炎) > TIME(水) > EXP(雷) > ATK(炎))
+    // 3すくみ判定 (ATK(炎) > TIME(水) > EXP(雷) > ATK(炎))
     if (a === 'ATK' && d === 'TIME') return 1.5;
     if (a === 'TIME' && d === 'EXP') return 1.5;
     if (a === 'EXP' && d === 'ATK') return 1.5;
@@ -633,7 +713,8 @@ export function startTeamBattle() {
 
         const lv = (typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
         const currentRarity = inv.currentRarity || cMaster.rarity || 'N';
-        const type = cMaster.type || 'ATK';
+        const skills = (inv && inv.skills && inv.skills.length > 0) ? inv.skills : [cMaster.type || 'ATK'];
+        const typeStr = skills.join('・');
         const value = (inv.isEvolved && inv.customValue) ? Number(inv.customValue) : Number(cMaster.value || 1.0);
         const name = getDisplayName(cMaster, inv, false);
         const maxHp = calcTbMaxHp({ value, level: lv, isEvolved: inv.isEvolved, customValue: inv.customValue }, false);
@@ -645,7 +726,8 @@ export function startTeamBattle() {
             inv,
             level: lv,
             rarity: currentRarity,
-            type,
+            skills,
+            type: typeStr,
             value,
             name,
             imageUrl: cMaster.imageUrl,
@@ -723,6 +805,7 @@ function setupTbStage(stageNum) {
         name: enemyName,
         level: enemyLevel,
         type: assignedType,
+        skills: [assignedType],
         rarity: pickedChar ? pickedChar.rarity : 'N',
         value: enemyValue,
         maxHp: enemyMaxHp,
@@ -786,10 +869,9 @@ export function tbGameLoop() {
             const tickDamage = calcTbTickDamage(tbState.enemy, activePlayer);
             activePlayer.hp = Math.max(0, activePlayer.hp - tickDamage);
 
-            // ダメージポップアップ・被弾演出・SE
+            // ダメージポップアップ・SE（発光エフェクトはタイムアップ・不正解時のみ発動）
             showTbDamagePopup(true, tickDamage);
             playSE('miss');
-            showPlayerDamageFlash();
 
             // 味方HPバー・ステータス更新
             updateTbPlayerStatusUI();
@@ -1003,7 +1085,7 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
         const baseAtk = 120; // 基礎攻撃力
         const rawRatio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
         const timeFactor = 0.5 + (rawRatio * 0.5); // 早い解答ほど高いダメージ
-        const affinity = getTbAffinityMultiplier(activePlayer.type, tbState.enemy.type); // 属性相性倍率
+        const affinity = getTbAffinityMultiplier(activePlayer.skills || activePlayer.type, tbState.enemy.skills || tbState.enemy.type, true); // 属性相性倍率（攻撃側最大値採用・ALL保証）
         const statFactor = stats.atk + ((stats.time - 1) * 0.5);
         const comboAdd = Math.min(tbState.score / 1000 * 0.025, 0.5);
 
@@ -1128,9 +1210,6 @@ export function updateTbBattleUI() {
 /**
  * 自陣アクティブキャラのステータス・グラフィック更新
  */
-/**
- * 自陣アクティブキャラのステータス・グラフィック更新
- */
 export function updateTbPlayerStatusUI() {
     const activePlayer = tbState.party[tbState.activeSlot];
     if (!activePlayer) return;
@@ -1145,8 +1224,8 @@ export function updateTbPlayerStatusUI() {
     const visualEl = document.getElementById('tb-player-visual');
 
     if (nameEl) nameEl.innerText = activePlayer.name;
-    // 「💧」ではなくレア度「SSR / ATK」を表示
-    if (typeEl) typeEl.innerText = `${activePlayer.rarity || 'N'} / ${activePlayer.type}`;
+    // 絵文字なしのすっきりとしたレア度・属性表示（例: SSR / TIME・EXP、UR / ALL）
+    if (typeEl) typeEl.innerText = `${activePlayer.rarity || 'N'} / ${formatSkillsText(activePlayer.skills || activePlayer.type)}`;
     if (lvEl) lvEl.innerText = `Lv.${activePlayer.level}`;
     if (hpTextEl) hpTextEl.innerText = `${activePlayer.hp} / ${activePlayer.maxHp}`;
 
@@ -1162,10 +1241,10 @@ export function updateTbPlayerStatusUI() {
         }
     }
 
-    // 相性ナビ（等倍時は非表示、有利/不利のみ「相性:○ ×1.5」「相性:△ ×0.5」を表示）
+    // 相性ナビ（等倍時は非表示、有利/不利のみ「相性:○ ×1.5」「相性:△ ×0.5」等を表示）
     if (affinityBadge) {
         if (tbState.enemy) {
-            const aff = getTbAffinityInfo(activePlayer.type, tbState.enemy.type);
+            const aff = getTbAffinityInfo(activePlayer.skills || activePlayer.type, tbState.enemy.skills || tbState.enemy.type);
             if (aff.visible) {
                 affinityBadge.style.display = 'inline-block';
                 affinityBadge.innerText = aff.text;
@@ -1203,8 +1282,8 @@ export function updateTbEnemyStatusUI() {
     const visualEl = document.getElementById('tb-enemy-visual');
 
     if (nameEl) nameEl.innerText = enemy.name;
-    // 「💧」ではなくレア度「SSR / TIME」を表示
-    if (typeEl) typeEl.innerText = `${enemy.rarity || 'N'} / ${enemy.type}`;
+    // 絵文字なしのすっきりとしたレア度・属性表示（例: SSR / TIME）
+    if (typeEl) typeEl.innerText = `${enemy.rarity || 'N'} / ${formatSkillsText(enemy.skills || enemy.type)}`;
     if (lvEl) lvEl.innerText = `Lv.${enemy.level}`;
     if (hpTextEl) hpTextEl.innerText = `${enemy.hp} / ${enemy.maxHp}`;
 
@@ -1240,16 +1319,16 @@ export function updateTbReserveUI() {
         const slotEl = document.getElementById(`tb-reserve-slot-${i + 1}`);
         if (!slotEl || !char) return;
 
-        // アイコン HTML
+        // アイコン HTML（画像がない場合はシンプルなアイコン）
         const iconHtml = (char.imageUrl && char.imageUrl.startsWith('http'))
             ? `<img src="${char.imageUrl}" class="tb-reserve-img">`
-            : `<span style="font-size:1.3rem;">${getTypeEmoji(char.type)}</span>`;
+            : `<span style="font-size:1.3rem;">✏️</span>`;
 
         if (char.isAlive) {
-            // 相性判定
+            // 相性判定（複数属性・ALL対応・「相性:○」「相性:△」のみ表示）
             let affBadgeHtml = '';
             if (tbState.enemy) {
-                const multi = getTbAffinityMultiplier(char.type, tbState.enemy.type);
+                const multi = getTbAffinityMultiplier(char.skills || char.type, tbState.enemy.skills || tbState.enemy.type, true);
                 if (multi > 1.0) {
                     affBadgeHtml = `<span class="tb-reserve-aff-badge advantage">相性:○</span>`;
                 } else if (multi < 1.0) {
