@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=10.0.5">
-    <link rel="stylesheet" href="css/layout.css?v=10.0.5">
-    <link rel="stylesheet" href="css/components.css?v=10.0.5">
-    <link rel="stylesheet" href="css/quests.css?v=10.0.5">
-    <link rel="stylesheet" href="css/special-quest.css?v=10.0.5">
+    <link rel="stylesheet" href="css/base.css?v=10.0.6">
+    <link rel="stylesheet" href="css/layout.css?v=10.0.6">
+    <link rel="stylesheet" href="css/components.css?v=10.0.6">
+    <link rel="stylesheet" href="css/quests.css?v=10.0.6">
+    <link rel="stylesheet" href="css/special-quest.css?v=10.0.6">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.5</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.6</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -828,6 +828,10 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.0.6</h4>
+            <ul>
+                <li>チームバトルクエストの敵出現レベル基準を最高レベル重視の加重平均（1位: 80% / 2位: 15% / 3位: 5%）に改修し、極端な編成による難易度低下を防止</li>
+            </ul>
             <h4>Ver 10.0.5</h4>
             <ul>
                 <li>チームバトルクエストの敵出現レベルをプレイヤー出撃チームの平均レベルに応じて動的にスケーリングするロジック（Stage 1: 0.8倍 / Stage 2: 1.0倍 / Stage 3: 1.2倍 ＋ レアリティ微補正）を実装</li>
@@ -1030,6 +1034,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=10.0.5"></script>
+<script type="module" src="js/main.js?v=10.0.6"></script>
 </body>
 </html>

@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.5';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.5';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.5';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.6';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.6';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.6';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -1005,7 +1005,7 @@ function sampleRarityFromTable(probList) {
 }
 
 /**
- * プレイヤーチームの平均レベルに基づいて敵レベルを動的に決定
+ * プレイヤーチームのレベル（最高Lv重視加重平均: 80% / 15% / 5%）に基づいて敵レベルを動的に決定
  * @param {number} stage ステージ番号 (1, 2, 3)
  * @param {string} rarity 敵のレア度 ('N', 'R', 'SR', 'SSR', 'UR')
  * @param {Array} [party] プレイヤーの出撃パーティー
@@ -1014,10 +1014,19 @@ function sampleRarityFromTable(probList) {
 export function calcTbEnemyDynamicLevel(stage, rarity, party) {
     const targetParty = (party && party.length > 0) ? party : (tbState.party || []);
     if (!targetParty || targetParty.length === 0) return stage * 5 + 5;
-    const avgLv = targetParty.reduce((sum, p) => sum + (p.level || p.lv || 1), 0) / targetParty.length;
+
+    // チームレベルを降順ソート
+    const lvs = targetParty.map(p => p.level || p.lv || 1);
+    const sortedLvs = [...lvs].sort((a, b) => b - a);
+    while (sortedLvs.length < 3) {
+        sortedLvs.push(sortedLvs[sortedLvs.length - 1] || 1);
+    }
+
+    // 1位: 80%, 2位: 15%, 3位: 5% の加重平均
+    const effectiveTeamLv = (sortedLvs[0] * 0.80) + (sortedLvs[1] * 0.15) + (sortedLvs[2] * 0.05);
 
     const stageMultiplier = stage === 1 ? 0.8 : (stage === 2 ? 1.0 : 1.2);
-    const baseLv = Math.round(avgLv * stageMultiplier);
+    const baseLv = Math.round(effectiveTeamLv * stageMultiplier);
 
     const rarityBonusMap = { N: -1, R: 0, SR: 1, SSR: 2, UR: 3 };
     const rarityBonus = rarityBonusMap[rarity] || 0;
