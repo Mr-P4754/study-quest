@@ -2,7 +2,7 @@
 // js/utils.js (計算ロジック・チャート描画・音響制御)
 // ==========================================
 
-import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.12';
+import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.13';
 
 export const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 

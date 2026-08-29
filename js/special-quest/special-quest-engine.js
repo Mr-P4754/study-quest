@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.12';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.12';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.12';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.13';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.13';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.13';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -939,12 +939,15 @@ export function showTbCountdownCutIn(stageNum) {
 
         // バトル一時停止（タイマー・ダメージをロック）
         tbState.isPaused = true;
+        tbState.isCountdown = true;
         updateTbTimerUI(); // タイマーバーを満タン状態に即座に描画
         overlay.classList.remove('hidden');
 
-        // 選択肢ボタンを一時非活性化
+        // 選択肢ボタンおよびポーズボタンを一時非活性化
         const allBtns = document.querySelectorAll('#tb-ui-choices .choice-btn');
         allBtns.forEach(b => b.disabled = true);
+        const pauseBtn = document.getElementById('tb-ui-pause-btn');
+        if (pauseBtn) pauseBtn.disabled = true;
 
         const steps = [
             { text: '3', se: 'count', color: '#f59e0b' },
@@ -957,6 +960,8 @@ export function showTbCountdownCutIn(stageNum) {
 
         function runStep() {
             if (!tbState.isActive) {
+                tbState.isCountdown = false;
+                if (pauseBtn) pauseBtn.disabled = false;
                 overlay.classList.add('hidden');
                 resolve();
                 return;
@@ -965,9 +970,11 @@ export function showTbCountdownCutIn(stageNum) {
             if (stepIndex >= steps.length) {
                 overlay.classList.add('hidden');
                 tbState.isPaused = false;
-                // 選択肢ボタンを再活性化
+                tbState.isCountdown = false;
+                // 選択肢ボタンおよびポーズボタンを再活性化
                 const btns = document.querySelectorAll('#tb-ui-choices .choice-btn');
                 btns.forEach(b => b.disabled = false);
+                if (pauseBtn) pauseBtn.disabled = false;
                 resolve();
                 return;
             }
@@ -1707,7 +1714,7 @@ export function updateTbReserveUI() {
  * チームバトルのポーズ切り替え
  */
 export function toggleTbPause() {
-    if (!tbState.isActive) return;
+    if (!tbState.isActive || tbState.isCountdown) return;
     tbState.isPaused = !tbState.isPaused;
     const overlay = document.getElementById('tb-pause-overlay');
     if (overlay) {
