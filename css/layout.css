@@ -1,5 +1,5 @@
 /* ==========================================
- * css/layout.css (画面フレーム・モーダル・グリッド配置)
+ * css/layout.css (画面フレーム・モーダル基盤・グリッド配置)
  * ========================================== */
 
 /* Screens */
@@ -76,7 +76,7 @@
     animation: marquee 15s linear infinite;
 }
 
-/* Header & Navigation Bar */
+/* Header */
 .header {
     padding: 5px 10px;
     background: #34495e;
@@ -90,6 +90,17 @@
     flex-shrink: 0;
     gap: 8px;
     width: 100%;
+}
+
+.menu-btn-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-top: 5px;
+    width: 90%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .title-menu-container {
@@ -127,7 +138,7 @@
     overflow: hidden;
 }
 
-/* Overlay & Modal Core */
+/* Overlay & Modal */
 .overlay {
     position: fixed;
     top: 0;
@@ -181,30 +192,15 @@
 .modal-w420 { max-width: 420px; }
 .modal-w450 { max-width: 450px; }
 .modal-w500 { max-width: 500px; }
-.modal-w650 { max-width: 650px; }
-.modal-h550 { max-height: 550px; }
-.modal-maxh85 { max-height: 85vh; }
 .modal-padded { padding: 20px; }
 
 .modal-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .modal-header-row-sm { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
 .modal-header-row-lg { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.modal-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.modal-btn-grid-sm { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .modal-scroll-area { flex: 1; overflow-y: auto; min-height: 0; }
 .modal-scroll-area-p5 { flex: 1; overflow-y: auto; width: 100%; padding: 5px; min-height: 0; }
 
-/* Category Modal List & Sub Menu */
-.sub-menu-grid { 
-    display: grid; 
-    grid-template-columns: 1fr; 
-    gap: 12px; 
-    margin: 15px 0; 
-    max-height: 50vh; 
-    overflow-y: auto; 
-    padding: 5px; 
-}
-
+/* Category Modal List */
 .cat-box-gray {
     background: #ecf0f1;
     padding: 15px;
@@ -234,13 +230,12 @@
     padding: 10px;
 }
 
-/* Category Accent Borders */
-.border-left-red { border-left: 6px solid #e74c3c; }
-.border-left-purple { border-left: 6px solid #8e44ad; }
-.border-left-orange { border-left: 6px solid #f39c12; }
-.border-left-green { border-left: 6px solid #27ae60; }
-.border-left-blue { border-left: 6px solid #3498db; }
-.border-left-cyan { border-left: 6px solid #1abc9c; }
+/* Field (Rogue) Layout */
+.field-screen-bg {
+    background-color: #1a252f;
+    display: flex;
+    flex-direction: column;
+}
 
 /* Version List Box */
 .version-list-box {

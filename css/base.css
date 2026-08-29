@@ -1,5 +1,5 @@
 /* ==========================================
- * css/base.css (基本リセット・アニメーション・共通ユーティリティ)
+ * css/base.css (基本リセット・アニメーション・汎用テキスト＆スペーシング)
  * ========================================== */
 
 /* Base & Reset */
@@ -113,7 +113,7 @@ button {
 .fade-out { opacity: 0 !important; transform: scale(0.8) !important; transition: all 1.0s ease-out; }
 .anim-paused { animation-play-state: paused !important; }
 
-/* Spacing Utilities */
+/* Margins & Spacing */
 .m-0 { margin: 0; }
 .mt-0 { margin-top: 0; }
 .mt-5 { margin-top: 5px; }
@@ -134,7 +134,7 @@ button {
 .p-15 { padding: 15px; }
 .p-20 { padding: 20px; }
 
-/* Typography Utilities */
+/* Text & Typography */
 .text-left { text-align: left; }
 .text-right { text-align: right; }
 .text-center { text-align: center; }

@@ -71,7 +71,40 @@
     flex: none;
 }
 
+/* Modal Button Grids */
+.modal-btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.modal-btn-grid .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-btn-grid-sm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.modal-btn-grid-sm .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Rich Menu Buttons (Category items) */
+.sub-menu-grid { 
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 12px; 
+    margin: 15px 0; 
+    max-height: 50vh; 
+    overflow-y: auto; 
+    padding: 5px; 
+}
+
 .rich-menu-btn { 
     width: 100%; 
     text-align: left; 
@@ -120,6 +153,14 @@
     font-size: 0.8em;
 }
 
+/* Category Accent Borders - !important guarantees color borders display */
+.border-left-red { border-left: 6px solid #e74c3c !important; }
+.border-left-purple { border-left: 6px solid #8e44ad !important; }
+.border-left-orange { border-left: 6px solid #f39c12 !important; }
+.border-left-green { border-left: 6px solid #27ae60 !important; }
+.border-left-blue { border-left: 6px solid #3498db !important; }
+.border-left-cyan { border-left: 6px solid #1abc9c !important; }
+
 /* Button Colors */
 .btn-red { background: #e74c3c; }
 .btn-green { background: #27ae60; }
@@ -137,6 +178,23 @@
 .btn-full-w { width: 100%; }
 .btn-half-w { width: calc(50% - 5px); }
 .btn-save-action { height: 40px; font-size: 0.9em; }
+
+/* Header Pause Button Active */
+.header-pause-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.3em;
+    cursor: pointer;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+.header-pause-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
 
 /* Help & Guide Buttons */
 .help-btn {
@@ -218,6 +276,12 @@
     z-index: 2;
 }
 
+.char-card.mastered .char-stock-badge {
+    background: linear-gradient(45deg, #f1c40f, #e67e22);
+    border: 1px solid #fff;
+    box-shadow: 0 0 5px #f1c40f;
+}
+
 .mat-select-badge {
     position: absolute;
     top: -5px;
@@ -255,6 +319,12 @@
 .rarity-R { color: #3498db; font-weight: bold; }
 .rarity-N { color: #7f8c8d; }
 .rarity-UR { color: #e056fd; font-weight: 900; text-shadow: 0 0 5px #fff, 0 0 10px #e056fd; animation: pulseRed 1s infinite alternate; }
+
+#cd-rarity {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
 
 .rank-S { color: #e056fd; font-weight: 900; text-shadow: 0 0 5px rgba(224, 86, 253, 0.3); }
 .rank-A { color: #e74c3c; font-weight: bold; }
@@ -316,4 +386,40 @@
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+/* Shop Tabs & Inventory Items */
+.item-tab-container {
+    display: flex;
+    border-bottom: 2px solid #bdc3c7;
+    margin-bottom: 10px;
+}
+.item-tab {
+    flex: 1;
+    padding: 8px;
+    background: #eee;
+    color: #7f8c8d;
+    font-size: 0.8em;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+.item-tab.active {
+    background: #27ae60;
+    color: white;
+}
+.page-item {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #2c3e50;
+}
+.book-use-btn:disabled {
+    background: #ccc;
+    border: none;
+    cursor: default;
+}
+.skill-tag.ALL {
+    background: linear-gradient(45deg, #8e44ad, #f1c40f);
+    border: 1px solid #fff;
+    box-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
 }
