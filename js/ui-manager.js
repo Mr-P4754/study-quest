@@ -180,17 +180,14 @@ export function updateCategoryBadges() {
     }
 }
 
-export function openCategory(catName) {
-    closeAllCategoryModals();
-    runtimeState.currentCategory = catName;
-    const overlay = document.getElementById(`cat-${catName}-overlay`);
-    if (overlay) overlay.classList.remove('hidden');
+export function openCategory(categoryId) {
+    runtimeState.currentCategory = categoryId;
+    document.getElementById('cat-' + categoryId + '-overlay')?.classList.remove('hidden');
 }
 
-export function closeCategory(catName) {
-    const overlay = document.getElementById(`cat-${catName}-overlay`);
-    if (overlay) overlay.classList.add('hidden');
-    if (runtimeState.currentCategory === catName) runtimeState.currentCategory = null;
+export function closeCategory(categoryId) {
+    runtimeState.currentCategory = null;
+    document.getElementById('cat-' + categoryId + '-overlay')?.classList.add('hidden');
 }
 
 export function closeAllCategoryModals() {
@@ -216,6 +213,8 @@ export function returnToCurrentCategory() {
 // ==========================================
 export function openUnitSelection() { 
     hideCurrentCategoryOverlay();
+    const unitTitle = document.getElementById('unit-select-title'); 
+    if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } 
     document.getElementById('unit-select-overlay')?.classList.remove('hidden'); 
 }
 export function closeUnitSelection() { 
@@ -496,14 +495,12 @@ export function renderRecord() {
         
         let html = `<div class="calc-record-group"><div class="calc-record-title">⚡ ${title} / ${modeLabel}</div>`;
         list.forEach((item, index) => {
-            html += `
-                <div class="calc-record-item">
-                    <span><span class="calc-record-rank">${index + 1}.</span>${item.correct}問 (${Number(item.time).toFixed(1)}秒)</span>
-                    <span class="calc-record-date">${item.date || ''}</span>
-                </div>
-            `;
+            const timeNum = Number(item.time) || 0;
+            const correctNum = Number(item.correct) || 0;
+            const dateStr = item.date ? `<span class="calc-record-date">${item.date}</span>` : '';
+            html += `<div class="calc-record-item"><span class="calc-record-rank">${index + 1}.</span> <span>${correctNum}正解 / ${timeNum.toFixed(1)}秒</span> ${dateStr}</div>`;
         });
-        html += `</div>`;
+        html += '</div>';
         recordList.innerHTML += html;
     });
 }

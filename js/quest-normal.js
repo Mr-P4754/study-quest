@@ -40,111 +40,96 @@ import {
     updateTitleInfo
 } from './ui-manager.js';
 
-export function startNormalGameCheck() {
-    const g = document.getElementById('grade-select')?.value;
-    const s = document.getElementById('subject-select')?.value;
-    const u = document.getElementById('unit-select')?.value;
-    const hp = document.getElementById('boss-hp-select')?.value;
+export function startNormalGameCheck() { 
+    const g = document.getElementById('grade-select')?.value; 
+    const s = document.getElementById('subject-select')?.value; 
+    const u = document.getElementById('unit-select')?.value; 
+    const hp = document.getElementById('boss-hp-select')?.value; 
+    if(!g || !s || !u) return alert("全て選択してください"); 
+    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2); 
+    if(qList.length === 0) return alert("問題がありません"); 
+    playData.selectedBossHp = Number(hp); 
+    runtimeState.oathOrigin = 'normal'; 
+    startGame(); 
+}
+
+export function startGame() {
+    const gSelect = document.getElementById('grade-select'); 
+    const sSelect = document.getElementById('subject-select'); 
+    const uSelect = document.getElementById('unit-select'); 
+    if(!gSelect || !sSelect || !uSelect) return;
+    
+    const g = gSelect.value, s = sSelect.value, u = uSelect.value;
     if(!g || !s || !u) return alert("全て選択してください");
     let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
-    playData.questions = qList;
-    playData.isRevenge = false;
-    playData.isRandom = false;
-    playData.isTyping = false;
-    playData.isCalculation = false;
-    playData.isSurvival = false;
-    playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
-    playData.context = { grade: g, subject: s, unit: u };
-    playData.activeOaths = [];
-    playData.activeReliefs = [];
+    let boss = (rawData.bosses && rawData.bosses.length > 0) ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
+    if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" };
+    if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
     
-    document.getElementById('unit-select-overlay')?.classList.add('hidden');
-    startGame();
-}
-
-export function startGame() { 
-    runtimeState.isGameActive = false; 
-    runtimeState.isPaused = false; 
-    gameState.lives = 3; 
+    playData.questions = qList.sort(() => Math.random() - 0.5); 
+    playData.qIndex = 0; 
+    playData.currentBoss = boss;
+    playData.isRevenge = false; 
+    playData.activeOaths = []; 
+    playData.activeReliefs = []; 
+    playData.isRandom = false; 
+    playData.isTyping = false; 
+    playData.isCalculation = false; 
+    playData.isSurvival = false; 
+    playData.context = { grade: g, subject: s, unit: u };
+    runtimeState.currentCategory = null;
+    
+    const charaStats = getCharaStats();
     gameState.score = 0; 
     gameState.combo = 0; 
-    playData.qIndex = 0; 
+    gameState.lives = 3; 
+    gameState.enemyHP = Number(boss.hp) || 3000; 
+    gameState.maxHP = gameState.enemyHP; 
+    gameState.maxTime = 10 * charaStats.time;
+    runtimeState.isGameActive = false; 
+    runtimeState.isPaused = false;
     
-    if (playData.activeOaths && playData.activeOaths.includes('backwater')) {
-        gameState.lives = 1;
-    } else if (playData.activeReliefs && playData.activeReliefs.includes('life')) {
-        gameState.lives = 5;
-    }
-    
-    let baseTime = 10;
-    if (playData.activeOaths && playData.activeOaths.includes('rapid')) {
-        baseTime = 5;
-    } else if (playData.activeReliefs && playData.activeReliefs.includes('time')) {
-        baseTime = 20;
-    }
-    
-    gameState.maxTime = baseTime;
-    gameState.timeLeft = baseTime;
-
-    const bar = document.getElementById('ui-timer');
-    if (bar) bar.style.width = '100%';
-    const timerText = document.getElementById('ui-timer-text');
-    if (timerText) timerText.innerText = baseTime.toFixed(1);
-
+    document.getElementById('pause-overlay')?.classList.add('hidden'); 
     document.getElementById('title-screen')?.classList.add('hidden'); 
     document.getElementById('game-screen')?.classList.remove('hidden'); 
+    document.getElementById('unit-select-overlay')?.classList.add('hidden');
     document.getElementById('cat-main-overlay')?.classList.add('hidden');
     document.getElementById('cat-special-overlay')?.classList.add('hidden');
     document.getElementById('cat-gacha-overlay')?.classList.add('hidden');
     document.getElementById('cat-achievement-overlay')?.classList.add('hidden');
     document.getElementById('cat-guide-overlay')?.classList.add('hidden');
+    
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    const enemyRow = document.querySelector('.enemy-stats-row'); if(enemyRow) enemyRow.style.display = '';
+    const hpFrame = document.querySelector('.enemy-hp-frame'); if(hpFrame) hpFrame.style.display = '';
 
     const enemyBox = document.querySelector('.enemy-visual-box'); 
-    if(enemyBox) { 
-        enemyBox.classList.remove('anim-paused'); 
-        enemyBox.classList.remove('fade-out'); 
-    } 
-
-    if (playData.isRevenge) { 
-        gameState.maxHP = playData.questions.length * 100; 
-        gameState.enemyHP = gameState.maxHP; 
-        const uienemyName = document.getElementById('ui-enemy-name'); 
-        if(uienemyName) uienemyName.innerText = "リベンジ・シャドウ"; 
-        const enemyIcon = document.getElementById('ui-enemy-icon'); 
-        if(enemyIcon) enemyIcon.innerText = "💀"; 
-    } else if (playData.isRandom) {
-        let b = null;
-        if (rawData.randomBosses && rawData.randomBosses.length > 0) {
-            b = rawData.randomBosses[Math.floor(Math.random() * rawData.randomBosses.length)];
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out'); 
+    if(enemyIcon) enemyIcon.classList.remove('shake-anim');
+    const uienemyName = document.getElementById('ui-enemy-name'); 
+    if(uienemyName) uienemyName.innerText = boss.name;
+    if(enemyIcon) {
+        if(boss.icon && boss.icon.startsWith('http')) { 
+            enemyIcon.innerHTML = `<img src="${boss.icon}">`; 
+        } else { 
+            enemyIcon.innerHTML = boss.icon || '👾'; 
         }
-        gameState.maxHP = (b && b.hp) ? Number(b.hp) : 3000;
-        gameState.enemyHP = gameState.maxHP;
-        const uienemyName = document.getElementById('ui-enemy-name');
-        if(uienemyName) uienemyName.innerText = (b && b.name) ? b.name : "迷宮の覇者";
-        const enemyIcon = document.getElementById('ui-enemy-icon');
-        if(enemyIcon) {
-            const iconVal = (b && b.icon) ? b.icon : "🐉";
-            if (iconVal.startsWith('http')) enemyIcon.innerHTML = `<img src="${iconVal}" style="max-height:100%;max-width:100%;">`;
-            else enemyIcon.innerText = iconVal;
-        }
-    } else { 
-        const b = rawData.bosses ? rawData.bosses.find(x => x.grade == playData.context.grade && x.unit == playData.context.unit) : null; 
-        gameState.maxHP = playData.selectedBossHp ? playData.selectedBossHp : (b ? Number(b.hp) : 3000); 
-        gameState.enemyHP = gameState.maxHP; 
-        const uienemyName = document.getElementById('ui-enemy-name'); 
-        if(uienemyName) uienemyName.innerText = b ? b.name : "BOSS"; 
-        const enemyIcon = document.getElementById('ui-enemy-icon'); 
-        if(enemyIcon) { 
-            const iconVal = b ? b.icon : "👾"; 
-            if (iconVal.startsWith('http')) enemyIcon.innerHTML = `<img src="${iconVal}" style="max-height:100%;max-width:100%;">`; 
-            else enemyIcon.innerText = iconVal; 
-        } 
-    } 
-
+    }
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+    
     updateUI(); 
-    startCountdown(); 
+    startCountdown();
 }
 
 export function nextQuestion() {
@@ -279,7 +264,6 @@ export function judge(isCorrect, btn) {
     }
 }
 
-// 誓約・救済遷移チェック
 export function goToOathMenuCheck() {
     const g = document.getElementById('grade-select')?.value;
     const s = document.getElementById('subject-select')?.value;
@@ -439,8 +423,37 @@ export function startRandomGame() {
     playData.activeOaths = [];
     playData.activeReliefs = [];
     
+    runtimeState.isGameActive = false;
+    runtimeState.isPaused = false;
+    gameState.lives = 3;
+    gameState.score = 0;
+    gameState.combo = 0;
+    playData.qIndex = 0;
+    gameState.maxTime = 10;
+    gameState.timeLeft = 10;
+
+    let b = null;
+    if (rawData.randomBosses && rawData.randomBosses.length > 0) {
+        b = rawData.randomBosses[Math.floor(Math.random() * rawData.randomBosses.length)];
+    }
+    gameState.maxHP = (b && b.hp) ? Number(b.hp) : 3000;
+    gameState.enemyHP = gameState.maxHP;
+    const uienemyName = document.getElementById('ui-enemy-name');
+    if(uienemyName) uienemyName.innerText = (b && b.name) ? b.name : "迷宮の覇者";
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if(enemyIcon) {
+        const iconVal = (b && b.icon) ? b.icon : "🐉";
+        if (iconVal.startsWith('http')) enemyIcon.innerHTML = `<img src="${iconVal}" style="max-height:100%;max-width:100%;">`;
+        else enemyIcon.innerText = iconVal;
+    }
+
     document.getElementById('random-overlay')?.classList.add('hidden');
-    startGame();
+    document.getElementById('title-screen')?.classList.add('hidden');
+    document.getElementById('game-screen')?.classList.remove('hidden');
+    document.getElementById('cat-main-overlay')?.classList.add('hidden');
+
+    updateUI();
+    startCountdown();
 }
 
 export function startTypingGame() {
@@ -493,8 +506,10 @@ export function startTypingGame() {
         else enemyIcon.innerText = iconVal;
     }
     
-    document.removeEventListener('keydown', handleTypingInput);
-    document.addEventListener('keydown', handleTypingInput);
+    if (typeof window !== 'undefined') {
+        document.removeEventListener('keydown', handleTypingInput);
+        document.addEventListener('keydown', handleTypingInput);
+    }
     
     updateUI();
     startCountdown();
@@ -735,8 +750,10 @@ export function startCalcGame() {
     const enemyIcon = document.getElementById('ui-enemy-icon');
     if (enemyIcon) enemyIcon.innerText = "🧮";
 
-    document.removeEventListener('keydown', handleTypingInput);
-    document.addEventListener('keydown', handleTypingInput);
+    if (typeof window !== 'undefined') {
+        document.removeEventListener('keydown', handleTypingInput);
+        document.addEventListener('keydown', handleTypingInput);
+    }
 
     updateUI();
     renderCalcInput();
@@ -874,7 +891,28 @@ export function startRevengeMode() {
     playData.activeOaths = [];
     playData.activeReliefs = [];
     
-    startGame();
+    runtimeState.isGameActive = false; 
+    runtimeState.isPaused = false; 
+    gameState.lives = 3; 
+    gameState.score = 0; 
+    gameState.combo = 0; 
+    playData.qIndex = 0;
+    gameState.maxTime = 10;
+    gameState.timeLeft = 10;
+    gameState.maxHP = playData.questions.length * 100;
+    gameState.enemyHP = gameState.maxHP;
+
+    document.getElementById('title-screen')?.classList.add('hidden'); 
+    document.getElementById('game-screen')?.classList.remove('hidden'); 
+    document.getElementById('cat-main-overlay')?.classList.add('hidden');
+
+    const uienemyName = document.getElementById('ui-enemy-name'); 
+    if(uienemyName) uienemyName.innerText = "リベンジ・シャドウ"; 
+    const enemyIcon = document.getElementById('ui-enemy-icon'); 
+    if(enemyIcon) enemyIcon.innerText = "💀"; 
+
+    updateUI(); 
+    startCountdown();
 }
 
 export function toggleOath(type) {

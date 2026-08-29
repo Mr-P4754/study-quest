@@ -20,13 +20,16 @@ import {
 
 import {
     updateUI,
-    startCountdown
+    startCountdown,
+    getCharaStats,
+    backToTitle
 } from './battle-core.js';
 
 import {
     showAppModal,
     showAlert,
-    showConfirm
+    showConfirm,
+    updateTitleInfo
 } from './ui-manager.js';
 
 export function startRogueMode() {
@@ -41,7 +44,6 @@ export function startRogueMode() {
     playData.isSurvival = false;
     playData.isRandom = false;
     playData.isRevenge = false;
-    
     if (typeof window !== 'undefined' && typeof window.handleTypingInput === 'function') {
         document.removeEventListener('keydown', window.handleTypingInput);
     }
@@ -103,6 +105,7 @@ export function generateRogueFloor() {
     rogueData.playerX = 1;
     rogueData.playerY = 1;
     rogueData.map[1][1] = ROGUE_TILES.VISITED;
+
     rogueData.shopBought = false;
 
     if (rogueData.floor % 5 === 0) {
@@ -310,84 +313,132 @@ export function buyRogueShopItem(id, cost) {
     renderRogueShopContents();
 }
 
-export function triggerRogueBattle(isBoss) {
+export function getRogueEnemyChar(isBoss, floor) {
+    let rarity = 'N';
+    if (isBoss) {
+        if (floor % 100 === 0) rarity = 'UR';
+        else if (floor % 50 === 0) rarity = 'SSR';
+        else if (floor % 5 === 0) rarity = 'SR';
+        else rarity = 'R';
+    } else {
+        const rand = Math.random();
+        if (rand < 0.01) rarity = 'UR';
+        else if (rand < 0.05) rarity = 'SSR';
+        else if (rand < 0.20) rarity = 'SR';
+        else if (rand < 0.50) rarity = 'R';
+        else rarity = 'N';
+    }
+    
+    let pool = (rawData.characters || []).filter(c => c.rarity === rarity);
+    if (!pool || pool.length === 0) pool = rawData.characters || [];
+    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
+    return { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
+}
+
+export function triggerRogueBattle(isBoss = false) {
     rogueData.isBossBattle = isBoss;
-    playData.questions = [...playData.rogueQuestions].sort(() => Math.random() - 0.5);
+    const enemyChar = getRogueEnemyChar(isBoss, rogueData.floor) || { id: '1', name: 'スライム', rarity: 'N', value: 1.0 };
+    playData.rogueEnemyCharId = enemyChar.id;
+
+    let hpMultiplier = 1.0;
+    if (isBoss) {
+        if (rogueData.floor % 5 === 0) hpMultiplier = 1.5;
+        else hpMultiplier = 1.25;
+    }
+    const calculatedHp = Math.floor(1000 * Number(enemyChar.value || 1.0) * hpMultiplier);
+
+    let qList = [...playData.rogueQuestions].sort(() => Math.random() - 0.5);
+    playData.questions = qList;
     playData.qIndex = 0;
+
+    let rarityText = `[${enemyChar.rarity}] `;
+    let bossName = isBoss ? `${rogueData.floor}F ボス: ${rarityText}${enemyChar.name}` : `${rarityText}${enemyChar.name}`;
+    let iconUrl = (enemyChar.imageUrl && enemyChar.imageUrl.startsWith('http')) ? enemyChar.imageUrl : "👾";
+
+    playData.currentBoss = { name: bossName, hp: calculatedHp, icon: iconUrl };
     playData.isRevenge = false;
+
+    playData.activeOaths = [];
+    if (isBoss && rogueData.floor % 5 === 0) {
+        const oaths = ['rapid', 'weak'];
+        playData.activeOaths = [ oaths[Math.floor(Math.random() * oaths.length)] ];
+    }
+
     playData.isRandom = false;
     playData.isTyping = false;
     playData.isCalculation = false;
     playData.isSurvival = false;
-    playData.activeOaths = [];
-    playData.activeReliefs = [];
+    playData.context = null;
+
+    gameState.score = 0;
+    gameState.combo = 0;
+    gameState.enemyHP = calculatedHp;
+    gameState.maxHP = calculatedHp;
+    
+    const charaStats = getCharaStats();
+    gameState.maxTime = 10 * charaStats.time;
+    if (playData.activeOaths.includes('rapid')) gameState.maxTime *= 0.5;
+    gameState.timeLeft = gameState.maxTime; 
 
     runtimeState.isGameActive = false;
     runtimeState.isPaused = false;
-    gameState.score = 0;
-    gameState.combo = 0;
-
-    gameState.maxTime = 10;
-    gameState.timeLeft = 10;
     
-    let hpScale = 1 + (rogueData.floor * 0.1);
-    if (isBoss) {
-        gameState.maxHP = Math.floor(3000 * hpScale);
-    } else {
-        gameState.maxHP = Math.floor(1000 * hpScale);
-    }
-    gameState.enemyHP = gameState.maxHP;
-
-    const uienemyName = document.getElementById('ui-enemy-name');
-    const enemyIcon = document.getElementById('ui-enemy-icon');
-
-    if (isBoss) {
-        if (uienemyName) uienemyName.innerText = `FLOOR ${rogueData.floor} BOSS`;
-        if (enemyIcon) enemyIcon.innerText = "🐉";
-        playData.rogueEnemyCharId = null;
-    } else {
-        let charaPool = (rawData.characters || []).filter(c => c && !String(c.id).startsWith('boss_'));
-        let chosenChara = null;
-        if (charaPool.length > 0) {
-            chosenChara = charaPool[Math.floor(Math.random() * charaPool.length)];
-        }
-
-        if (chosenChara) {
-            playData.rogueEnemyCharId = chosenChara.id;
-            if (uienemyName) uienemyName.innerText = chosenChara.name;
-            if (enemyIcon) {
-                if (chosenChara.imageUrl && chosenChara.imageUrl.startsWith('http')) {
-                    enemyIcon.innerHTML = `<img src="${chosenChara.imageUrl}" style="max-height:100%;max-width:100%;">`;
-                } else {
-                    enemyIcon.innerText = "👾";
-                }
-            }
-        } else {
-            playData.rogueEnemyCharId = null;
-            if (uienemyName) uienemyName.innerText = `FLOOR ${rogueData.floor} ENEMY`;
-            if (enemyIcon) enemyIcon.innerText = "👾";
-        }
-    }
-
-    const enemyBox = document.querySelector('.enemy-visual-box');
-    if (enemyBox) {
-        enemyBox.classList.remove('anim-paused');
-        enemyBox.classList.remove('fade-out');
+    if (typeof window !== 'undefined' && typeof window.handleTypingInput === 'function') {
+        document.removeEventListener('keydown', window.handleTypingInput);
     }
 
     document.getElementById('field-screen')?.classList.add('hidden');
     document.getElementById('game-screen')?.classList.remove('hidden');
 
+    document.getElementById('calc-layout')?.classList.add('hidden');
+    document.getElementById('ui-calc-answer')?.classList.add('hidden');
+    document.getElementById('calc-keypad')?.classList.add('hidden');
+    document.getElementById('ui-calc-progress')?.classList.add('hidden');
+    document.getElementById('ui-choices')?.classList.remove('hidden');
+    document.getElementById('ui-typing-area')?.classList.add('hidden');
+    document.getElementById('ui-question')?.classList.remove('hidden');
+
+    const uienemyName = document.getElementById('ui-enemy-name');
+    let displayBossName = bossName;
+    if (playData.activeOaths.length > 0) displayBossName = "【誓約】" + bossName;
+    if (uienemyName) uienemyName.innerText = displayBossName;
+    
+    const enemyIcon = document.getElementById('ui-enemy-icon');
+    if (enemyIcon) { 
+        if(iconUrl.startsWith('http')) { 
+            enemyIcon.innerHTML = `<img src="${iconUrl}">`; 
+        } else { 
+            enemyIcon.innerHTML = iconUrl; 
+        }
+        enemyIcon.classList.remove('shake-anim'); 
+    }
+    
+    const enemyBox = document.querySelector('.enemy-visual-box');
+    if(enemyBox) enemyBox.classList.remove('anim-paused', 'fade-out');
+    const hpFrame = document.querySelector('.enemy-hp-frame');
+    if (hpFrame) hpFrame.style.display = '';
+    const timerBar = document.getElementById('ui-timer'); 
+    if(timerBar) timerBar.style.width = '100%'; 
+    const timerText = document.getElementById('ui-timer-text'); 
+    if(timerText) timerText.innerText = gameState.maxTime.toFixed(1);
+
     updateUI();
     startCountdown();
 }
 
-export function showRogueCutIn(text) {
+export function showRogueCutIn(t) {
     const container = document.getElementById('rogue-canvas-container');
     if (!container) return;
     const d = document.createElement('div');
-    d.className = 'cutin rogue-cutin';
-    d.innerText = text;
+    d.className = 'rogue-cutin';
+    d.style.position = 'absolute';
+    d.style.top = '40px';
+    d.style.left = '50%';
+    d.style.transform = 'translateX(-50%)';
+    d.style.zIndex = '100';
+    d.style.pointerEvents = 'none';
+    d.style.whiteSpace = 'nowrap';
+    d.innerText = t;
     container.appendChild(d);
     setTimeout(() => d.remove(), 1200);
 }
@@ -409,27 +460,63 @@ export function updateRogueUI() {
     if (xpEl) xpEl.innerText = rogueData.earnedXp;
 }
 
-export async function escapeRogueConfirm() {
-    if (await showConfirm("探索を終了して拠点に帰還しますか？\n（獲得したEXPを持ち帰ることができます）")) {
-        exitRogueSystem(true);
-    }
+export function escapeRogueConfirm() {
+    showConfirm("探索を中断して拠点に戻りますか？\n（獲得した残りのXPは引き継がれます）").then(yes => {
+        if (yes) exitRogueSystem(true);
+    });
 }
 
-export function exitRogueSystem(isSuccess) {
+export function exitRogueSystem(success) {
     rogueData.active = false;
-    stopBGM();
-    document.getElementById('field-screen')?.classList.add('hidden');
-    document.getElementById('game-screen')?.classList.add('hidden');
-    document.getElementById('rogue-shop-overlay')?.classList.add('hidden');
-    document.getElementById('title-screen')?.classList.remove('hidden');
+    gameState.xp += rogueData.earnedXp;
+    saveGame();
 
-    if (isSuccess) {
-        gameState.xp += rogueData.earnedXp;
-        saveGame();
-        showAlert(`無事に帰還しました！\n獲得XP: +${rogueData.earnedXp}`);
-    } else {
-        showAlert("探索失敗...\n獲得XPは破棄されました。");
+    if (typeof backToTitle === 'function') {
+        backToTitle();
+    }
+    
+    document.getElementById('field-screen')?.classList.add('hidden');
+
+    const resTitle = document.getElementById('res-title');
+    if (resTitle) {
+        resTitle.innerText = success ? "EXPLORE COMPLETE!" : "EXPLORE FAILED...";
+        resTitle.style.color = success ? "#f1c40f" : "#bdc3c7";
+    }
+    
+    const resIcon = document.getElementById('res-icon');
+    if (resIcon) resIcon.innerText = success ? "🏆" : "💨";
+
+    const resScoreSpan = document.getElementById('res-score');
+    if (resScoreSpan && resScoreSpan.previousSibling && resScoreSpan.previousSibling.nodeType === 3) {
+        resScoreSpan.previousSibling.nodeValue = "最終到達階層: ";
+    }
+    if (resScoreSpan) resScoreSpan.innerText = rogueData.floor + "F";
+
+    const resDetails = document.getElementById('res-details');
+    if (resDetails) {
+        if (success) {
+            resDetails.innerHTML = `<div style="font-size: 1.1em; font-weight: bold; color: #2c3e50;">探索目標を達成し帰還しました！</div><div style="font-size: 0.9em; margin-top: 5px;">獲得した一時EXPを回収しました。</div>`;
+        } else {
+            resDetails.innerHTML = `<div style="font-size: 1.1em; font-weight: bold; color: #c0392b;">探索失敗…拠点へ強制送還されました。</div><div style="font-size: 0.9em; margin-top: 5px;">獲得した一時EXPを回収しました。</div>`;
+        }
+        resDetails.style.display = 'block';
     }
 
+    const resDrop = document.getElementById('res-drop');
+    if (resDrop) resDrop.style.display = 'none';
+
+    const resXpLabel = document.getElementById('res-xp-label');
+    if (resXpLabel) resXpLabel.innerText = "獲得EXP";
+    
+    const resXpSpan = document.getElementById('res-xp');
+    if (resXpSpan) {
+        resXpSpan.style.lineHeight = "1.1";
+        resXpSpan.innerHTML = `+<span style="color:#f1c40f;">${rogueData.earnedXp}</span>`;
+    }
+
+    if (success) playSE('win'); else playSE('lose');
+
+    document.getElementById('result-overlay')?.classList.remove('hidden');
+    
     if (typeof updateTitleInfo === 'function') updateTitleInfo();
 }

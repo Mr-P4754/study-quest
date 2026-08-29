@@ -27,7 +27,8 @@ import {
 
 import {
     getRarityIndex,
-    getDisplayName
+    getDisplayName,
+    playSE
 } from './utils.js';
 
 import {
@@ -39,6 +40,11 @@ import {
     returnToCurrentCategory,
     updateCategoryBadges
 } from './ui-manager.js';
+
+let selectedMaterials = {};
+let viewingCharaId = null;
+let currentShopTab = 'buy';
+let zukanSortMode = 'default';
 
 // ==========================================
 // ガチャ＆図鑑
@@ -56,90 +62,62 @@ export function closeGacha() {
     returnToCurrentCategory();
 }
 
-export function rollGacha(count) {
-    const cost = count === 10 ? 30000 : 3000;
-    if (gameState.xp < cost) return alert("EXPが足りません！");
+export async function rollGacha(times) {
+    const cost = times === 10 ? 30000 : 3000;
+    if (gameState.xp < cost) return alert("XPが足りません！");
+    if (!(await showConfirm(`${cost} XPを消費してガチャを${times}回引きますか？`))) return;
     gameState.xp -= cost;
-    const results = [];
-    const pool = rawData.characters ? rawData.characters.filter(c => c && !String(c.id).startsWith('boss_')) : [];
-    if (pool.length === 0) return alert("キャラデータがありません");
-    
-    for (let i = 0; i < count; i++) {
-        const rand = Math.random() * 100;
-        let targetRarity = 'N';
-        if (rand < 1) targetRarity = 'UR';
-        else if (rand < 6) targetRarity = 'SSR';
-        else if (rand < 26) targetRarity = 'SR';
-        else if (rand < 66) targetRarity = 'R';
-        
-        let rarityPool = pool.filter(c => c.rarity === targetRarity);
-        if (rarityPool.length === 0) rarityPool = pool;
-        const chara = rarityPool[Math.floor(Math.random() * rarityPool.length)];
-        results.push(chara);
-        
-        if (!gameState.charaInventory[chara.id]) {
-            gameState.charaInventory[chara.id] = { level: 1, count: 1, exp: 0, currentRarity: chara.rarity };
-        } else {
-            gameState.charaInventory[chara.id].count++;
-        }
-    }
-    
-    gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
-    updateMissionProgress('gacha', count);
-    saveGame();
-    showGachaResult(results);
-    renderZukan();
-    const gXp = document.getElementById('gacha-xp');
-    if(gXp) gXp.innerText = gameState.xp;
-    checkTitles();
+    executeGacha(times, null);
 }
 
-export function rollGuaranteedTenGacha(targetRarity, cost) {
-    if (gameState.xp < cost) return alert("EXPが足りません！");
+export async function rollGuaranteedTenGacha(targetRarity, cost) {
+    if (gameState.xp < cost) return alert("XPが足りません！");
+    if (!(await showConfirm(`${cost} XPを消費して【${targetRarity} 1体確定10連】を引きますか？`))) return;
     gameState.xp -= cost;
-    const results = [];
-    const pool = rawData.characters ? rawData.characters.filter(c => c && !String(c.id).startsWith('boss_')) : [];
-    if (pool.length === 0) return alert("キャラデータがありません");
+    executeGacha(10, targetRarity);
+}
+
+export function executeGacha(times, guaranteedRarity) {
+    if (!rawData.characters || rawData.characters.length === 0) return alert("キャラデータがありません");
+    const pool = { 'N': [], 'R': [], 'SR': [], 'SSR': [], 'UR': [] };
+    rawData.characters.forEach(c => { if(pool[c.rarity]) pool[c.rarity].push(c); });
     
-    for (let i = 0; i < 9; i++) {
-        const rand = Math.random() * 100;
-        let r = 'N';
-        if (rand < 1) r = 'UR';
-        else if (rand < 6) r = 'SSR';
-        else if (rand < 26) r = 'SR';
-        else if (rand < 66) r = 'R';
+    const getRandChar = (targetRarity) => {
+        let rPool = pool[targetRarity];
+        if (!rPool || rPool.length === 0) {
+            const available = Object.keys(pool).filter(k => pool[k].length > 0);
+            rPool = pool[available[available.length - 1]];
+        }
+        return rPool[Math.floor(Math.random() * rPool.length)];
+    };
+
+    const drawSingle = (isGuaranteed) => {
+        if (isGuaranteed && guaranteedRarity) return getRandChar(guaranteedRarity);
+        const rand = Math.random();
+        if (rand < 0.01) return getRandChar('UR');
+        if (rand < 0.05) return getRandChar('SSR');
+        if (rand < 0.20) return getRandChar('SR');
+        if (rand < 0.50) return getRandChar('R');
+        return getRandChar('N');
+    };
+
+    const results = [];
+    for (let i = 0; i < times; i++) {
+        const isGuaranteed = (times === 10 && i === 9 && guaranteedRarity);
+        const c = drawSingle(isGuaranteed);
+        results.push(c);
         
-        let rarityPool = pool.filter(c => c.rarity === r);
-        if (rarityPool.length === 0) rarityPool = pool;
-        const chara = rarityPool[Math.floor(Math.random() * rarityPool.length)];
-        results.push(chara);
-        
-        if (!gameState.charaInventory[chara.id]) {
-            gameState.charaInventory[chara.id] = { level: 1, count: 1, exp: 0, currentRarity: chara.rarity };
+        if (!gameState.charaInventory[c.id]) {
+            gameState.charaInventory[c.id] = { level: 1, count: 1, exp: 0, currentRarity: c.rarity };
         } else {
-            gameState.charaInventory[chara.id].count++;
+            gameState.charaInventory[c.id].count++;
         }
     }
     
-    let guaranteedPool = pool.filter(c => c.rarity === targetRarity);
-    if (guaranteedPool.length === 0) guaranteedPool = pool;
-    const lastChara = guaranteedPool[Math.floor(Math.random() * guaranteedPool.length)];
-    results.push(lastChara);
-    
-    if (!gameState.charaInventory[lastChara.id]) {
-        gameState.charaInventory[lastChara.id] = { level: 1, count: 1, exp: 0, currentRarity: lastChara.rarity };
-    } else {
-        gameState.charaInventory[lastChara.id].count++;
-    }
-    
-    gameState.stats.totalPlay = (gameState.stats.totalPlay || 0) + 1;
-    updateMissionProgress('gacha', 10);
+    playSE('win');
+    if(typeof updateMissionProgress === 'function') updateMissionProgress('gacha', 1);
     saveGame();
     showGachaResult(results);
-    renderZukan();
-    const gXp = document.getElementById('gacha-xp');
-    if(gXp) gXp.innerText = gameState.xp;
-    checkTitles();
 }
 
 export function showGachaResult(charas) {
@@ -151,7 +129,7 @@ export function showGachaResult(charas) {
         if (c.imageUrl && c.imageUrl.startsWith('http')) {
             imgTag = `<img src="${c.imageUrl}" style="width:100px;height:100px;object-fit:contain;margin:10px auto;display:block;">`;
         } else {
-            imgTag = `<div style="font-size:60px;margin:10px 0;">✏️</div>`;
+            imgTag = `<div style="font-size:60px;margin:10px 0;">📦</div>`;
         }
         container.innerHTML = `
             <div class="gacha-result-card">
@@ -168,7 +146,7 @@ export function showGachaResult(charas) {
             if (c.imageUrl && c.imageUrl.startsWith('http')) {
                 imgTag = `<img src="${c.imageUrl}" class="gr-mini-img">`;
             } else {
-                imgTag = `<div style="font-size:30px; margin:5px 0;">✏️</div>`;
+                imgTag = `<div style="font-size:30px; margin:5px 0;">📦</div>`;
             }
             const isLast = (index === 9);
             const extraStyle = isLast ? 'border: 2px solid #f1c40f; background: #fffbe6;' : '';
@@ -184,153 +162,189 @@ export function showGachaResult(charas) {
         container.innerHTML = gridHtml;
     }
     document.getElementById('gacha-result-overlay')?.classList.remove('hidden');
+    renderZukan();
+    const gXp = document.getElementById('gacha-xp');
+    if(gXp) gXp.innerText = gameState.xp;
+    checkTitles();
 }
 
 export function closeGachaResult() { 
     document.getElementById('gacha-result-overlay')?.classList.add('hidden'); 
 }
 
-export function renderZukan() {
-    const grid = document.getElementById('zukan-grid');
-    if (!grid || !rawData.characters) return;
-    grid.innerHTML = '';
-    
-    let list = [...rawData.characters];
-    
-    const filter = runtimeState.zukanCurrentFilter || 'ALL';
-    if (filter !== 'ALL') {
-        list = list.filter(c => {
-            const inv = gameState.charaInventory[c.id];
-            const skills = (inv && inv.skills && inv.skills.length > 0) ? inv.skills : [c.type];
-            return skills.includes(filter);
-        });
-    }
-    
-    const sort = runtimeState.zukanCurrentSort || 'default';
+export function renderZukan() { 
+    const g = document.getElementById('zukan-grid'); 
+    if(!g) return; 
+    g.innerHTML = ''; 
+    if(!rawData.characters) return;
+    const list = [...rawData.characters];
     list.sort((a, b) => {
-        const invA = gameState.charaInventory[a.id];
+        const invA = gameState.charaInventory[a.id]; 
         const invB = gameState.charaInventory[b.id];
-        const rA = invA?.currentRarity || a.rarity;
-        const rB = invB?.currentRarity || b.rarity;
-        
-        if (sort === 'rarity_desc') return getRarityIndex(rB) - getRarityIndex(rA);
-        if (sort === 'rarity_asc') return getRarityIndex(rA) - getRarityIndex(rB);
-        if (sort === 'level') return (invB?.level || 0) - (invA?.level || 0);
-        if (sort === 'stock') return (invB?.count || 0) - (invA?.count || 0);
-        if (sort === 'type') return (a.type || '').localeCompare(b.type || '');
-        return String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+        if (zukanSortMode === 'rarity_desc' || zukanSortMode === 'rarity_asc') { 
+            const rOrder = { 'UR':5, 'SSR':4, 'SR':3, 'R':2, 'N':1 }; 
+            const rA = (invA && invA.currentRarity) ? invA.currentRarity : a.rarity;
+            const rB = (invB && invB.currentRarity) ? invB.currentRarity : b.rarity;
+            const valA = rOrder[rA] || 0; 
+            const valB = rOrder[rB] || 0; 
+            return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB; 
+        }
+        if (zukanSortMode === 'type') { return (a.type || "").localeCompare(b.type || ""); }
+        if (zukanSortMode === 'level') { const lvA = invA ? invA.level : -1; const lvB = invB ? invB.level : -1; if (lvA !== lvB) return lvB - lvA; }
+        if (zukanSortMode === 'stock') { const cntA = invA ? invA.count : -1; const cntB = invB ? invB.count : -1; if (cntA !== cntB) return cntB - cntA; }
+        return 0;
     });
-    
-    list.forEach(c => {
-        const inv = gameState.charaInventory[c.id];
-        const isOwned = !!inv;
-        const isEquipped = String(gameState.equipped) === String(c.id);
-        const currentR = inv?.currentRarity || c.rarity;
-        const isMastered = inv && inv.count >= MASTER_COUNT;
-        
-        let cardClass = `char-card ${isOwned ? 'owned' : ''} ${isEquipped ? 'active' : ''} ${isMastered ? 'mastered' : ''}`;
-        let imgHtml = (c.imageUrl && c.imageUrl.startsWith('http')) 
-            ? `<img src="${c.imageUrl}" class="char-img">` 
-            : `<div style="font-size:30px; margin-bottom:4px;">✏️</div>`;
-            
-        let badgeHtml = isOwned ? `<div class="char-lvl-badge">Lv.${inv.level}</div>` : '';
-        let stockHtml = (isOwned && inv.count > 0) ? `<div class="char-stock-badge">${isMastered ? '★' : ''}${inv.count}</div>` : '';
-        let nameHtml = getDisplayName(c, inv);
-        
-        grid.innerHTML += `
-            <div class="${cardClass}" onclick="openCharaDetail('${c.id}')">
-                ${badgeHtml}
-                ${stockHtml}
-                ${imgHtml}
-                <div class="rarity-${currentR}" style="font-weight:bold; font-size:0.8em;">${currentR}</div>
-                <div style="font-weight:bold; color:#2c3e50; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nameHtml}</div>
-            </div>
-        `;
+    list.forEach(c => { 
+        const data = gameState.charaInventory[c.id]; 
+        const isOwned = !!data; 
+        const div = document.createElement('div');
+        let masterClass = ''; 
+        if (isOwned && data.count >= MASTER_COUNT) masterClass = 'mastered';
+        div.className = `char-card ${isOwned ? 'owned' : ''} ${gameState.equipped == c.id ? 'active' : ''} ${masterClass}`;
+        let visual, nameText, lvlBadge = '', stockBadge = ''; 
+        let decoName = "???"; 
+        if(isOwned) {
+            visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
+            const currentRarity = data.currentRarity || c.rarity; 
+            decoName = getDisplayName(c, data); 
+            nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
+            lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`; 
+            if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
+            div.onclick = () => openCharaDetail(c.id);
+        } else { 
+            visual = `<div style="font-size:2em;line-height:50px;color:#bdc3c7;">?</div>`; 
+            nameText = "???"; 
+        }
+        div.innerHTML = `${lvlBadge}${stockBadge}${visual}<div style="font-weight:bold;font-size:0.8em;">${nameText}</div><div style="font-size:0.7em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${decoName}</div>`;
+        g.appendChild(div);
     });
 }
 
 export function changeZukanSort() {
     const sel = document.getElementById('zukan-sort-select');
     if (!sel) return;
-    runtimeState.zukanCurrentSort = sel.value;
+    zukanSortMode = sel.value;
     renderZukan();
 }
 
 // ==========================================
 // キャラ詳細・強化合成・進化・転生
 // ==========================================
-export function openCharaDetail(id) {
-    const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-    if (!c) return;
-    runtimeState.viewingCharaId = id;
-    const inv = gameState.charaInventory[id];
-    const isOwned = !!inv;
-    const currentR = inv?.currentRarity || c.rarity;
-    const maxL = RARITY_CAPS[currentR] || 10;
-    const lv = inv ? inv.level : 0;
-    const exp = inv ? (Number(inv.exp) || 0) : 0;
-    const stock = inv ? inv.count : 0;
+export function openCharaDetail(id) { 
+    viewingCharaId = id; 
+    const c = rawData.characters ? rawData.characters.find(x => String(x.id) == String(id)) : null; 
+    const o = gameState.charaInventory[id] || gameState.charaInventory[String(id)] || (c ? gameState.charaInventory[c.id] : null); 
+    if(!c || !o) return; 
+    const currentR = o.currentRarity || c.rarity; 
+    const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
+    const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
     
-    const cdName = document.getElementById('cd-name');
-    if (cdName) cdName.innerHTML = getDisplayName(c, inv);
-    const cdRarity = document.getElementById('cd-rarity');
-    if (cdRarity) {
-        cdRarity.className = `rarity-${currentR} mb-10`;
-        cdRarity.innerText = currentR;
+    const cdName = document.getElementById('cd-name'); 
+    if(cdName) cdName.innerHTML = getDisplayName(c, o);
+    const cdRarity = document.getElementById('cd-rarity'); 
+    if(cdRarity) { cdRarity.innerText = currentR; cdRarity.className = "rarity-" + currentR; }
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    const isMax = o.level >= maxLv;
+    const cdLv = document.getElementById('cd-lv'); 
+    if(cdLv) cdLv.innerText = 'Lv.' + o.level + ' / ' + maxLv;
+    
+    let skillHtml = ''; 
+    currentSkills.forEach(s => { skillHtml += `<span class="skill-tag ${s}">${s}</span>`; });
+    const cdType = document.getElementById('cd-type'); 
+    if(cdType) cdType.innerHTML = `<div class="skill-tag-container">${skillHtml}</div>`;
+    
+    let val = baseVal + (o.level * LV_BONUS_RATE); 
+    const cdVal = document.getElementById('cd-val'); 
+    if(cdVal) cdVal.innerText = 'x' + val.toFixed(2); 
+    const cdStock = document.getElementById('cd-stock'); 
+    if(cdStock) cdStock.innerText = o.count + "個"; 
+    const cdDesc = document.getElementById('cd-desc'); 
+    if(cdDesc) cdDesc.innerText = c.desc || "";
+    
+    const detailBtnRow = document.querySelector('.detail-btn-row');
+    if(detailBtnRow) {
+        if (document.querySelector('.item-use-area')) document.querySelector('.item-use-area').remove();
+        const canUse = !isMax;
+        detailBtnRow.insertAdjacentHTML('beforebegin', `<div class="item-use-area"><div style="font-weight:bold; font-size:0.8em; color:#2c3e50; margin-bottom:5px;">育成アイテム</div><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;"><button class="book-use-btn" onclick="useExpItem('xpBookSmall', 200)" ${canUse && (gameState.inventory.xpBookSmall||0)>0?'':'disabled'}>小(${gameState.inventory.xpBookSmall||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookMedium', 500)" ${canUse && (gameState.inventory.xpBookMedium||0)>0?'':'disabled'}>中(${gameState.inventory.xpBookMedium||0})</button><button class="book-use-btn" onclick="useExpItem('xpBookLarge', 1000)" ${canUse && (gameState.inventory.xpBookLarge||0)>0?'':'disabled'}>大(${gameState.inventory.xpBookLarge||0})</button></div></div>`);
     }
-    const cdImg = document.getElementById('cd-img');
-    if (cdImg) {
-        if (c.imageUrl && c.imageUrl.startsWith('http')) {
-            cdImg.src = c.imageUrl;
-            cdImg.style.display = 'block';
+    
+    const isEquipped = String(gameState.equipped) === String(id);
+    const btnEquip = document.getElementById('btn-equip') || document.querySelector('.btn-equip-action');
+    if (btnEquip) {
+        if (isEquipped) {
+            btnEquip.innerText = '✅ 装備中';
+            btnEquip.disabled = true;
+            btnEquip.style.opacity = '0.7';
+            btnEquip.style.cursor = 'default';
         } else {
-            cdImg.style.display = 'none';
+            btnEquip.innerText = '🛡️ このキャラを装備';
+            btnEquip.disabled = false;
+            btnEquip.style.opacity = '1.0';
+            btnEquip.style.cursor = 'pointer';
         }
     }
-    
-    const cdLv = document.getElementById('cd-lv');
-    if (cdLv) cdLv.innerText = `Lv.${lv} / ${maxL}`;
-    const cdExpBar = document.getElementById('cd-exp-bar');
-    if (cdExpBar) cdExpBar.style.width = `${Math.min(100, (exp / EXP_REQ) * 100)}%`;
-    const cdExpText = document.getElementById('cd-exp-text');
-    if (cdExpText) cdExpText.innerText = `${exp} / ${EXP_REQ}`;
-    
-    const skills = (inv && inv.skills && inv.skills.length > 0) ? inv.skills : [c.type];
-    const cdType = document.getElementById('cd-type');
-    if (cdType) {
-        cdType.innerHTML = `<div class="skill-tag-container">${skills.map(s => `<span class="skill-tag ${s}">${s}</span>`).join('')}</div>`;
-    }
-    
-    const baseVal = (inv && inv.isEvolved && inv.customValue) ? inv.customValue : Number(c.value);
-    const finalVal = baseVal + (lv * LV_BONUS_RATE);
-    const cdVal = document.getElementById('cd-val');
-    if (cdVal) cdVal.innerText = `x${finalVal.toFixed(2)}`;
-    
-    const cdStock = document.getElementById('cd-stock');
-    if (cdStock) cdStock.innerText = `${stock}個`;
-    const cdDesc = document.getElementById('cd-desc');
-    if (cdDesc) cdDesc.innerText = c.desc || "説明文なし";
-    
-    const btnEquip = document.getElementById('btn-equip');
+
     const btnEnhance = document.getElementById('btn-enhance');
-    const btnSell = document.getElementById('btn-sell');
+    if (btnEnhance) {
+        btnEnhance.disabled = isMax;
+        btnEnhance.style.opacity = isMax ? "0.5" : "1.0";
+        btnEnhance.style.cursor = isMax ? "not-allowed" : "pointer";
+    }
+
+    const cdExpText = document.getElementById('cd-exp-text'); 
+    if(cdExpText) cdExpText.innerText = isMax ? 'MAX' : ((o.exp || 0) + ' / ' + EXP_REQ); 
+    const cdExpBar = document.getElementById('cd-exp-bar'); 
+    if(cdExpBar) cdExpBar.style.width = isMax ? '100%' : (Math.min(100, ((o.exp || 0) / EXP_REQ * 100)) + '%');
+    const cdImg = document.getElementById('cd-img');
+    if(cdImg) { if(c.imageUrl && c.imageUrl.startsWith('http')) cdImg.src = c.imageUrl; else cdImg.src = ''; }
+    document.getElementById('chara-detail-overlay')?.classList.remove('hidden'); 
     
-    if (btnEquip) btnEquip.disabled = !isOwned;
-    if (btnEnhance) btnEnhance.disabled = !isOwned || lv >= maxL;
-    if (btnSell) btnSell.disabled = !isOwned || stock <= 1;
-    
-    renderEvoContainer(c, inv);
-    document.getElementById('chara-detail-overlay')?.classList.remove('hidden');
+    const evoContainer = document.getElementById('evo-container'); 
+    if(evoContainer) {
+        evoContainer.innerHTML = ''; 
+        evoContainer.classList.add('hidden');
+        if (o.level >= maxLv && o.count >= EVO_STOCK_REQ && currentR !== 'UR') {
+            const cost = EVO_COST_XP[currentR]; 
+            const btn = document.createElement('button'); 
+            btn.className = 'detail-btn'; 
+            btn.style.background = 'linear-gradient(to bottom, #f1c40f, #e67e22)'; 
+            btn.style.borderBottom = '5px solid #d35400'; 
+            btn.style.marginBottom = '10px'; 
+            btn.style.height = 'auto'; 
+            btn.style.minHeight = '60px'; 
+            btn.style.flexDirection = 'column'; 
+            btn.style.padding = '8px'; 
+            btn.innerHTML = `<div style="font-weight:bold; font-size:1.1em; margin-bottom:4px;">🌟 限界突破・進化！</div><div style="font-size:0.75em; font-weight:normal;">消費: ${cost.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</div>`; 
+            btn.onclick = executeEvolution; 
+            evoContainer.appendChild(btn); 
+            evoContainer.classList.remove('hidden');
+        }
+        if (currentR === 'UR' && o.level >= maxLv && o.count >= EVO_STOCK_REQ) {
+            const btn = document.createElement('button'); 
+            btn.className = 'detail-btn'; 
+            btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; 
+            btn.style.borderBottom = '5px solid #5b2c6f'; 
+            btn.style.marginBottom = '10px'; 
+            btn.style.height = 'auto'; 
+            btn.style.minHeight = '60px'; 
+            btn.style.flexDirection = 'column'; 
+            btn.style.padding = '8px';
+            btn.innerHTML = `<div style="font-weight:bold; font-size:1.1em; margin-bottom:4px;">🪽 転生する</div><div style="font-size:0.75em; font-weight:normal;">消費: ${REBORN_COST_XP.toLocaleString()} XP ／ 素材 ${EVO_STOCK_REQ}個</div>`; 
+            btn.onclick = executeReincarnation; 
+            evoContainer.appendChild(btn); 
+            evoContainer.classList.remove('hidden');
+        }
+    }
 }
 
 export function closeCharaDetail() {
     document.getElementById('chara-detail-overlay')?.classList.add('hidden');
-    runtimeState.viewingCharaId = null;
+    viewingCharaId = null;
 }
 
 export function equipCurrentChara() {
-    if (!runtimeState.viewingCharaId) return;
-    gameState.equipped = String(runtimeState.viewingCharaId);
+    if (!viewingCharaId) return;
+    gameState.equipped = String(viewingCharaId);
     saveGame();
     updateTitleInfo();
     renderZukan();
@@ -338,279 +352,297 @@ export function equipCurrentChara() {
     closeCharaDetail();
 }
 
-export function renderEvoContainer(chara, inv) {
-    const container = document.getElementById('evo-container');
-    if (!container || !inv) {
-        if(container) container.classList.add('hidden');
-        return;
-    }
+export async function useExpItem(itemId, gain) {
+    if ((gameState.inventory[itemId] || 0) <= 0) return;
+    const itemNames = { 'xpBookSmall':'小の書', 'xpBookMedium':'中の書', 'xpBookLarge':'大の書' };
+    const itemName = itemNames[itemId] || '経験値アイテム';
+    if (!(await showConfirm(`【確認】\n${itemName} を使用して、経験値を +${gain} しますか？`))) return;
+
+    const inv = gameState.charaInventory[viewingCharaId];
+    const master = rawData.characters ? rawData.characters.find(c => c.id == viewingCharaId) : null;
+    if(!inv) return;
     
-    const currentR = inv.currentRarity || chara.rarity;
-    const maxL = RARITY_CAPS[currentR] || 10;
-    const canEvolve = (inv.level >= maxL && inv.count >= EVO_STOCK_REQ && currentR !== 'UR');
-    const canReborn = (currentR === 'UR' && inv.level >= maxL);
+    const maxL = RARITY_CAPS[inv.currentRarity || (master ? master.rarity : 'N')] || 10;
+    if (inv.level >= maxL) return alert("Lv.MAXです");
+
+    gameState.inventory[itemId]--;
+    inv.exp = (Number(inv.exp) || 0) + gain;
     
-    if (!canEvolve && !canReborn) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-        return;
-    }
+    let lvUp = 0;
+    while (inv.exp >= EXP_REQ && inv.level < maxL) { inv.exp -= EXP_REQ; inv.level++; lvUp++; }
+    if (inv.level >= maxL) inv.exp = 0;
     
-    container.classList.remove('hidden');
-    if (canEvolve) {
-        const nextR = RARITY_ORDER[getRarityIndex(currentR) + 1];
-        const cost = EVO_COST_XP[currentR] || 100000;
-        container.innerHTML = `
-            <button class="evo-btn btn-evolution" onclick="executeEvolution('${chara.id}')">
-                ✨ 限界突破・進化 (${nextR})<br>
-                <small>在庫 ${EVO_STOCK_REQ}個 + ${cost} XP</small>
-            </button>
-        `;
-    } else if (canReborn) {
-        container.innerHTML = `
-            <button class="evo-btn btn-reincarnation" onclick="executeReincarnation('${chara.id}')">
-                🪽 転生を行う<br>
-                <small>${REBORN_COST_XP} XP を消費して更なる高みへ</small>
-            </button>
-        `;
-    }
+    saveGame(); 
+    playSE('start'); 
+    if (lvUp > 0) alert(`レベルアップ！ Lv.${inv.level}`);
+    openCharaDetail(viewingCharaId);
 }
 
-export async function executeEvolution(id) {
-    const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-    const inv = gameState.charaInventory[id];
-    if (!c || !inv) return;
+export async function executeEvolution() {
+    const o = gameState.charaInventory[viewingCharaId];
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
+    if(!o || !c) return;
+    const currentR = o.currentRarity || c.rarity;
+    const maxLv = RARITY_CAPS[currentR] || 10;
     
-    const currentR = inv.currentRarity || c.rarity;
-    const cost = EVO_COST_XP[currentR] || 100000;
-    if (gameState.xp < cost) return alert("進化に必要なXPが足りません！");
-    if (inv.count < EVO_STOCK_REQ) return alert("進化に必要な在庫数が足りません！");
+    if (o.level < maxLv || o.count < EVO_STOCK_REQ || currentR === 'UR') return;
     
-    if (!await showConfirm(`このキャラを進化させますか？\nレアリティが上がり、Lv上限が解放されます。\n（在庫 ${EVO_STOCK_REQ}個と ${cost} XPを消費）`)) return;
+    const cost = EVO_COST_XP[currentR];
+    if (gameState.xp < cost) return alert(`XPが足りません！\n必要: ${cost} XP`);
+    
+    if (!(await showConfirm(`【進化確認】\n${cost} XP と素材${EVO_STOCK_REQ}個を消費して進化させますか？`))) return;
     
     gameState.xp -= cost;
-    inv.count -= EVO_STOCK_REQ;
-    const nextR = RARITY_ORDER[getRarityIndex(currentR) + 1];
-    inv.currentRarity = nextR;
-    inv.isEvolved = true;
+    o.count -= EVO_STOCK_REQ;
+    
+    const nextIdx = RARITY_ORDER.indexOf(currentR) + 1;
+    o.currentRarity = RARITY_ORDER[nextIdx];
+    o.level = 1;
+    o.exp = 0;
+    o.isEvolved = true;
+    o.customValue = (o.customValue || Number(c.value)) + 0.5;
     
     gameState.stats.achieved_evolve = true;
-    saveGame();
-    alert(`進化成功！ ${c.name} は [${nextR}] に進化しました！`);
-    openCharaDetail(id);
-    renderZukan();
+    saveGame(); 
+    playSE('win'); 
+    alert("限界突破・進化しました！");
+    openCharaDetail(viewingCharaId); 
     updateTitleInfo();
     checkTitles();
 }
 
-export async function executeReincarnation(id) {
-    const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-    const inv = gameState.charaInventory[id];
-    if (!c || !inv) return;
+export async function executeReincarnation() {
+    const o = gameState.charaInventory[viewingCharaId];
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
+    if(!o || !c) return;
     
-    if (gameState.xp < REBORN_COST_XP) return alert("転生に必要なXPが足りません！");
-    if (!await showConfirm(`【転生】を行いますか？\nLv.1に戻りますが、追加スキルを獲得し永続強化されます。\n（消費: ${REBORN_COST_XP} XP）`)) return;
+    const currentR = o.currentRarity || c.rarity;
+    const maxLv = RARITY_CAPS[currentR] || 30;
+    if (currentR !== 'UR' || o.level < maxLv || o.count < EVO_STOCK_REQ) return;
+    
+    if (gameState.xp < REBORN_COST_XP) return alert(`XPが足りません！\n必要: ${REBORN_COST_XP} XP`);
+    
+    if (!(await showConfirm(`【転生確認】\n${REBORN_COST_XP} XP と素材${EVO_STOCK_REQ}個を消費して転生させますか？\n(レベルは1に戻り、新たなスキルを習得します)`))) return;
     
     gameState.xp -= REBORN_COST_XP;
-    inv.level = 1;
-    inv.exp = 0;
-    inv.reincarnationCount = (inv.reincarnationCount || 0) + 1;
+    o.count -= EVO_STOCK_REQ;
+    o.level = 1;
+    o.exp = 0;
+    o.reincarnationCount = (o.reincarnationCount || 0) + 1;
+    o.customValue = (o.customValue || Number(c.value)) + 1.0;
     
-    if (!inv.skills) inv.skills = [c.type];
-    const availableSkills = ['ATK', 'TIME', 'EXP'].filter(s => !inv.skills.includes(s));
-    if (availableSkills.length > 0) {
-        const newSkill = availableSkills[Math.floor(Math.random() * availableSkills.length)];
-        inv.skills.push(newSkill);
-    }
+    if (!o.skills) o.skills = [c.type];
+    const availableSkills = ['ATK', 'TIME', 'EXP'].filter(s => !o.skills.includes(s));
+    if (availableSkills.length > 0) { o.skills.push(availableSkills[Math.floor(Math.random() * availableSkills.length)]); } else if (!o.skills.includes('ALL')) { o.skills = ['ALL']; }
     
     gameState.stats.achieved_reborn = true;
-    saveGame();
-    alert(`転生完了！ ${c.name} は転生し、新たな力を宿しました！`);
-    openCharaDetail(id);
-    renderZukan();
+    saveGame(); 
+    playSE('win'); 
+    alert("転生に成功しました！新たな力を得ました。");
+    openCharaDetail(viewingCharaId); 
     updateTitleInfo();
     checkTitles();
 }
 
-export function openEnhanceMenu() {
-    if (!runtimeState.viewingCharaId) return;
-    runtimeState.selectedMaterialIds = [];
-    document.getElementById('material-select-overlay')?.classList.remove('hidden');
-    renderMaterialList();
-    updateEnhancePreview();
+export function openEnhanceMenu() { 
+    const t = gameState.charaInventory[viewingCharaId]; 
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null; 
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || chara.rarity; 
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return alert("すでにLv.MAXです");
+    selectedMaterials = {}; 
+    document.getElementById('material-select-overlay')?.classList.remove('hidden'); 
+    document.getElementById('chara-detail-overlay')?.classList.add('hidden'); 
+    renderEnhanceList(); 
 }
 
 export function closeEnhanceMenu() {
     document.getElementById('material-select-overlay')?.classList.add('hidden');
-    runtimeState.selectedMaterialIds = [];
+    document.getElementById('chara-detail-overlay')?.classList.remove('hidden');
+    selectedMaterials = {};
 }
 
-export function renderMaterialList() {
-    const container = document.getElementById('material-list');
-    if (!container) return;
-    container.innerHTML = '';
-    
-    const targetId = String(runtimeState.viewingCharaId);
-    
-    // アイテム（書物）素材の表示
-    const books = [
-        { type: 'redPages', name: '赤のページ', exp: 50, count: gameState.inventory?.redPages || 0, icon: '📕' },
-        { type: 'bluePages', name: '青のページ', exp: 50, count: gameState.inventory?.bluePages || 0, icon: '📘' },
-        { type: 'xpBookSmall', name: '知識の書(小)', exp: 200, count: gameState.inventory?.xpBookSmall || 0, icon: '📗' },
-        { type: 'xpBookMedium', name: '知識の書(中)', exp: 500, count: gameState.inventory?.xpBookMedium || 0, icon: '📙' },
-        { type: 'xpBookLarge', name: '知識の書(大)', exp: 1200, count: gameState.inventory?.xpBookLarge || 0, icon: '📓' }
-    ];
-    
-    books.forEach(b => {
-        if (b.count > 0) {
-            const isSel = runtimeState.selectedMaterialIds.includes(b.type);
-            container.innerHTML += `
-                <div class="mat-card ${isSel ? 'selected' : ''}" onclick="toggleMaterialSelection('${b.type}')">
-                    <div style="font-size:2.0em;">${b.icon}</div>
-                    <div style="font-weight:bold;">${b.name}</div>
-                    <div style="color:#7f8c8d;">所持: ${b.count}</div>
-                    <div style="color:#27ae60; font-weight:bold;">+${b.exp}EXP</div>
-                </div>
-            `;
-        }
-    });
-    
-    // 不要キャラ素材の表示
-    Object.keys(gameState.charaInventory).forEach(id => {
-        if (id === targetId) return;
-        const inv = gameState.charaInventory[id];
+export function renderEnhanceList() {
+    const list = document.getElementById('material-list'); 
+    if(!list) return; 
+    list.innerHTML = ''; 
+    let totalGain = 0;
+    if(!rawData.characters) return;
+    rawData.characters.forEach(c => {
+        if (c.id === viewingCharaId) return; 
+        const inv = gameState.charaInventory[c.id]; 
         if (!inv || inv.count <= 0) return;
-        const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-        if (!c) return;
-        
-        const isSel = runtimeState.selectedMaterialIds.includes(id);
-        const currentR = inv.currentRarity || c.rarity;
-        const expVal = MAT_EXP[currentR] || 25;
-        
-        let imgHtml = (c.imageUrl && c.imageUrl.startsWith('http'))
-            ? `<img src="${c.imageUrl}" style="width:40px;height:40px;object-fit:contain;">`
-            : `<div style="font-size:24px;">✏️</div>`;
-            
-        container.innerHTML += `
-            <div class="mat-card ${isSel ? 'selected' : ''}" onclick="toggleMaterialSelection('${id}')">
-                ${imgHtml}
-                <div class="rarity-${currentR}" style="font-weight:bold;">${currentR}</div>
-                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
-                <div style="color:#7f8c8d;">在庫: ${inv.count}</div>
-                <div style="color:#27ae60; font-weight:bold;">+${expVal}EXP</div>
-            </div>
-        `;
+        const selectCount = selectedMaterials[c.id] || 0; 
+        const expVal = MAT_EXP[c.rarity] || 25; 
+        if(selectCount > 0) totalGain += (expVal * selectCount);
+        let visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" style="width:40px;height:40px;">` : `<span>📦</span>`;
+        let activeClass = selectCount > 0 ? 'selected' : ''; 
+        let badge = selectCount > 0 ? `<div class="mat-select-badge">${selectCount}</div>` : '';
+        list.innerHTML += `<div class="mat-card ${activeClass}" onclick="toggleMaterial('${c.id}', ${inv.count})">${badge}<div class="rarity-${c.rarity}">${c.rarity}</div>${visual}<div style="font-weight:bold; font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name}</div><div style="font-size:0.7em;">所持: ${inv.count}</div><div class="mat-exp-val">+${expVal}</div></div>`;
     });
+    updateEnhancePreview(totalGain);
 }
 
-export function toggleMaterialSelection(id) {
-    if (runtimeState.selectedMaterialIds.includes(id)) {
-        runtimeState.selectedMaterialIds = runtimeState.selectedMaterialIds.filter(x => x !== id);
+export function toggleMaterial(id, maxCount) { 
+    const t = gameState.charaInventory[viewingCharaId];
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || chara.rarity;
+    const neededExp = getNeededExpForMax(t, currentR);
+
+    if (!selectedMaterials[id]) selectedMaterials[id] = 0; 
+    const currentGain = getSelectedTotalExp();
+
+    if (selectedMaterials[id] >= maxCount || currentGain >= neededExp) {
+        selectedMaterials[id] = 0;
     } else {
-        runtimeState.selectedMaterialIds.push(id);
+        selectedMaterials[id]++;
     }
-    renderMaterialList();
-    updateEnhancePreview();
+    renderEnhanceList(); 
 }
 
-export function updateEnhancePreview() {
-    let totalExp = 0;
-    runtimeState.selectedMaterialIds.forEach(id => {
-        if (id === 'redPages' || id === 'bluePages') totalExp += 50;
-        else if (id === 'xpBookSmall') totalExp += 200;
-        else if (id === 'xpBookMedium') totalExp += 500;
-        else if (id === 'xpBookLarge') totalExp += 1200;
-        else {
-            const inv = gameState.charaInventory[id];
-            const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-            if (inv && c) {
-                const r = inv.currentRarity || c.rarity;
-                totalExp += (MAT_EXP[r] || 25);
-            }
+export function getNeededExpForMax(t, currentR) {
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return 0;
+    return ((maxLv - t.level) * EXP_REQ) - (Number(t.exp) || 0);
+}
+
+export function getSelectedTotalExp() {
+    let total = 0;
+    if (!rawData.characters) return 0;
+    Object.keys(selectedMaterials).forEach(id => {
+        const cnt = selectedMaterials[id] || 0;
+        if (cnt > 0) {
+            const matChar = rawData.characters.find(c => c.id === id);
+            const expVal = matChar ? (MAT_EXP[matChar.rarity] || 25) : 25;
+            total += (expVal * cnt);
         }
     });
-    
-    const expSpan = document.getElementById('enhance-total-exp');
-    if (expSpan) expSpan.innerText = totalExp;
-    
-    const targetInv = gameState.charaInventory[runtimeState.viewingCharaId];
-    const targetMaster = rawData.characters ? rawData.characters.find(x => String(x.id) === String(runtimeState.viewingCharaId)) : null;
-    
-    const lvPrev = document.getElementById('enhance-lv-preview');
-    if (lvPrev && targetInv && targetMaster) {
-        const maxL = RARITY_CAPS[targetInv.currentRarity || targetMaster.rarity] || 10;
-        let simExp = (Number(targetInv.exp) || 0) + totalExp;
-        let simLv = targetInv.level;
-        while (simExp >= EXP_REQ && simLv < maxL) {
-            simExp -= EXP_REQ;
-            simLv++;
-        }
-        lvPrev.innerText = `Lv.${targetInv.level} → Lv.${simLv}`;
+    return total;
+}
+
+export function updateEnhancePreview(gainExp) {
+    const enhanceTotal = document.getElementById('enhance-total-exp'); 
+    if(enhanceTotal) enhanceTotal.innerText = gainExp;
+    const t = gameState.charaInventory[viewingCharaId]; 
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null; 
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || chara.rarity; 
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    let simExp = (Number(t.exp) || 0) + gainExp; 
+    let simLv = t.level;
+    while (simExp >= EXP_REQ && simLv < maxLv) { simExp -= EXP_REQ; simLv++; }
+    if (simLv >= maxLv) simExp = 0;
+
+    const preview = document.getElementById('enhance-lv-preview');
+    if(!preview) return;
+    if (simLv >= maxLv) { 
+        preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold; color:#e74c3c;">➞ Lv.${maxLv} (MAX)</span>`; 
+    } else if (simLv > t.level) { 
+        preview.innerHTML = `Lv.${t.level} <span style="font-weight:bold; color:#e67e22;">➞ Lv.${simLv}</span> (あと${EXP_REQ - simExp})`; 
+    } else { 
+        preview.innerText = `Lv.${t.level} (あと${EXP_REQ - simExp})`; 
+        preview.style.color = '#7f8c8d'; 
     }
 }
 
 export async function executeBulkEnhance() {
-    if (runtimeState.selectedMaterialIds.length === 0) return alert("強化素材を選択してください。");
-    const targetInv = gameState.charaInventory[runtimeState.viewingCharaId];
-    const targetMaster = rawData.characters ? rawData.characters.find(x => String(x.id) === String(runtimeState.viewingCharaId)) : null;
-    if (!targetInv || !targetMaster) return;
+    const totalSelected = Object.values(selectedMaterials).reduce((a, b) => a + b, 0); 
+    if (totalSelected === 0) return alert("素材を選択してください");
     
-    let totalExp = 0;
-    runtimeState.selectedMaterialIds.forEach(id => {
-        if (id === 'redPages') { gameState.inventory.redPages--; totalExp += 50; }
-        else if (id === 'bluePages') { gameState.inventory.bluePages--; totalExp += 50; }
-        else if (id === 'xpBookSmall') { gameState.inventory.xpBookSmall--; totalExp += 200; }
-        else if (id === 'xpBookMedium') { gameState.inventory.xpBookMedium--; totalExp += 500; }
-        else if (id === 'xpBookLarge') { gameState.inventory.xpBookLarge--; totalExp += 1200; }
-        else {
-            const inv = gameState.charaInventory[id];
-            const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-            if (inv && c) {
-                const r = inv.currentRarity || c.rarity;
-                totalExp += (MAT_EXP[r] || 25);
-                inv.count--;
-                if (inv.count <= 0) delete gameState.charaInventory[id];
+    const t = gameState.charaInventory[viewingCharaId]; 
+    const chara = rawData.characters ? rawData.characters.find(x => x.id === viewingCharaId) : null;
+    if (!t || !chara) return;
+    const currentR = t.currentRarity || (chara ? chara.rarity : 'N'); 
+    const maxLv = RARITY_CAPS[currentR] || 10;
+    if (t.level >= maxLv) return alert("すでにLv.MAXです");
+
+    let totalGain = 0; 
+    Object.keys(selectedMaterials).forEach(id => { 
+        const count = selectedMaterials[id]; 
+        if (count > 0 && rawData.characters) { 
+            const matChar = rawData.characters.find(c => c.id === id); 
+            if(matChar) { const expVal = MAT_EXP[matChar.rarity] || 25; totalGain += (expVal * count); } 
+        } 
+    });
+
+    if (!(await showConfirm(`選択した素材（最大${totalSelected}体）を消費して強化しますか？\n獲得EXP: +${totalGain}`))) return;
+    
+    let usedCount = 0;
+    let actualExpGained = 0;
+    let lvUpCount = 0;
+
+    for (const id of Object.keys(selectedMaterials)) {
+        let count = selectedMaterials[id] || 0;
+        const matChar = rawData.characters ? rawData.characters.find(c => c.id === id) : null;
+        const expVal = matChar ? (MAT_EXP[matChar.rarity] || 25) : 25;
+
+        while (count > 0 && t.level < maxLv) {
+            if (gameState.charaInventory[id] && gameState.charaInventory[id].count > 0) {
+                gameState.charaInventory[id].count--;
+                count--;
+                usedCount++;
+                actualExpGained += expVal;
+                t.exp = (Number(t.exp) || 0) + expVal;
+
+                while (t.exp >= EXP_REQ && t.level < maxLv) {
+                    t.exp -= EXP_REQ;
+                    t.level++;
+                    lvUpCount++;
+                }
+                if (t.level >= maxLv) {
+                    t.exp = 0;
+                    break;
+                }
+            } else {
+                break;
             }
         }
-    });
-    
-    const maxL = RARITY_CAPS[targetInv.currentRarity || targetMaster.rarity] || 10;
-    targetInv.exp = (Number(targetInv.exp) || 0) + totalExp;
-    while (targetInv.exp >= EXP_REQ && targetInv.level < maxL) {
-        targetInv.exp -= EXP_REQ;
-        targetInv.level++;
     }
-    if (targetInv.level >= maxL) targetInv.exp = 0;
-    
-    updateMissionProgress('enhance', 1);
+
+    updateMissionProgress('enhance', 1); 
+    checkTitles(); 
     saveGame();
-    alert("強化が完了しました！");
-    closeEnhanceMenu();
-    openCharaDetail(runtimeState.viewingCharaId);
-    renderZukan();
-    updateTitleInfo();
-    checkTitles();
+    
+    const isNowMax = t.level >= maxLv;
+    let msg = `強化完了！\n経験値 +${actualExpGained} を獲得しました。`;
+    if (lvUpCount > 0) msg += `\nレベルが Lv.${t.level} に上がりました！`;
+    if (isNowMax) msg += `\n🎉 Lv.MAXに到達しました！`;
+    if (usedCount < totalSelected) msg += `\n（Lv.MAXに到達したため、余剰の素材${totalSelected - usedCount}体は消費されずに残りました）`;
+    
+    alert(msg);
+    selectedMaterials = {}; 
+    renderEnhanceList(); 
+    updateEnhancePreview(0);
+    
+    if(chara) {
+        const cdLv = document.getElementById('cd-lv'); if(cdLv) cdLv.innerText = 'Lv.' + t.level + ' / ' + maxLv; 
+        const cdExpText = document.getElementById('cd-exp-text'); if(cdExpText) cdExpText.innerText = isNowMax ? 'MAX' : (t.exp + ' / ' + EXP_REQ); 
+        const cdExpBar = document.getElementById('cd-exp-bar'); if(cdExpBar) cdExpBar.style.width = isNowMax ? '100%' : (Math.min(100, (t.exp / EXP_REQ * 100)) + '%');
+        const baseVal = (t.isEvolved && t.customValue) ? t.customValue : Number(chara.value); 
+        const cdVal = document.getElementById('cd-val'); if(cdVal) cdVal.innerText='x'+(baseVal+(t.level*LV_BONUS_RATE)).toFixed(2);
+        const btnEnhance = document.getElementById('btn-enhance');
+        if (btnEnhance) {
+            btnEnhance.disabled = isNowMax;
+            btnEnhance.style.opacity = isNowMax ? "0.5" : "1.0";
+            btnEnhance.style.cursor = isNowMax ? "not-allowed" : "pointer";
+        }
+    }
 }
 
-export async function sellCharaStock() {
-    const id = runtimeState.viewingCharaId;
-    const inv = gameState.charaInventory[id];
-    const c = rawData.characters ? rawData.characters.find(x => String(x.id) === String(id)) : null;
-    if (!inv || !c || inv.count <= 1) return alert("売却できる余剰在庫がありません。");
-    
-    const r = inv.currentRarity || c.rarity;
-    const price = SELL_PRICES[r] || 250;
-    
-    if (!await showConfirm(`余剰在庫を1個売却して ${price} XP に変換しますか？\n（残り在庫: ${inv.count - 1}個になります）`)) return;
-    
-    inv.count--;
-    gameState.xp += price;
-    saveGame();
-    alert(`売却完了！ +${price} XP を獲得しました。`);
-    openCharaDetail(id);
-    renderZukan();
+export async function sellCharaStock() { 
+    const o = gameState.charaInventory[viewingCharaId]; 
+    const c = rawData.characters ? rawData.characters.find(x => x.id == viewingCharaId) : null;
+    if (!o || o.count <= 0) return;
+    const currentR = o.currentRarity || (c ? c.rarity : 'N');
+    const price = (typeof SELL_PRICES !== 'undefined' && SELL_PRICES[currentR]) ? SELL_PRICES[currentR] : 250;
+    if (!(await showConfirm(`素材を1体売却して ${price} XPを獲得しますか？`))) return; 
+    o.count--; 
+    gameState.xp += price; 
+    saveGame(); 
+    openCharaDetail(viewingCharaId); 
     updateTitleInfo();
-    checkTitles();
 }
 
 // ==========================================
@@ -628,51 +660,48 @@ export function closeShop() {
 }
 
 export function renderShop() {
-    const list = document.getElementById('shop-list');
-    const xpSpan = document.getElementById('shop-xp');
-    if (xpSpan) xpSpan.innerText = gameState.xp;
-    if (!list || !rawData.shopItems) return;
-    
-    list.innerHTML = '';
-    rawData.shopItems.forEach(item => {
-        const lv = gameState.itemLevels[item.id] || 0;
-        const isMax = lv >= MAX_ITEM_LEVEL;
-        const cost = item.price * (lv + 1);
-        const canBuy = gameState.xp >= cost && !isMax;
-        
-        list.innerHTML += `
-            <div class="shop-item">
-                <div class="shop-icon">${item.icon}</div>
-                <div class="shop-info">
-                    <div class="shop-name">${item.name}</div>
-                    <div class="shop-desc">${item.desc}</div>
-                </div>
-                <div class="shop-right">
-                    <div class="shop-level-tag">Lv.${lv}/${MAX_ITEM_LEVEL}</div>
-                    <button class="shop-buy-btn" onclick="buyShopItem('${item.id}', ${cost})" ${!canBuy ? 'disabled' : ''}>
-                        ${isMax ? 'MAX' : cost + ' XP'}
-                    </button>
-                </div>
-            </div>
-        `;
-    });
+    const shopXp = document.getElementById('shop-xp'); if(shopXp) shopXp.innerText = gameState.xp;
+    const l=document.getElementById('shop-list'); if(!l) return;
+    l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="currentShopTab='buy'; renderShop();">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="currentShopTab='exchange'; renderShop();">アイテム交換</div></div>`; 
+    if(currentShopTab === 'buy') {
+        if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
+            const lv = (gameState.itemLevels && gameState.itemLevels[i.id]) ? gameState.itemLevels[i.id] : 0;
+            const p = i.price * (lv + 1);
+            const isMax = lv >= MAX_ITEM_LEVEL;
+            l.innerHTML+=`<div class="shop-item"><div class="shop-icon">${i.icon}</div><div class="shop-info"><div class="shop-name">${i.name}</div><div class="shop-desc">${i.desc}</div></div><div class="shop-right"><div class="shop-level-tag">Lv.${lv} / ${MAX_ITEM_LEVEL}</div><button class="shop-buy-btn" ${isMax?'disabled':''} onclick="buyItem('${i.id}',${p})">${isMax?'MAX':'⬆ '+p+'XP'}</button></div></div>`; 
+        }); 
+    } else {
+        const rates = [ { id: 'xpBookSmall', name: '小の書', cost: 20, gain: 200, icon: '📔' }, { id: 'xpBookMedium', name: '中の書', cost: 35, gain: 500, icon: '📕' }, { id: 'xpBookLarge', name: '大の書', cost: 50, gain: 1000, icon: '📘' } ];
+        rates.forEach(ex => {
+            const canEx = (gameState.inventory.redPages >= ex.cost && gameState.inventory.bluePages >= ex.cost);
+            const currentCount = gameState.inventory[ex.id] || 0;
+            l.innerHTML += `<div class="shop-item"><div class="shop-icon">${ex.icon}</div><div class="shop-info"><div class="shop-name">${ex.name}</div><div class="shop-desc">キャラXP +${ex.gain}</div><div style="font-size:0.8em; color:#7f8c8d;">所持: ${currentCount}冊</div><div style="font-size:0.8em; color:#e67e22; font-weight:bold;">必要: 📕${ex.cost} & 📘${ex.cost}</div></div><div class="shop-right"><button class="shop-buy-btn" ${canEx?'':'disabled'} onclick="exchangeBook('${ex.id}', ${ex.cost})">交換</button></div></div>`;
+        });
+    }
 }
 
-export function buyShopItem(id, cost) {
-    const item = rawData.shopItems ? rawData.shopItems.find(x => String(x.id) === String(id)) : null;
-    if (!item) return;
-    if (gameState.xp < cost) return alert("XPが足りません！");
-    
-    const curLv = gameState.itemLevels[id] || 0;
-    if (curLv >= MAX_ITEM_LEVEL) return alert("すでに最大レベルです。");
-    
-    gameState.xp -= cost;
-    gameState.itemLevels[id] = curLv + 1;
-    updateMissionProgress('shop', 1);
-    saveGame();
-    renderShop();
-    updateTitleInfo();
-    checkTitles();
+export function buyItem(id, p) { 
+    if (!gameState.itemLevels) gameState.itemLevels = {}; 
+    if((gameState.itemLevels[id]||0) >= 10) return; 
+    if(gameState.xp < p) return alert("XP不足"); 
+    gameState.xp -= p; 
+    gameState.itemLevels[id] = (gameState.itemLevels[id] || 0) + 1; 
+    updateMissionProgress('shop', 1); 
+    saveGame(); 
+    openShop(); 
+    updateTitleInfo(); 
+    checkTitles(); 
+}
+
+export function exchangeBook(bookId, cost) { 
+    if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; 
+    gameState.inventory.redPages -= cost; 
+    gameState.inventory.bluePages -= cost; 
+    gameState.inventory[bookId]++; 
+    updateMissionProgress('shop', 1); 
+    saveGame(); 
+    renderShop(); 
+    playSE('win'); 
 }
 
 // ==========================================
@@ -690,45 +719,20 @@ export function closeMissions() {
 }
 
 export function renderMissions() { 
-    const l = document.getElementById('mission-list'); 
-    if(!l) return; 
-    l.innerHTML = ''; 
-    let all = true; 
-    MISSIONS.forEach(m => { 
-        const p = dailyMissions.progress[m.id] || 0; 
-        const fin = p >= m.target; 
-        const clm = dailyMissions.claimed[m.id]; 
-        if(!fin) all = false; 
-        l.innerHTML += `
-            <div class="mission-item">
-                <div class="mission-title">
-                    <span>${m.title}</span>
-                    <span class="mission-reward">+${m.reward} XP</span>
-                </div>
-                <div class="text-xs text-gray mt-5">${m.desc}</div>
-                <div class="mission-progress-bg">
-                    <div class="mission-progress-fill" style="width:${Math.min(100, (p / m.target) * 100)}%;"></div>
-                </div>
-                <button class="mission-btn ${fin && !clm ? 'active' : 'disabled'}" onclick="claimMission('${m.id}', ${m.reward})">
-                    ${clm ? '受取済' : (fin ? '報酬を受け取る' : `進行中 (${p}/${m.target})`)}
-                </button>
-            </div>
-        `; 
+    const l=document.getElementById('mission-list'); if(!l) return; l.innerHTML=''; let all=true; 
+    MISSIONS.forEach(m=>{ 
+        const p=dailyMissions.progress[m.id]||0; 
+        const fin=p>=m.target; const clm=dailyMissions.claimed[m.id]; 
+        if(!fin)all=false; 
+        l.innerHTML+=`<div class="mission-item"><b>${m.title}</b> (${p}/${m.target})<br><small>${m.desc}</small><button class="mission-btn ${fin&&!clm?'active':'disabled'}" onclick="claimMission('${m.id}',${m.reward})">${clm?'受取済':'受取'}</button></div>`; 
     }); 
-    if(all) { 
+    if(all){ 
         const isClaimed = dailyMissions.claimed.allClear;
         let btnStyle = isClaimed ? '' : 'background:#f1c40f; border-color:#d35400;'; 
         let btnClass = isClaimed ? 'disabled' : ''; 
         let btnText = isClaimed ? '受取済' : `${MISSION_ALL_CLEAR} EXPを受け取る`;
         let btnAction = isClaimed ? '' : 'onclick="claimAllClear()"';
-        l.innerHTML += `
-            <div style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;">
-                <div style="font-weight:bold; color:#e67e22;">🎉 オールクリアボーナス</div>
-                <button class="mission-btn ${btnClass}" style="width:100%; margin-top:5px; ${btnStyle}" ${btnAction}>
-                    ${btnText}
-                </button>
-            </div>
-        `; 
+        l.innerHTML += `<div style="margin-top:10px; padding:10px; background:#fef5e7; border:2px solid #e67e22; border-radius:10px;"><div style="font-weight:bold; color:#e67e22;">コンプリート報酬</div><button class="mission-btn ${btnClass}" style="width:100%; margin-top:5px; ${btnStyle}" ${btnAction}>${btnText}</button></div>`; 
     } 
 }
 
@@ -782,14 +786,9 @@ export function closeTitles() {
 }
 
 export function renderTitles() {
-    const list = document.getElementById('titles-list'); 
-    if(!list) return; 
-    list.innerHTML = '';
+    const list = document.getElementById('titles-list'); if(!list) return; list.innerHTML = '';
     let collectionCount = 0; 
-    let hasSSR = false; 
-    let hasUR = false; 
-    let hasLvMax = false; 
-    let hasMastered = false;
+    let hasSSR = false; let hasUR = false; let hasLvMax = false; let hasMastered = false;
     
     if(gameState.charaInventory) {
         collectionCount = Object.keys(gameState.charaInventory).length;
@@ -804,8 +803,7 @@ export function renderTitles() {
     }
 
     TITLES.forEach(t => {
-        const isClaimed = gameState.unlockedTitles.includes(t.id); 
-        let isUnlocked = false;
+        const isClaimed = gameState.unlockedTitles.includes(t.id); let isUnlocked = false;
         if (isClaimed) isUnlocked = true;
         else {
             if (t.req.includes('collection') && collectionCount >= t.val) isUnlocked = true;
@@ -833,15 +831,7 @@ export function renderTitles() {
         let statusClass = isClaimed ? 'claimed' : (isUnlocked ? 'unlocked' : '');
         let btnText = isClaimed ? '受取済' : (isUnlocked ? `受取: ${t.reward}XP` : '未達成');
         let btnAction = (isUnlocked && !isClaimed) ? `onclick="claimTitle('${t.id}', ${t.reward})"` : '';
-        list.innerHTML += `
-            <div class="title-item ${statusClass}">
-                <div class="title-header">
-                    <span class="title-name">${t.name}</span>
-                    <button class="title-reward-btn" ${btnAction}>${btnText}</button>
-                </div>
-                <div class="title-req">${t.desc}</div>
-            </div>
-        `;
+        list.innerHTML += `<div class="title-item ${statusClass}"><div class="title-header"><span class="title-name">${t.name}</span><button class="title-reward-btn" ${btnAction}>${btnText}</button></div><div class="title-req">${t.desc}</div></div>`;
     });
 }
 
@@ -857,18 +847,13 @@ export function claimTitle(id, reward) {
 }
 
 export function checkTitles() {
-    let count = 0; 
-    let collectionCount = 0; 
-    let hasSSR = false; 
-    let hasUR = false; 
-    let hasLvMax = false; 
-    let hasMastered = false;
+    let count = 0; let collectionCount = 0; 
+    let hasSSR = false; let hasUR = false; let hasLvMax = false; let hasMastered = false;
     
     if(gameState.charaInventory && rawData.characters && rawData.characters.length > 0) {
         collectionCount = Object.keys(gameState.charaInventory).length;
         Object.keys(gameState.charaInventory).forEach(id => {
-            const c = rawData.characters.find(x => x.id === id); 
-            const inv = gameState.charaInventory[id];
+            const c = rawData.characters.find(x => x.id === id); const inv = gameState.charaInventory[id];
             if(c && c.rarity === 'SSR') hasSSR = true;
             if(c && c.rarity === 'UR') hasUR = true;
             if(inv && inv.level >= 20) hasLvMax = true;
@@ -909,12 +894,7 @@ export function checkTitles() {
     });
     const badge = document.getElementById('title-badge');
     if(badge) {
-        if(count > 0) { 
-            badge.classList.remove('hidden'); 
-            badge.innerText = count > 9 ? '!' : count; 
-        } else { 
-            badge.classList.add('hidden'); 
-        }
+        if(count > 0) { badge.classList.remove('hidden'); badge.innerText = count > 9 ? '!' : count; } else { badge.classList.add('hidden'); }
     }
 
     updateCategoryBadges();
