@@ -30,7 +30,8 @@ import {
     showAppModal,
     showAlert,
     showConfirm,
-    updateTitleInfo
+    updateTitleInfo,
+    addCalcRecord
 } from './ui-manager.js?v=9.1.8';
 
 export function showCutIn(t) { 

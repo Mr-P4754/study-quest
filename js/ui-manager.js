@@ -13,7 +13,8 @@ import {
 
 import {
     getDisplayName,
-    drawRadarChart
+    drawRadarChart,
+    playSE
 } from './utils.js?v=9.1.8';
 
 // ==========================================
@@ -372,27 +373,28 @@ export function closeGiftMenu() {
 
 export function renderGiftList() {
     const list = document.getElementById('gift-list');
-    const receiveBtn = document.getElementById('btn-receive-all-gifts');
+    const receiveAllBtn = document.getElementById('btn-receive-all-gifts');
     if (!list) return;
     list.innerHTML = '';
     
     let gifts = rawData.gifts || [];
     let unclaimed = gifts.filter(g => g.id && !gameState.claimedGifts.includes(g.id));
     
-    if (unclaimed.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#7f8c8d;">受け取れるギフトはありません。</div>';
-        if (receiveBtn) {
-            receiveBtn.disabled = true;
-            receiveBtn.style.opacity = '0.5';
-            receiveBtn.style.cursor = 'not-allowed';
+    if (receiveAllBtn) {
+        if (unclaimed.length > 0) {
+            receiveAllBtn.disabled = false;
+            receiveAllBtn.style.opacity = '1';
+            receiveAllBtn.style.cursor = 'pointer';
+        } else {
+            receiveAllBtn.disabled = true;
+            receiveAllBtn.style.opacity = '0.5';
+            receiveAllBtn.style.cursor = 'not-allowed';
         }
-        return;
     }
     
-    if (receiveBtn) {
-        receiveBtn.disabled = false;
-        receiveBtn.style.opacity = '1';
-        receiveBtn.style.cursor = 'pointer';
+    if (unclaimed.length === 0) {
+        list.innerHTML = '<div style="text-align:center; color:#7f8c8d; padding:20px;">受け取れるギフトはありません</div>';
+        return;
     }
     
     unclaimed.forEach(g => {
@@ -434,6 +436,7 @@ export function checkAdminGifts() {
     let count = unclaimed.length;
     const badge = document.getElementById('gift-badge');
     const giftBtn = document.getElementById('btn-gift');
+    const receiveAllBtn = document.getElementById('btn-receive-all-gifts');
     
     if (badge) {
         if (count > 0) {
