@@ -909,17 +909,20 @@ export function startTeamBattle() {
     // ステージ1の敵をセットアップ
     setupTbStage(1);
 
+    // カウントダウン中は問題文と選択肢を非表示（先読み完全防止）
+    const qBox = document.getElementById('tb-ui-question');
+    if (qBox) qBox.innerText = '⏳ バトル開始準備中...';
+    const choicesGrid = document.getElementById('tb-ui-choices');
+    if (choicesGrid) choicesGrid.innerHTML = '';
+
     // BGM開始
     playBGM();
-
-    // 最初の問題出題
-    nextTbQuestion();
 
     // リアルタイムゲームループ開始 (100ms周期)
     if (tbState.timerId) clearInterval(tbState.timerId);
     tbState.timerId = setInterval(tbGameLoop, 100);
 
-    // 3秒前カウントダウンカットイン開始（開始演出中は時間・操作を完全ロック）
+    // 3秒前カウントダウンカットイン開始（カウントダウン完了後に自動で第1問が出題される）
     showTbCountdownCutIn(1);
 }
 
@@ -933,6 +936,7 @@ export function showTbCountdownCutIn(stageNum) {
         const overlay = document.getElementById('tb-countdown-overlay');
         const textEl = document.getElementById('tb-countdown-text');
         if (!overlay || !textEl) {
+            nextTbQuestion();
             resolve();
             return;
         }
@@ -943,9 +947,13 @@ export function showTbCountdownCutIn(stageNum) {
         updateTbTimerUI(); // タイマーバーを満タン状態に即座に描画
         overlay.classList.remove('hidden');
 
+        // カウントダウン中は問題文と選択肢を隠す（先読み防止）
+        const qBox = document.getElementById('tb-ui-question');
+        if (qBox) qBox.innerText = '⏳ バトル開始準備中...';
+        const choicesGrid = document.getElementById('tb-ui-choices');
+        if (choicesGrid) choicesGrid.innerHTML = '';
+
         // 選択肢ボタンおよびポーズボタンを一時非活性化
-        const allBtns = document.querySelectorAll('#tb-ui-choices .choice-btn');
-        allBtns.forEach(b => b.disabled = true);
         const pauseBtn = document.getElementById('tb-ui-pause-btn');
         if (pauseBtn) pauseBtn.disabled = true;
 
@@ -971,10 +979,9 @@ export function showTbCountdownCutIn(stageNum) {
                 overlay.classList.add('hidden');
                 tbState.isPaused = false;
                 tbState.isCountdown = false;
-                // 選択肢ボタンおよびポーズボタンを再活性化
-                const btns = document.querySelectorAll('#tb-ui-choices .choice-btn');
-                btns.forEach(b => b.disabled = false);
                 if (pauseBtn) pauseBtn.disabled = false;
+                // カウントダウン終了と同時に問題を出題
+                nextTbQuestion();
                 resolve();
                 return;
             }
@@ -1189,8 +1196,9 @@ export function tbGameLoop() {
     // 1. タイマーバーとテキストの更新
     updateTbTimerUI();
 
-    // 2. 1秒ごと（10カウントごと）のスリップダメージ（敵の通常攻撃）
-    if (tbState.tickCount % 10 === 0) {
+    // 2. 出題から2秒間（20カウント間）はスリップダメージ無効（問題読解猶予時間）
+    // 出題から2.0秒経過後（20カウント目以降）に1秒ごと（10カウントごと）にスリップダメージ発生
+    if (tbState.tickCount >= 20 && tbState.tickCount % 10 === 0) {
         const activePlayer = tbState.party[tbState.activeSlot];
         if (activePlayer && activePlayer.isAlive) {
             const tickDamage = calcTbTickDamage(tbState.enemy, activePlayer);
@@ -1455,8 +1463,7 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
                     await showAlert(`🎉 STAGE ${tbState.stage} CLEAR!\n次の敵が現れた！`);
                     if (!tbState.isActive) return;
                     setupTbStage(tbState.stage + 1);
-                    nextTbQuestion();
-                    // 新しい敵登場のカウントダウンカットイン
+                    // 新しい敵登場のカウントダウンカットイン（完了時に自動で問題が出題される）
                     showTbCountdownCutIn(tbState.stage);
                 } else {
                     // 全ステージ制覇・完全勝利！
