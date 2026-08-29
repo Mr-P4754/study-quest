@@ -10,25 +10,25 @@ import {
     runtimeState,
     ROGUE_TILES,
     saveGame
-} from './state.js?v=9.4.5';
+} from './state.js?v=10.0.0';
 
 import {
     playSE,
     playBGM
-} from './utils.js?v=9.4.5';
+} from './utils.js?v=10.0.0';
 
 import {
     updateUI,
     startCountdown,
     getCharaStats,
     backToTitle
-} from './battle-core.js?v=9.4.5';
+} from './battle-core.js?v=10.0.0';
 
 import {
     showAppModal,
     showConfirm,
     updateTitleInfo
-} from './ui-manager.js?v=9.4.5';
+} from './ui-manager.js?v=10.0.0';
 
 export function addRogueLog(text) {
     if (!rogueData.logs) rogueData.logs = [];
@@ -445,10 +445,11 @@ export function getRogueEnemyChar(isBoss, floor) {
         else rarity = 'R';
     } else {
         const rand = Math.random();
-        if (rand < 0.01) rarity = 'UR';
-        else if (rand < 0.05) rarity = 'SSR';
-        else if (rand < 0.20) rarity = 'SR';
-        else if (rand < 0.50) rarity = 'R';
+        // N: 50% / R: 35% / SR: 12% / SSR: 2.8% / UR: 0.2%
+        if (rand < 0.002) rarity = 'UR';
+        else if (rand < 0.030) rarity = 'SSR';
+        else if (rand < 0.150) rarity = 'SR';
+        else if (rand < 0.500) rarity = 'R';
         else rarity = 'N';
     }
     

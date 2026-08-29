@@ -9,55 +9,65 @@
     max-width: 620px;
     width: 95%;
     max-height: 90vh;
+    max-height: 90dvh;
     display: flex;
     flex-direction: column;
+    padding: clamp(10px, 2.5vw, 18px);
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .party-formation-header {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
 }
 
 .party-formation-title {
     margin: 0;
     color: #f39c12;
-    font-size: 1.4rem;
+    font-size: clamp(1.1rem, 3.5vw, 1.4rem);
     font-weight: 700;
     text-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
 
 .party-formation-desc {
-    font-size: 0.82rem;
+    font-size: clamp(0.7rem, 2vw, 0.82rem);
     color: #7f8c8d;
-    margin: 4px 0 10px 0;
+    margin: 2px 0 6px 0;
+    line-height: 1.3;
 }
 
 /* 上部：3体スロット配置エリア */
 .party-slots-container {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(4px, 1.5vw, 10px);
     background: linear-gradient(135deg, #1a252f, #2c3e50);
-    padding: 12px;
+    padding: clamp(6px, 1.5vw, 12px);
     border-radius: 12px;
     border: 2px solid #34495e;
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .party-slot-card {
     background: rgba(255, 255, 255, 0.06);
     border: 2px dashed #7f8c8d;
-    border-radius: 10px;
-    padding: 8px 6px;
+    border-radius: 8px;
+    padding: 6px 4px;
     text-align: center;
     position: relative;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 120px;
+    min-height: clamp(90px, 16vh, 125px);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .party-slot-card.main-slot {
@@ -83,14 +93,17 @@
 
 .party-slot-badge {
     position: absolute;
-    top: 4px;
-    left: 4px;
-    font-size: 0.65rem;
+    top: 2px;
+    left: 2px;
+    font-size: clamp(0.55rem, 1.2vw, 0.65rem);
     font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
     color: #fff;
-    background: #7f8c8d;
+    background: #64748b;
+    line-height: 1.2;
+    z-index: 2;
+    white-space: nowrap;
 }
 
 .party-slot-card.main-slot .party-slot-badge {
@@ -98,44 +111,48 @@
 }
 
 .party-slot-empty-icon {
-    font-size: 1.8rem;
+    font-size: clamp(1.3rem, 3.5vw, 1.8rem);
     color: #bdc3c7;
-    margin: 6px 0;
+    margin: 2px 0;
 }
 
 .party-slot-empty-text {
-    font-size: 0.72rem;
+    font-size: clamp(0.62rem, 1.4vw, 0.72rem);
     color: #bdc3c7;
+    line-height: 1.2;
 }
 
 .party-slot-img {
-    width: 48px;
-    height: 48px;
+    width: clamp(34px, 8vw, 48px);
+    height: clamp(34px, 8vw, 48px);
     object-fit: contain;
-    margin: 4px auto;
+    margin: 2px auto;
 }
 
 .party-slot-info {
     width: 100%;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .party-slot-name {
-    font-size: 0.75rem;
+    font-size: clamp(0.65rem, 1.4vw, 0.75rem);
     font-weight: bold;
     color: #ecf0f1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 .party-slot-meta {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 4px;
-    font-size: 0.65rem;
-    color: #bdc3c7;
+    gap: 3px;
+    font-size: clamp(0.55rem, 1.2vw, 0.65rem);
+    color: #cbd5e1;
+    white-space: nowrap;
+    margin-top: 1px;
 }
 
 .party-slot-remove-btn {
@@ -149,34 +166,41 @@
     color: #fff;
     border: none;
     border-radius: 50%;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     cursor: pointer;
     display: none;
+    z-index: 3;
+    padding: 0;
 }
 
-.party-slot-card.filled:hover .party-slot-remove-btn {
-    display: block;
+.party-slot-card.filled .party-slot-remove-btn {
+    display: block; /* スマホでも解除ボタンを常に表示 */
 }
 
 /* 下部：キャラ選択リスト */
 .party-select-list-title {
-    font-size: 0.85rem;
+    font-size: clamp(0.72rem, 1.8vw, 0.85rem);
     font-weight: bold;
     color: #2c3e50;
     text-align: left;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .party-zukan-scroll {
-    max-height: 240px;
+    flex: 1;
+    min-height: 120px;
+    max-height: clamp(140px, 32vh, 260px);
     overflow-y: auto;
     background: #f8f9fa;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 8px;
+    padding: 6px;
+    box-sizing: border-box;
+    overscroll-behavior: contain;
 }
 
 

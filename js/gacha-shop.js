@@ -23,13 +23,13 @@ import {
     MISSIONS,
     MISSION_ALL_CLEAR,
     saveGame
-} from './state.js?v=9.4.5';
+} from './state.js?v=10.0.0';
 
 import {
     getRarityIndex,
     getDisplayName,
     playSE
-} from './utils.js?v=9.4.5';
+} from './utils.js?v=10.0.0';
 
 import {
     showAppModal,
@@ -40,7 +40,7 @@ import {
     returnToCurrentCategory,
     closeAllCategoryModals,
     updateCategoryBadges
-} from './ui-manager.js?v=9.4.5';
+} from './ui-manager.js?v=10.0.0';
 
 let selectedMaterials = {};
 let viewingCharaId = null;
@@ -95,10 +95,11 @@ export function executeGacha(times, guaranteedRarity) {
     const drawSingle = (isGuaranteed) => {
         if (isGuaranteed && guaranteedRarity) return getRandChar(guaranteedRarity);
         const rand = Math.random();
-        if (rand < 0.01) return getRandChar('UR');
-        if (rand < 0.05) return getRandChar('SSR');
-        if (rand < 0.20) return getRandChar('SR');
-        if (rand < 0.50) return getRandChar('R');
+        // N: 55% / R: 30% / SR: 11% / SSR: 3.5% / UR: 0.5%
+        if (rand < 0.005) return getRandChar('UR');
+        if (rand < 0.040) return getRandChar('SSR');
+        if (rand < 0.150) return getRandChar('SR');
+        if (rand < 0.450) return getRandChar('R');
         return getRandChar('N');
     };
 

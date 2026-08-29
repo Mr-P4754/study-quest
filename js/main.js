@@ -31,7 +31,7 @@ import {
     initUserId,
     loadSaveData,
     saveGame
-} from './state.js?v=9.4.5';
+} from './state.js?v=10.0.0';
 
 import {
     getRarityIndex,
@@ -47,13 +47,13 @@ import {
     stopBGM,
     playMmlBGM,
     BGM_MML
-} from './utils.js?v=9.4.5';
+} from './utils.js?v=10.0.0';
 
 import {
     uploadData,
     downloadData,
     fetchData
-} from './api.js?v=9.4.5';
+} from './api.js?v=10.0.0';
 
 import {
     showCutIn,
@@ -68,7 +68,7 @@ import {
     finishGame,
     handleResultClose,
     backToTitle
-} from './battle-core.js?v=9.4.5';
+} from './battle-core.js?v=10.0.0';
 
 import {
     startNormalGameCheck,
@@ -103,7 +103,7 @@ import {
     toggleRelief,
     startOathGame,
     startReliefGame
-} from './quest-normal.js?v=9.4.5';
+} from './quest-normal.js?v=10.0.0';
 
 import {
     addRogueLog,
@@ -126,7 +126,7 @@ import {
     updateRogueUI,
     escapeRogueConfirm,
     exitRogueSystem
-} from './quest-explore.js?v=9.4.5';
+} from './quest-explore.js?v=10.0.0';
 
 import {
     openGacha,
@@ -173,7 +173,7 @@ import {
     checkLoginBonus,
     closeLoginBonus,
     checkMissionDate
-} from './gacha-shop.js?v=9.4.5';
+} from './gacha-shop.js?v=10.0.0';
 
 import {
     initTitle,
@@ -219,7 +219,7 @@ import {
     showAlert,
     showConfirm,
     GuideModule
-} from './ui-manager.js?v=9.4.5';
+} from './ui-manager.js?v=10.0.0';
 
 import {
     openTeamBattleSetup,
@@ -252,7 +252,7 @@ import {
     toggleTbPause,
     resumeTbGame,
     escapeTeamBattleFromPause
-} from './special-quest/special-quest-engine.js?v=9.4.5';
+} from './special-quest/special-quest-engine.js?v=10.0.0';
 
 // ==========================================
 // インライン onclick / 動的UI互換用 window 一括バインド

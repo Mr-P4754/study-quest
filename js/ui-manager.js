@@ -9,13 +9,13 @@ import {
     runtimeState,
     GUIDE_DATA,
     saveGame
-} from './state.js?v=9.4.5';
+} from './state.js?v=10.0.0';
 
 import {
     getDisplayName,
     drawRadarChart,
     playSE
-} from './utils.js?v=9.4.5';
+} from './utils.js?v=10.0.0';
 
 // ==========================================
 // タイトル初期化・カテゴリー制御

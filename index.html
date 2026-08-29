@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.4.5">
-    <link rel="stylesheet" href="css/layout.css?v=9.4.5">
-    <link rel="stylesheet" href="css/components.css?v=9.4.5">
-    <link rel="stylesheet" href="css/quests.css?v=9.4.5">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.4.5">
+    <link rel="stylesheet" href="css/base.css?v=10.0.0">
+    <link rel="stylesheet" href="css/layout.css?v=10.0.0">
+    <link rel="stylesheet" href="css/components.css?v=10.0.0">
+    <link rel="stylesheet" href="css/quests.css?v=10.0.0">
+    <link rel="stylesheet" href="css/special-quest.css?v=10.0.0">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.4.5</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.0</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -260,7 +260,7 @@
             </div>
             <!-- 自陣前衛ステータス -->
             <div class="tb-status-card tb-player-status">
-                <div id="tb-affinity-badge" class="tb-affinity-badge advantage">相性:○ ×1.5</div>
+                <div id="tb-affinity-badge" class="tb-affinity-badge advantage">相性:○ ⚔×1.5/🛡×0.5</div>
                 <div class="tb-status-name-row">
                     <span id="tb-player-name" class="tb-status-name">味方キャラクター</span>
                     <span id="tb-player-type" class="tb-type-pill">SSR / ATK</span>
@@ -307,7 +307,7 @@
     <div class="modal tb-setup-modal">
         <div class="modal-header-row-sm">
             <h2 class="text-dark m-0">⚔️ チームバトル出撃準備</h2>
-            <button class="help-btn" type="button" onclick="GuideModule.open('special')">❓</button>
+            <button class="help-btn" type="button" onclick="GuideModule.open('team_battle')">❓</button>
         </div>
         <p class="text-sm text-gray">挑戦する単元とパーティーを確認してください</p>
         <div class="cat-box-gray">
@@ -809,6 +809,14 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.0.0（大型アップデート：チームバトルクエスト正式実装）</h4>
+            <ul>
+                <li>✨ 新コンテンツ「チームバトルクエスト」正式リリース！（3体交代制リアルタイム高速バトル、属性3すくみ相性・複数属性/ALL転生完全対応、撃破モンスター獲得報酬）</li>
+                <li>📊 全コンテンツのレアリティ抽選確率テーブル刷新（ガチャ・探索・チームバトル各ステージ）</li>
+                <li>📱 パーティー編成画面のマルチデバイス・レスポンシブ対応強化</li>
+                <li>📖 プレイガイドの全面改修（各機能の操作手順・遊び方・最新仕様の明記）</li>
+                <li>⚔️ ステータスカードの相性表示強化（攻撃・防御補正の可視化）</li>
+            </ul>
             <h4>Ver 9.4.5</h4>
             <ul>
                 <li>チームバトルクエストの複数属性・ALL属性相性計算対応と演出調整（複数属性の最大有利/耐性倍率・ALL属性最低保証/抑制、自キャラ浮遊アニメーション、被弾発光のタイムアップ/不正解時限定化、すっきりとした属性・相性UI表示）</li>
@@ -977,6 +985,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.4.5"></script>
+<script type="module" src="js/main.js?v=10.0.0"></script>
 </body>
 </html>

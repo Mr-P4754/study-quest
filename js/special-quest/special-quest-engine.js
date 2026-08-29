@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.5';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.5';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.5';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.0';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.0';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.0';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -637,25 +637,39 @@ function normalizeType(type) {
 }
 
 /**
- * 相性ナビUI用のテキストとクラスを返すヘルパー
- * @param {string} playerType
- * @param {string} enemyType
+ * 前衛相性ナビUI用のテキストとクラスを返すヘルパー（攻撃・防御相性補正表示）
+ * @param {string|string[]} playerSkills
+ * @param {string|string[]} enemySkills
  * @returns {{ text: string, className: string, visible: boolean }}
  */
-export function getTbAffinityInfo(playerType, enemyType) {
-    const multi = getTbAffinityMultiplier(playerType, enemyType);
-    if (multi > 1.0) {
-        return { text: `相性:○ ×${multi}`, className: 'advantage', visible: true };
-    } else if (multi < 1.0) {
-        return { text: `相性:△ ×${multi}`, className: 'disadvantage', visible: true };
+export function getTbAffinityInfo(playerSkills, enemySkills) {
+    const atkMulti = getTbAffinityMultiplier(playerSkills, enemySkills, true);
+    const defMulti = getTbAffinityMultiplier(enemySkills, playerSkills, false);
+
+    const isAdvantage = (atkMulti > 1.0 || defMulti < 1.0);
+    const isDisadvantage = (atkMulti < 1.0 || defMulti > 1.0);
+
+    if (isAdvantage) {
+        return { 
+            text: `相性:○ ⚔×${atkMulti}/🛡×${defMulti}`, 
+            className: 'advantage', 
+            visible: true 
+        };
+    } else if (isDisadvantage) {
+        return { 
+            text: `相性:△ ⚔×${atkMulti}/🛡×${defMulti}`, 
+            className: 'disadvantage', 
+            visible: true 
+        };
     } else {
-        return { text: '', className: '', visible: false }; // 等倍の時は非表示
+        // 攻防ともに等倍 (1.0倍) の時は非表示
+        return { text: '', className: '', visible: false };
     }
 }
 
 /**
  * 敵からアクティブな味方への基本ダメージ（ペナルティの基準値）計算
- * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正 * 属性相性倍率)
+ * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正 * 属性相性倍率[防御側耐性採用])
  * @param {Object} enemy
  * @param {Object} activePlayer
  * @returns {number}
@@ -665,7 +679,7 @@ export function calcTbTickDamage(enemy, activePlayer) {
     const val = Number(enemy.value) || 1.0;
     const lv = Number(enemy.level) || 1;
     const lvScale = 1 + (lv - 1) * 0.05;
-    const affinity = getTbAffinityMultiplier(enemy.type, activePlayer.type);
+    const affinity = getTbAffinityMultiplier(enemy.skills || enemy.type, activePlayer.skills || activePlayer.type, false);
     return Math.max(1, Math.floor(30 * val * lvScale * affinity));
 }
 
@@ -771,6 +785,34 @@ export function startTeamBattle() {
 }
 
 /**
+ * チームバトル用：ステージ番号に応じた敵キャラクターのレア度決定
+ * STAGE 1: N: 70% / R: 25% / SR: 5% / SSR: 0% / UR: 0%
+ * STAGE 2: N: 30% / R: 50% / SR: 18% / SSR: 2% / UR: 0%
+ * STAGE 3: N: 0% / R: 40% / SR: 45% / SSR: 13% / UR: 2%
+ * @param {number} stageNum
+ * @returns {string}
+ */
+export function getTbStageEnemyRarity(stageNum) {
+    const rand = Math.random();
+    if (stageNum === 1) {
+        if (rand < 0.05) return 'SR';
+        if (rand < 0.30) return 'R';
+        return 'N';
+    } else if (stageNum === 2) {
+        if (rand < 0.02) return 'SSR';
+        if (rand < 0.20) return 'SR';
+        if (rand < 0.70) return 'R';
+        return 'N';
+    } else {
+        // STAGE 3
+        if (rand < 0.02) return 'UR';
+        if (rand < 0.15) return 'SSR';
+        if (rand < 0.60) return 'SR';
+        return 'R';
+    }
+}
+
+/**
  * 指定ステージの敵キャラクターを生成・配置（図鑑キャラからランダム抽出）
  * @param {number} stageNum
  */
@@ -780,19 +822,14 @@ function setupTbStage(stageNum) {
     // 敵レベルと補正倍率の計算
     const enemyLevel = stageNum * 5 + 5; // Stage 1: Lv.10, Stage 2: Lv.15, Stage 3: Lv.20
 
-    // rawData.characters からランダムにキャラクターを抽出
+    // rawData.characters からステージ別レア度確率テーブルに従ってキャラクターを抽出
     const availableCharas = (rawData.characters && rawData.characters.length > 0) ? rawData.characters : [];
     let pickedChar = null;
     if (availableCharas.length > 0) {
-        // ステージに応じたレア度優先（ステージ1: N/R, ステージ2: R/SR, ステージ3: SR/SSR/UR）
-        const stageRarities = [
-            ['N', 'R'],
-            ['R', 'SR'],
-            ['SR', 'SSR', 'UR']
-        ];
-        const targetRarities = stageRarities[stageNum - 1] || ['SR', 'SSR'];
-        const candidates = availableCharas.filter(c => targetRarities.includes(c.rarity));
-        const pool = candidates.length > 0 ? candidates : availableCharas;
+        // ステージ別のレア度抽選
+        const targetRarity = getTbStageEnemyRarity(stageNum);
+        const candidates = availableCharas.filter(c => c.rarity === targetRarity);
+        const pool = (candidates.length > 0) ? candidates : availableCharas;
         pickedChar = pool[Math.floor(Math.random() * pool.length)];
     }
 
