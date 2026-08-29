@@ -37,7 +37,9 @@ import {
     showAppModal,
     showAlert,
     showConfirm,
-    updateTitleInfo
+    updateTitleInfo,
+    openOathMenu,
+    openReliefMenu
 } from './ui-manager.js';
 
 // ==========================================
@@ -76,7 +78,7 @@ export function goToOathMenuCheck() {
     
     document.getElementById('unit-select-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'normal';
-    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+    openOathMenu();
 }
 
 export function goToReliefMenuCheck() {
@@ -99,7 +101,7 @@ export function goToReliefMenuCheck() {
     
     document.getElementById('unit-select-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'normal';
-    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
+    openReliefMenu();
 }
 
 export function startGame() {
@@ -354,7 +356,7 @@ export function goToOathMenuSurvivalCheck() {
     
     document.getElementById('survival-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'survival';
-    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+    openOathMenu();
 }
 
 export function goToReliefMenuSurvivalCheck() {
@@ -373,7 +375,7 @@ export function goToReliefMenuSurvivalCheck() {
     
     document.getElementById('survival-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'survival';
-    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
+    openReliefMenu();
 }
 
 export function startSurvivalGame() {
@@ -476,7 +478,7 @@ export function goToOathMenuRandomCheck() {
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     document.getElementById('random-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'random';
-    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+    openOathMenu();
 }
 
 export function goToReliefMenuRandomCheck() {
@@ -489,7 +491,7 @@ export function goToReliefMenuRandomCheck() {
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     document.getElementById('random-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'random';
-    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
+    openReliefMenu();
 }
 
 export function startRandomGame() {
@@ -617,7 +619,7 @@ export function goToOathMenuTypingCheck() {
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     document.getElementById('typing-menu-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'typing';
-    if (typeof window.openOathMenu === 'function') window.openOathMenu();
+    openOathMenu();
 }
 
 export function goToReliefMenuTypingCheck() {
@@ -631,7 +633,7 @@ export function goToReliefMenuTypingCheck() {
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     document.getElementById('typing-menu-overlay')?.classList.add('hidden');
     runtimeState.oathOrigin = 'typing';
-    if (typeof window.openReliefMenu === 'function') window.openReliefMenu();
+    openReliefMenu();
 }
 
 export function startTypingGame() {
