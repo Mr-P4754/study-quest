@@ -440,13 +440,23 @@ Object.assign(globalScope, {
 // ==========================================
 // 初期化エントリーポイント
 // ==========================================
+let isAppInitialized = false;
+async function initApp() {
+    if (isAppInitialized) return;
+    isAppInitialized = true;
+    initUserId();
+    loadSaveData();
+    checkMissionDate();
+    await fetchData();
+    initTitle();
+    checkLoginBonus();
+}
+
 if (typeof window !== 'undefined') {
-    window.onload = async () => {
-        initUserId();
-        loadSaveData();
-        checkMissionDate();
-        await fetchData();
-        initTitle();
-        checkLoginBonus();
-    };
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initApp();
+    } else {
+        document.addEventListener('DOMContentLoaded', initApp);
+        window.addEventListener('load', initApp, { once: true });
+    }
 }
