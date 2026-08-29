@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=10.0.1">
-    <link rel="stylesheet" href="css/layout.css?v=10.0.1">
-    <link rel="stylesheet" href="css/components.css?v=10.0.1">
-    <link rel="stylesheet" href="css/quests.css?v=10.0.1">
-    <link rel="stylesheet" href="css/special-quest.css?v=10.0.1">
+    <link rel="stylesheet" href="css/base.css?v=10.0.2">
+    <link rel="stylesheet" href="css/layout.css?v=10.0.2">
+    <link rel="stylesheet" href="css/components.css?v=10.0.2">
+    <link rel="stylesheet" href="css/quests.css?v=10.0.2">
+    <link rel="stylesheet" href="css/special-quest.css?v=10.0.2">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.1</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.2</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -260,7 +260,7 @@
             </div>
             <!-- 自陣前衛ステータス -->
             <div class="tb-status-card tb-player-status">
-                <div id="tb-affinity-badge" class="tb-affinity-badge advantage">相性:○ ⚔×1.5/🛡×0.5</div>
+                <div id="tb-affinity-badge" class="tb-affinity-badge advantage">相性:○ ⚔×1.5</div>
                 <div class="tb-status-name-row">
                     <span id="tb-player-name" class="tb-status-name">味方キャラクター</span>
                     <span id="tb-player-type" class="tb-type-pill">SSR / ATK</span>
@@ -822,6 +822,11 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.0.2</h4>
+            <ul>
+                <li>チームバトルの相性補正を攻撃時のみに特化＆ステータスカード相性ナビを「相性:○ ⚔×○」表記に最適化</li>
+                <li>倒した敵・与えたダメージに応じた報酬保証システムを実装（3体完全制覇できなくても倒したモンスターと獲得XPを確実に獲得）</li>
+            </ul>
             <h4>Ver 10.0.1</h4>
             <ul>
                 <li>パーティー編成画面にキャラクターソート機能（レア度/レベル/属性/図鑑番号順）を実装</li>
@@ -1004,6 +1009,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=10.0.1"></script>
+<script type="module" src="js/main.js?v=10.0.2"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 // js/api.js (GASバックエンド通信・クラウド同期)
 // ==========================================
 
-import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=10.0.1';
+import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=10.0.2';
 
 export async function uploadData() {
     if (typeof window.showConfirm === 'function') {

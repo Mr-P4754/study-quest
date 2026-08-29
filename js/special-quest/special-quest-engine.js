@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.1';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.1';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.1';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.2';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.2';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.2';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -670,39 +670,25 @@ function normalizeType(type) {
 }
 
 /**
- * 前衛相性ナビUI用のテキストとクラスを返すヘルパー（攻撃・防御相性補正表示）
+ * 前衛相性ナビUI用のテキストとクラスを返すヘルパー（攻撃相性補正表示）
  * @param {string|string[]} playerSkills
  * @param {string|string[]} enemySkills
  * @returns {{ text: string, className: string, visible: boolean }}
  */
 export function getTbAffinityInfo(playerSkills, enemySkills) {
-    const atkMulti = getTbAffinityMultiplier(playerSkills, enemySkills, true);
-    const defMulti = getTbAffinityMultiplier(enemySkills, playerSkills, false);
-
-    const isAdvantage = (atkMulti > 1.0 || defMulti < 1.0);
-    const isDisadvantage = (atkMulti < 1.0 || defMulti > 1.0);
-
-    if (isAdvantage) {
-        return { 
-            text: `相性:○ ⚔×${atkMulti}/🛡×${defMulti}`, 
-            className: 'advantage', 
-            visible: true 
-        };
-    } else if (isDisadvantage) {
-        return { 
-            text: `相性:△ ⚔×${atkMulti}/🛡×${defMulti}`, 
-            className: 'disadvantage', 
-            visible: true 
-        };
+    const multi = getTbAffinityMultiplier(playerSkills, enemySkills, true);
+    if (multi > 1.0) {
+        return { text: `相性:○ ⚔×${multi}`, className: 'advantage', visible: true };
+    } else if (multi < 1.0) {
+        return { text: `相性:△ ⚔×${multi}`, className: 'disadvantage', visible: true };
     } else {
-        // 攻防ともに等倍 (1.0倍) の時は非表示
-        return { text: '', className: '', visible: false };
+        return { text: '', className: '', visible: false }; // 等倍の時は非表示
     }
 }
 
 /**
  * 敵からアクティブな味方への基本ダメージ（ペナルティの基準値）計算
- * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正 * 属性相性倍率[防御側耐性採用])
+ * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正) ※相性補正は攻撃のみに適用
  * @param {Object} enemy
  * @param {Object} activePlayer
  * @returns {number}
@@ -712,8 +698,7 @@ export function calcTbTickDamage(enemy, activePlayer) {
     const val = Number(enemy.value) || 1.0;
     const lv = Number(enemy.level) || 1;
     const lvScale = 1 + (lv - 1) * 0.05;
-    const affinity = getTbAffinityMultiplier(enemy.skills || enemy.type, activePlayer.skills || activePlayer.type, false);
-    return Math.max(1, Math.floor(30 * val * lvScale * affinity));
+    return Math.max(1, Math.floor(30 * val * lvScale));
 }
 
 // ----------------------------------------------------
@@ -1562,7 +1547,7 @@ export async function escapeTeamBattle() {
     const wasPaused = tbState.isPaused;
     tbState.isPaused = true;
 
-    if (!(await showConfirm("チームバトルから撤退しますか？\n（獲得予定の経験値は破棄されます）"))) {
+    if (!(await showConfirm("チームバトルから撤退しますか？\n（ここまでに倒した敵と獲得したXPは保持されます）"))) {
         tbState.isPaused = wasPaused;
         return;
     }
@@ -1572,6 +1557,7 @@ export async function escapeTeamBattle() {
 
 /**
  * バトル終了処理（勝利・敗北・撤退）
+ * 倒した敵・与えたダメージに応じた報酬を確実に付与
  * @param {boolean} isWin
  * @param {boolean} [isEscape=false]
  */
@@ -1591,51 +1577,65 @@ export function finishTeamBattle(isWin, isEscape = false) {
     // 確実にタイトル画面を表示
     document.getElementById('title-screen')?.classList.remove('hidden');
 
-    if (isEscape) {
-        returnToCurrentCategory();
-        return;
+    // 1. ダメージに応じた途中獲得XPの算出
+    let damageExp = 0;
+    const enemy = tbState.enemy;
+    if (enemy && enemy.maxHp > 0 && enemy.hp < enemy.maxHp) {
+        const damageDealt = enemy.maxHp - enemy.hp;
+        const damageRatio = Math.min(1.0, damageDealt / enemy.maxHp);
+        const stageBaseExp = 1500 * tbState.stage;
+        const activeChar = tbState.party[tbState.activeSlot] || tbState.party[0];
+        const stats = activeChar ? getTbCharaStats(activeChar) : { exp: 1.0 };
+        damageExp = Math.floor(stageBaseExp * (stats.exp || 1.0) * damageRatio);
     }
 
+    const winBonus = isWin ? 2000 : 0;
+    const totalExp = tbState.earnedXp + damageExp + winBonus;
+    if (totalExp > 0) {
+        gameState.xp += totalExp;
+    }
+
+    // 2. 倒した敵キャラクターを図鑑・インベントリに獲得
+    const acquiredNames = [];
+    if (tbState.defeatedEnemies && tbState.defeatedEnemies.length > 0) {
+        tbState.defeatedEnemies.forEach(e => {
+            if (e.master && e.master.id) {
+                const charId = String(e.master.id);
+                if (!gameState.charaInventory[charId]) {
+                    gameState.charaInventory[charId] = {
+                        level: 1,
+                        count: 1,
+                        exp: 0,
+                        currentRarity: e.master.rarity || 'N'
+                    };
+                } else {
+                    if (typeof gameState.charaInventory[charId].level !== 'number' || gameState.charaInventory[charId].level < 1) {
+                        gameState.charaInventory[charId].level = 1;
+                    }
+                    gameState.charaInventory[charId].count = (gameState.charaInventory[charId].count || 0) + 1;
+                }
+                acquiredNames.push(`・${e.name} (${e.rarity || 'N'})`);
+            }
+        });
+    }
+
+    saveGame();
+
+    let rewardText = '';
+    if (acquiredNames.length > 0) {
+        rewardText = `\n\n🎁 獲得キャラクター:\n${acquiredNames.join('\n')}`;
+    }
+
+    // 3. 結果表示モーダル
     if (isWin) {
         playSE('win');
-        const finalExp = tbState.earnedXp + 2000;
-        gameState.xp += finalExp;
-
-        // 倒した敵キャラクターを図鑑・インベントリに獲得
-        const acquiredNames = [];
-        if (tbState.defeatedEnemies && tbState.defeatedEnemies.length > 0) {
-            tbState.defeatedEnemies.forEach(enemy => {
-                if (enemy.master && enemy.master.id) {
-                    const charId = String(enemy.master.id);
-                    if (!gameState.charaInventory[charId]) {
-                        gameState.charaInventory[charId] = {
-                            level: 1,
-                            count: 1,
-                            exp: 0,
-                            currentRarity: enemy.master.rarity || 'N'
-                        };
-                    } else {
-                        if (typeof gameState.charaInventory[charId].level !== 'number' || gameState.charaInventory[charId].level < 1) {
-                            gameState.charaInventory[charId].level = 1;
-                        }
-                        gameState.charaInventory[charId].count = (gameState.charaInventory[charId].count || 0) + 1;
-                    }
-                    acquiredNames.push(`・${enemy.name} (${enemy.rarity || 'N'})`);
-                }
-            });
-        }
-
-        saveGame();
-
-        let rewardText = '';
-        if (acquiredNames.length > 0) {
-            rewardText = `\n\n🎁 獲得キャラクター:\n${acquiredNames.join('\n')}`;
-        }
-
-        showAlert(`🏆 チームバトルクエスト 完全制覇！\n\n獲得スコア: ${tbState.score}\n獲得XP: +${finalExp} XP${rewardText}`);
+        showAlert(`🏆 チームバトルクエスト 完全制覇！\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP (制覇ボーナス+2000含む)${rewardText}`);
+    } else if (isEscape) {
+        playSE('lose');
+        showAlert(`🚪 チームバトルから撤退しました\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP${rewardText}\n\nここまでに倒した敵と与えたダメージに応じたXPを受け取りました。`);
     } else {
         playSE('lose');
-        showAlert("💀 全滅してしまった...\n\nパーティーの編成やレベル、属性相性を見直して再挑戦しよう！");
+        showAlert(`💀 バトル終了（STAGE ${tbState.stage} で全滅）\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP${rewardText}\n\n倒した敵と与えたダメージに応じた報酬を獲得しました！パーティーや属性相性を見直して再挑戦しよう！`);
     }
 
     returnToCurrentCategory();
