@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS } from '../state.js?v=9.3.2';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.2';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.2';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.3';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.3';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.3';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -434,14 +434,61 @@ export const tbState = {
     enemy: null, // 現在の敵データ
     party: [], // 味方3体の戦闘用データ配列
     timerId: null,
-    tickCount: 0, // 0.1秒カウンター
-    graceTicks: 20, // 思考猶予カウント (20 = 2.0秒)
+    timeLeft: 10, // 現在問題の残り時間（秒）
+    maxTime: 10,  // 現在問題の最大制限時間（秒）
     currentQuestion: null,
     questions: [],
     qIndex: 0,
     score: 0,
     earnedXp: 0
 };
+
+/**
+ * 通常クエストと完全共通化されたキャラクター属性・補正値計算
+ * @param {Object} partyMember
+ * @returns {{ atk: number, time: number, exp: number }}
+ */
+export function getTbCharaStats(partyMember) {
+    let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
+    if (!partyMember) return stats;
+
+    const charaData = partyMember.master;
+    const userChara = partyMember.inv;
+
+    if (charaData && userChara) {
+        const level = (typeof userChara.level === 'number' && userChara.level >= 1) ? userChara.level : 1;
+        const baseVal = (userChara.isEvolved && userChara.customValue) ? Number(userChara.customValue) : Number(charaData.value || 1.0);
+        const finalVal = baseVal + (level * LV_BONUS_RATE);
+        const skills = (userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type || 'ATK'];
+
+        skills.forEach(type => {
+            if (type === 'ALL') {
+                stats.atk = finalVal;
+                stats.time = finalVal;
+                stats.exp = finalVal;
+            } else {
+                if (type === 'ATK') stats.atk = finalVal;
+                if (type === 'TIME') stats.time = finalVal;
+                if (type === 'EXP') stats.exp = finalVal;
+            }
+        });
+    }
+
+    // ショップ装備アイテムによるステータス加算（通常クエストと同様）
+    if (gameState.itemLevels && rawData.shopItems) {
+        Object.keys(gameState.itemLevels).forEach(itemId => {
+            const item = rawData.shopItems.find(i => String(i.id) === String(itemId));
+            const level = gameState.itemLevels[itemId];
+            if (item && level > 0) {
+                if (item.type === 'ATK') stats.atk += (Number(item.value) * level);
+                if (item.type === 'TIME') stats.time += (Number(item.value) * level);
+                if (item.type === 'EXP') stats.exp += (Number(item.value) * level);
+            }
+        });
+    }
+
+    return stats;
+}
 
 /**
  * 最大HP算出関数
@@ -525,7 +572,7 @@ export function getTbAffinityInfo(playerType, enemyType) {
 }
 
 /**
- * 敵からアクティブな味方へのスリップダメージ計算
+ * 敵からアクティブな味方への基本ダメージ（ペナルティの基準値）計算
  * 計算式: Math.floor(30 * 敵の補正値(value) * 敵のレベル補正 * 属性相性倍率)
  * @param {Object} enemy
  * @param {Object} activePlayer
@@ -616,7 +663,6 @@ export function startTeamBattle() {
     tbState.qIndex = 0;
     tbState.score = 0;
     tbState.earnedXp = 0;
-    tbState.tickCount = 0;
 
     // 画面切り替え
     document.getElementById('team-battle-setup-modal')?.classList.add('hidden');
@@ -650,7 +696,6 @@ export function startTeamBattle() {
  */
 function setupTbStage(stageNum) {
     tbState.stage = stageNum;
-    tbState.tickCount = 0; // 思考猶予リセット
 
     // 敵レベルと補正倍率の計算
     const enemyLevel = stageNum * 5 + 5; // Stage 1: Lv.10, Stage 2: Lv.15, Stage 3: Lv.20
@@ -696,77 +741,89 @@ function setupTbStage(stageNum) {
 }
 
 // ----------------------------------------------------
-// リアルタイム・ゲームループ
+// リアルタイム・ゲームループ（10秒タイマー＆カウントダウン）
 // ----------------------------------------------------
 
 /**
- * 100msごとに実行されるリアルタイムバトル処理
+ * 100msごとに実行されるリアルタイムバトル処理（タイムリミット監視）
  */
 export function tbGameLoop() {
     if (!tbState.isActive || tbState.isPaused) return;
 
-    tbState.tickCount++;
+    // 100ms ごとに 0.1秒減少
+    tbState.timeLeft = Math.max(0, tbState.timeLeft - 0.1);
 
+    // タイマーバーとテキストの更新
     const timerFill = document.getElementById('tb-timer');
     const timerText = document.getElementById('tb-timer-text');
-    const activePlayer = tbState.party[tbState.activeSlot];
+    const ratio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
 
-    // 1. 思考猶予時間（最初の2秒 = 20カウント）
-    if (tbState.tickCount <= tbState.graceTicks) {
-        const remainingTicks = tbState.graceTicks - tbState.tickCount;
-        const remainingSec = (remainingTicks / 10).toFixed(1);
-        const remainingRatio = 1 - (tbState.tickCount / tbState.graceTicks);
-
-        if (timerFill) {
-            timerFill.style.width = `${Math.max(0, remainingRatio * 100)}%`;
+    if (timerFill) {
+        timerFill.style.width = `${ratio * 100}%`;
+        if (ratio < 0.25) {
+            timerFill.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else if (ratio < 0.5) {
+            timerFill.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+        } else {
             timerFill.style.background = 'linear-gradient(90deg, #38bdf8, #22c55e)';
         }
-        if (timerText) {
-            timerText.innerText = `${remainingSec}s`;
+    }
+
+    if (timerText) {
+        timerText.innerText = `${tbState.timeLeft.toFixed(1)}s`;
+        if (ratio < 0.25) {
+            timerText.style.color = '#ef4444';
+        } else {
             timerText.style.color = '#ffffff';
         }
-    } 
-    // 2. 猶予終了後：スリップダメージ発生
-    else {
-        if (timerFill) {
-            timerFill.style.width = '100%';
-            timerFill.style.background = 'linear-gradient(90deg, #f59e0b, #ef4444)';
-        }
-        if (timerText) {
-            timerText.innerText = 'DANGER!';
-            timerText.style.color = '#ef4444';
-        }
+    }
 
-        // 10カウント (1.0秒) ごとにスリップダメージ発生
-        if ((tbState.tickCount - tbState.graceTicks) % 10 === 0) {
-            if (activePlayer && activePlayer.isAlive) {
-                const tickDamage = calcTbTickDamage(tbState.enemy, activePlayer);
-                activePlayer.hp = Math.max(0, activePlayer.hp - tickDamage);
+    // タイムアップ判定（10倍ペナルティ発動）
+    if (tbState.timeLeft <= 0) {
+        applyTbPenalty('⏰ 時間切れ！');
+    }
+}
 
-                // 被弾エフェクト・SE
-                playSE('miss');
-                showPlayerDamageFlash();
+/**
+ * 10倍ペナルティ処理（時間切れ または 不正解時）
+ * @param {string} reason
+ */
+function applyTbPenalty(reason) {
+    if (!tbState.isActive || tbState.isPaused) return;
 
-                // 味方HPバー・ステータス更新
-                updateTbPlayerStatusUI();
-                updateTbReserveUI();
+    const activePlayer = tbState.party[tbState.activeSlot];
+    if (!activePlayer || !activePlayer.isAlive) return;
 
-                // HPが0になった場合の交替または全滅判定
-                if (activePlayer.hp <= 0) {
-                    activePlayer.isAlive = false;
-                    const nextAliveIndex = tbState.party.findIndex(p => p.isAlive);
-                    if (nextAliveIndex !== -1) {
-                        // 生きている控えキャラへ強制交替
-                        showAlert(`⚠️ ${activePlayer.name} が倒れた！<br>${tbState.party[nextAliveIndex].name} が出撃！`);
-                        switchTbActiveChar(nextAliveIndex);
-                    } else {
-                        // 全滅・敗北
-                        finishTeamBattle(false);
-                    }
-                }
-            }
+    // 通常スリップダメージの10倍のペナルティダメージ
+    const baseDamage = calcTbTickDamage(tbState.enemy, activePlayer);
+    const penaltyDamage = baseDamage * 10;
+
+    activePlayer.hp = Math.max(0, activePlayer.hp - penaltyDamage);
+
+    playSE('miss');
+    showPlayerDamageFlash();
+
+    // 味方HPバー・ステータス更新
+    updateTbPlayerStatusUI();
+    updateTbReserveUI();
+
+    // HPが0になった場合の交替または全滅判定
+    if (activePlayer.hp <= 0) {
+        activePlayer.isAlive = false;
+        const nextAliveIndex = tbState.party.findIndex(p => p.isAlive);
+        if (nextAliveIndex !== -1) {
+            // 生きている控えキャラへ強制交替
+            showAlert(`⚠️ ${reason}<br>${activePlayer.name} が倒れた！<br>${tbState.party[nextAliveIndex].name} が出撃！`);
+            switchTbActiveChar(nextAliveIndex);
+        } else {
+            // 全滅・敗北
+            finishTeamBattle(false);
+            return;
         }
     }
+
+    // 即座に次の問題へ移行（タイマーリセット）
+    nextTbQuestion();
 }
 
 /**
@@ -787,7 +844,7 @@ function showPlayerDamageFlash() {
 // ----------------------------------------------------
 
 /**
- * 次の問題を出題
+ * 次の問題を出題（通常クエスト共通のTIMEボーナス適用）
  */
 export function nextTbQuestion() {
     if (!tbState.isActive) return;
@@ -799,7 +856,12 @@ export function nextTbQuestion() {
 
     const q = tbState.questions[tbState.qIndex++];
     tbState.currentQuestion = q;
-    tbState.tickCount = 0; // 猶予時間カウントをリセット
+
+    // 前衛キャラのTIMEボーナスを適用したタイマー初期化（基本10秒 × TIME補正）
+    const activePlayer = tbState.party[tbState.activeSlot];
+    const stats = getTbCharaStats(activePlayer);
+    tbState.maxTime = 10 * (stats.time || 1.0);
+    tbState.timeLeft = tbState.maxTime;
 
     const qBox = document.getElementById('tb-question');
     if (qBox) qBox.innerText = q.question || '問題文';
@@ -820,7 +882,7 @@ export function nextTbQuestion() {
 }
 
 /**
- * クイズ回答判定と自陣攻撃
+ * クイズ回答判定と自陣攻撃（通常クエスト共通のATK/TIME補正・属性相性を適用）
  * @param {string} selectedChoice
  */
 export function judgeTbAnswer(selectedChoice) {
@@ -835,10 +897,16 @@ export function judgeTbAnswer(selectedChoice) {
         playSE('hit');
         tbState.score += 100;
 
-        // 味方攻撃側 → 敵防御側の相性倍率
-        const affinity = getTbAffinityMultiplier(activePlayer.type, tbState.enemy.type);
-        const baseAtk = Math.floor(150 * activePlayer.value * (1 + (activePlayer.level - 1) * 0.1));
-        const finalDamage = Math.max(10, Math.floor(baseAtk * affinity));
+        // 通常クエストと完全共通化されたステータス補正計算
+        const stats = getTbCharaStats(activePlayer);
+        const baseAtk = 120; // 基礎攻撃力
+        const rawRatio = Math.max(0, tbState.timeLeft / (tbState.maxTime || 10));
+        const timeFactor = 0.5 + (rawRatio * 0.5); // 早い解答ほど高いダメージ
+        const affinity = getTbAffinityMultiplier(activePlayer.type, tbState.enemy.type); // 属性相性倍率
+        const statFactor = stats.atk + ((stats.time - 1) * 0.5);
+        const comboAdd = Math.min(tbState.score / 1000 * 0.025, 0.5);
+
+        const finalDamage = Math.max(10, Math.floor(baseAtk * timeFactor * (statFactor + comboAdd) * affinity));
 
         tbState.enemy.hp = Math.max(0, tbState.enemy.hp - finalDamage);
 
@@ -851,7 +919,10 @@ export function judgeTbAnswer(selectedChoice) {
         // 敵撃破判定
         if (tbState.enemy.hp <= 0) {
             playSE('win');
-            tbState.earnedXp += 1500 * tbState.stage;
+            // EXPボーナス適用
+            const baseExp = 1500 * tbState.stage;
+            const earned = Math.floor(baseExp * stats.exp);
+            tbState.earnedXp += earned;
 
             if (tbState.stage < tbState.maxStage) {
                 // 次のステージへ進行
@@ -868,11 +939,8 @@ export function judgeTbAnswer(selectedChoice) {
         // 次の問題へ
         nextTbQuestion();
     } else {
-        // 不正解
-        playSE('miss');
-        // 不正解時はペナルティとして即座に猶予時間を消費（猶予終了へ）
-        tbState.tickCount = tbState.graceTicks;
-        nextTbQuestion();
+        // 不正解：10倍ペナルティ発動！
+        applyTbPenalty('✕ 不正解！');
     }
 }
 
@@ -908,8 +976,10 @@ export function switchTbActiveChar(slotIndex) {
     tbState.activeSlot = slotIndex;
     playSE('count');
 
-    // 交代演出・思考猶予をリセット
-    tbState.tickCount = 0;
+    // 交代演出・タイマーを新前衛キャラのTIME補正に合わせてリセット
+    const stats = getTbCharaStats(targetChar);
+    tbState.maxTime = 10 * (stats.time || 1.0);
+    tbState.timeLeft = tbState.maxTime;
 
     updateTbBattleUI();
 }

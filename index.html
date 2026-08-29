@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.3.2">
-    <link rel="stylesheet" href="css/layout.css?v=9.3.2">
-    <link rel="stylesheet" href="css/components.css?v=9.3.2">
-    <link rel="stylesheet" href="css/quests.css?v=9.3.2">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.3.2">
+    <link rel="stylesheet" href="css/base.css?v=9.3.3">
+    <link rel="stylesheet" href="css/layout.css?v=9.3.3">
+    <link rel="stylesheet" href="css/components.css?v=9.3.3">
+    <link rel="stylesheet" href="css/quests.css?v=9.3.3">
+    <link rel="stylesheet" href="css/special-quest.css?v=9.3.3">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.3.2</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.3.3</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -216,7 +216,7 @@
     </div>
 </div>
 
-<div id="team-battle-screen" class="screen tb-screen-bg hidden">
+<div id="team-battle-screen" class="screen field-screen-bg tb-screen-bg hidden">
     <!-- ヘッダー（進行度、タイマー、撤退、ポーズ） -->
     <div class="tb-header">
         <div id="tb-progress-text" class="tb-progress-badge">⚔️ STAGE 1/3</div>
@@ -825,6 +825,10 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.3.3</h4>
+            <ul>
+                <li>チームバトルクエストのバグ修正・仕様更新（通常戦闘背景共通化、問題文・選択肢の描画バグ解消、タイムリミット10秒化、時間切れ・不正解時の10倍ペナルティ、通常クエスト共通の属性特化ボーナス適用）</li>
+            </ul>
             <h4>Ver 9.3.2</h4>
             <ul>
                 <li>チームバトルクエストのUI共通化・レイアウト最適化（スマホ画面対応Flexboxレイアウト、通常戦闘クイズUIとの共通化、ポーズ機能追加、敵キャラクターの図鑑キャラ化）</li>
@@ -941,6 +945,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.3.2"></script>
+<script type="module" src="js/main.js?v=9.3.3"></script>
 </body>
 </html>

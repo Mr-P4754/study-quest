@@ -245,7 +245,6 @@
    ポケモン（GBA/DS時代）風 対角線バトルレイアウト
    ---------------------------------------------------- */
 .tb-screen-bg {
-    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
     position: relative;
     width: 100%;
     height: 100vh;
