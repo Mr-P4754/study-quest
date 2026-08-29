@@ -11,7 +11,7 @@ import {
     runtimeState,
     LV_BONUS_RATE,
     saveGame
-} from './state.js?v=9.2.1';
+} from './state.js?v=9.2.2';
 
 import {
     getDisplayName,
@@ -19,12 +19,12 @@ import {
     playSE,
     playBGM,
     stopBGM
-} from './utils.js?v=9.2.1';
+} from './utils.js?v=9.2.2';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=9.2.1';
+} from './gacha-shop.js?v=9.2.2';
 
 import {
     showAppModal,
@@ -32,7 +32,7 @@ import {
     showConfirm,
     updateTitleInfo,
     addCalcRecord
-} from './ui-manager.js?v=9.2.1';
+} from './ui-manager.js?v=9.2.2';
 
 export function showCutIn(t) { 
     const str = String(t);
@@ -289,6 +289,8 @@ export function finishGame(isClear) {
 
     const resDrop = document.getElementById('res-drop');
     const resXpSpan = document.getElementById('res-xp');
+    const resXpLabel = document.getElementById('res-xp-label');
+    if (resXpLabel) resXpLabel.innerText = "獲得XP";
     
     if (typeof rogueData !== 'undefined' && rogueData.active) {
         const stats = getCharaStats();
@@ -325,7 +327,8 @@ export function finishGame(isClear) {
             }
             return;
         }
-        if(resXpSpan) resXpSpan.innerHTML = `+${earned} (探索中)`;
+        if (resXpLabel) resXpLabel.innerText = "獲得一時XP";
+        if (resXpSpan) resXpSpan.innerHTML = `+${earned}`;
     } else if (playData.isSurvival) {
         const correctCount = gameState.score; 
         let oathMultiplier = 1;
@@ -552,7 +555,8 @@ export function finishGame(isClear) {
     const resDetails = document.getElementById('res-details');
     if (!playData.isSurvival) {
         if (typeof rogueData !== 'undefined' && rogueData.active) {
-            if (resXpSpan) resXpSpan.innerHTML = `+${earned} (探索中)`;
+            if (resXpLabel) resXpLabel.innerText = "獲得一時XP";
+            if (resXpSpan) resXpSpan.innerHTML = `+${earned}`;
             if (resDetails) {
                 if (dropInfo.isRogueChar) {
                     resDetails.innerHTML = `<div style="font-size: 1.0em; font-weight: bold; color: #27ae60;">🎉 [${dropInfo.rarity}] ${dropInfo.name} を仲間にしました！</div>`;
