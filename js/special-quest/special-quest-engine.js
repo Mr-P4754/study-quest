@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.4';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.4';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.4';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.5';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.5';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.5';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -871,8 +871,8 @@ export function startTeamBattle() {
         });
     }
 
-    // 敵チーム3体を合計コスト10以下ルールで事前生成
-    tbState.enemyTeam = generateTbEnemyTeam();
+    // 敵チーム3体を合計コスト10以下ルール ＆ プレイヤー平均レベルスケーリングで事前生成
+    tbState.enemyTeam = generateTbEnemyTeam(tbState.party);
 
     // バトル状態初期化
     tbState.isActive = true;
@@ -1005,10 +1005,32 @@ function sampleRarityFromTable(probList) {
 }
 
 /**
- * チームバトル用：合計コスト10以下ルール内で敵チーム3体を事前生成
+ * プレイヤーチームの平均レベルに基づいて敵レベルを動的に決定
+ * @param {number} stage ステージ番号 (1, 2, 3)
+ * @param {string} rarity 敵のレア度 ('N', 'R', 'SR', 'SSR', 'UR')
+ * @param {Array} [party] プレイヤーの出撃パーティー
+ * @returns {number} 補正後の敵レベル (1〜30)
+ */
+export function calcTbEnemyDynamicLevel(stage, rarity, party) {
+    const targetParty = (party && party.length > 0) ? party : (tbState.party || []);
+    if (!targetParty || targetParty.length === 0) return stage * 5 + 5;
+    const avgLv = targetParty.reduce((sum, p) => sum + (p.level || p.lv || 1), 0) / targetParty.length;
+
+    const stageMultiplier = stage === 1 ? 0.8 : (stage === 2 ? 1.0 : 1.2);
+    const baseLv = Math.round(avgLv * stageMultiplier);
+
+    const rarityBonusMap = { N: -1, R: 0, SR: 1, SSR: 2, UR: 3 };
+    const rarityBonus = rarityBonusMap[rarity] || 0;
+
+    return Math.max(1, Math.min(30, baseLv + rarityBonus));
+}
+
+/**
+ * チームバトル用：合計コスト10以下ルール内で敵チーム3体を事前生成（プレイヤーレベルスケーリング）
+ * @param {Array} [playerParty]
  * @returns {Array<Object>}
  */
-export function generateTbEnemyTeam() {
+export function generateTbEnemyTeam(playerParty) {
     const maxRetries = 100;
     let chosenRarities = null;
 
@@ -1040,7 +1062,8 @@ export function generateTbEnemyTeam() {
         const pool = (candidates.length > 0) ? candidates : availableCharas;
         const pickedChar = pool[Math.floor(Math.random() * pool.length)];
 
-        const enemyLevel = stageNum * 5 + 5;
+        // プレイヤー平均レベルに基づく動的レベルスケーリング
+        const enemyLevel = calcTbEnemyDynamicLevel(stageNum, targetRarity, playerParty);
         const enemyName = pickedChar ? pickedChar.name : `モンスター Lv.${enemyLevel}`;
         const assignedType = pickedChar ? (pickedChar.type || 'ATK') : ['ATK', 'TIME', 'EXP'][stageNum - 1];
         const enemyValue = (pickedChar ? Number(pickedChar.value || 1.0) : 1.0) * (0.8 + stageNum * 0.25);
