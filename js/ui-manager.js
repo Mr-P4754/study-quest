@@ -9,13 +9,13 @@ import {
     runtimeState,
     GUIDE_DATA,
     saveGame
-} from './state.js?v=9.1.8';
+} from './state.js?v=9.1.9';
 
 import {
     getDisplayName,
     drawRadarChart,
     playSE
-} from './utils.js?v=9.1.8';
+} from './utils.js?v=9.1.9';
 
 // ==========================================
 // タイトル初期化・カテゴリー制御
@@ -207,7 +207,7 @@ export function returnToCurrentCategory() {
 // モード選択モーダル開閉制御
 // ==========================================
 export function openUnitSelection() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     const unitTitle = document.getElementById('unit-select-title'); 
     if(unitTitle) { unitTitle.innerText = "クエスト出発"; unitTitle.style.color = "#2c3e50"; } 
     document.getElementById('unit-select-overlay')?.classList.remove('hidden'); 
@@ -218,13 +218,15 @@ export function closeUnitSelection() {
 }
 
 export function openRandomMenu() { 
-    if(!rawData.questions) return;
-    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
-    const sel = document.getElementById('random-grade-select'); 
-    if(!sel) return; 
-    sel.innerHTML = '<option value="">学年を選択...</option>';
-    grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
+    if(rawData.questions && rawData.questions.length > 0) {
+        const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+        const sel = document.getElementById('random-grade-select'); 
+        if(sel) {
+            sel.innerHTML = '<option value="">学年を選択...</option>';
+            grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+        }
+    }
     document.getElementById('random-overlay')?.classList.remove('hidden'); 
 }
 export function closeRandomMenu() { 
@@ -233,13 +235,15 @@ export function closeRandomMenu() {
 }
 
 export function openTypingMenu() { 
-    if(!rawData.typing || rawData.typing.length === 0) return alert("タイピング問題データが見つかりません");
-    const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g => g);
-    const sel = document.getElementById('typing-grade-select'); 
-    if(!sel) return; 
-    sel.innerHTML = '<option value="">学年を選択...</option>';
-    grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
+    if(rawData.typing && rawData.typing.length > 0) {
+        const grades = [...new Set(rawData.typing.map(t => t.grade))].filter(g => g);
+        const sel = document.getElementById('typing-grade-select'); 
+        if(sel) {
+            sel.innerHTML = '<option value="">学年を選択...</option>';
+            grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+        }
+    }
     document.getElementById('typing-menu-overlay')?.classList.remove('hidden'); 
 }
 export function closeTypingMenu() { 
@@ -248,14 +252,15 @@ export function closeTypingMenu() {
 }
 
 export function openSurvivalMenu() { 
-    if(!rawData.questions) return;
-    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
-    const sel = document.getElementById('survival-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    closeAllCategoryModals();
+    if(rawData.questions && rawData.questions.length > 0) {
+        const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+        const sel = document.getElementById('survival-grade-select'); 
+        if(sel) {
+            sel.innerHTML = '<option value="">学年を選択...</option>';
+            grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+        }
     }
-    hideCurrentCategoryOverlay();
     document.getElementById('survival-overlay')?.classList.remove('hidden'); 
 }
 export function closeSurvivalMenu() { 
@@ -264,7 +269,7 @@ export function closeSurvivalMenu() {
 }
 
 export function openCalcMenu() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('calc-overlay')?.classList.remove('hidden'); 
 }
 export function closeCalcMenu() { 
@@ -273,14 +278,15 @@ export function closeCalcMenu() {
 }
 
 export function openRogueMenu() { 
-    if(!rawData.questions) return;
-    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
-    const sel = document.getElementById('rogue-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+    closeAllCategoryModals();
+    if(rawData.questions && rawData.questions.length > 0) {
+        const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+        const sel = document.getElementById('rogue-grade-select'); 
+        if(sel) {
+            sel.innerHTML = '<option value="">学年を選択...</option>';
+            grades.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
+        }
     }
-    hideCurrentCategoryOverlay();
     document.getElementById('rogue-menu-overlay')?.classList.remove('hidden'); 
 }
 export function closeRogueMenu() { 
@@ -342,7 +348,7 @@ export function closeReliefMenu() {
 }
 
 export function openSyncMenu() {
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     const idEl = document.getElementById('my-user-id');
     if (idEl) idEl.innerText = runtimeState.currentUserId || '--------';
     document.getElementById('sync-overlay')?.classList.remove('hidden');
@@ -353,7 +359,7 @@ export function closeSyncMenu() {
 }
 
 export function openVersionHistory() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('version-overlay')?.classList.remove('hidden'); 
 }
 export function closeVersionHistory() { 
@@ -365,7 +371,7 @@ export function closeVersionHistory() {
 // ギフトシステム
 // ==========================================
 export function openGiftMenu() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('gift-overlay')?.classList.remove('hidden'); 
     renderGiftList(); 
 }
@@ -465,7 +471,7 @@ export function checkAdminGifts() {
 // 成績表・学力レポート
 // ==========================================
 export function openRecord() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('record-overlay')?.classList.remove('hidden'); 
     renderRecord(); 
 }

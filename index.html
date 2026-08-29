@@ -7,12 +7,13 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>STUDY QUEST RPG</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.1.8">
-    <link rel="stylesheet" href="css/layout.css?v=9.1.8">
-    <link rel="stylesheet" href="css/components.css?v=9.1.8">
-    <link rel="stylesheet" href="css/quests.css?v=9.1.8">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.1.8">
+    <link rel="stylesheet" href="css/base.css?v=9.1.9">
+    <link rel="stylesheet" href="css/layout.css?v=9.1.9">
+    <link rel="stylesheet" href="css/components.css?v=9.1.9">
+    <link rel="stylesheet" href="css/quests.css?v=9.1.9">
+    <link rel="stylesheet" href="css/special-quest.css?v=9.1.9">
 </head>
 <body>
 
@@ -29,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.1.8</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.1.9</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -606,6 +607,11 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.1.9</h4>
+            <ul>
+                <li>モーダル遷移処理の堅牢化（カテゴリーモーダルの確実な非表示化とサブ機能画面・階層モーダルへの遷移制御の完全同期）</li>
+                <li>ブラウザ環境におけるアイコン読み込みおよびキャッシュ更新の最適化</li>
+            </ul>
             <h4>Ver 9.1.8</h4>
             <ul>
                 <li>モーダル多重遷移（通常/サバイバル/迷宮/タイピングからの誓約・救済、キャラ詳細、強化合成）の安定化・復帰制御の完全復元</li>
@@ -684,6 +690,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.1.8"></script>
+<script type="module" src="js/main.js?v=9.1.9"></script>
 </body>
 </html>

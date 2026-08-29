@@ -23,13 +23,13 @@ import {
     MISSIONS,
     MISSION_ALL_CLEAR,
     saveGame
-} from './state.js?v=9.1.8';
+} from './state.js?v=9.1.9';
 
 import {
     getRarityIndex,
     getDisplayName,
     playSE
-} from './utils.js?v=9.1.8';
+} from './utils.js?v=9.1.9';
 
 import {
     showAppModal,
@@ -38,8 +38,9 @@ import {
     updateTitleInfo,
     hideCurrentCategoryOverlay,
     returnToCurrentCategory,
+    closeAllCategoryModals,
     updateCategoryBadges
-} from './ui-manager.js?v=9.1.8';
+} from './ui-manager.js?v=9.1.9';
 
 let selectedMaterials = {};
 let viewingCharaId = null;
@@ -50,7 +51,7 @@ let zukanSortMode = 'default';
 // ガチャ＆図鑑
 // ==========================================
 export function openGacha() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('gacha-overlay')?.classList.remove('hidden'); 
     renderZukan(); 
     const xpSpan = document.getElementById('gacha-xp');
@@ -653,7 +654,7 @@ export async function sellCharaStock() {
 // ショップ
 // ==========================================
 export function openShop() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('shop-overlay')?.classList.remove('hidden'); 
     renderShop(); 
 }
@@ -712,7 +713,7 @@ export function exchangeBook(bookId, cost) {
 // ミッション・称号・ログインボーナス
 // ==========================================
 export function openMissions() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('mission-overlay')?.classList.remove('hidden'); 
     renderMissions(); 
 }
@@ -779,7 +780,7 @@ export function updateMissionBadge() {
 }
 
 export function openTitles() { 
-    hideCurrentCategoryOverlay();
+    closeAllCategoryModals();
     document.getElementById('titles-overlay')?.classList.remove('hidden'); 
     renderTitles(); 
 }
