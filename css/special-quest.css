@@ -253,6 +253,26 @@
     flex-direction: column;
     justify-content: space-between;
     overflow: hidden;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* タイムバー上のテキスト（バーの上に重ねて中央配置） */
+#tb-ui-timer-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 16px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #000;
+    font-size: 0.8em;
+    color: #fff;
+    letter-spacing: 1px;
+    z-index: 10;
+    pointer-events: none;
 }
 
 /* ヘッダー内バッジ・ボタン */
@@ -290,6 +310,8 @@
     padding: 4px 10px;
     box-sizing: border-box;
     overflow: hidden;
+    background: transparent !important;
+    background-color: transparent !important;
 }
 
 /* フッター問題領域の中央揃え */

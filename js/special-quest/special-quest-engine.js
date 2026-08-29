@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.7';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.7';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.7';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.3.8';
+import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.3.8';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.3.8';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -914,6 +914,8 @@ function showPlayerDamageFlash() {
 export function nextTbQuestion() {
     if (!tbState.isActive) return;
 
+    tbState.isPaused = false; // ポーズ状態を解除してゲーム再開
+
     if (tbState.qIndex >= tbState.questions.length) {
         tbState.questions = [...tbState.questions].sort(() => Math.random() - 0.5);
         tbState.qIndex = 0;
@@ -1002,6 +1004,7 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
 
         // 敵撃破判定
         if (tbState.enemy.hp <= 0) {
+            tbState.isPaused = true; // 敵撃破時は即座に時間停止（スリップダメージを完全に阻止）
             playSE('win');
             // EXPボーナス適用
             const baseExp = 1500 * tbState.stage;
