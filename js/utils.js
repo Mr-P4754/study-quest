@@ -2,7 +2,7 @@
 // js/utils.js (計算ロジック・チャート描画・音響制御)
 // ==========================================
 
-import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=9.4.0';
+import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=9.4.1';
 
 export const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 
@@ -207,14 +207,31 @@ let bgmTimeout = null;
 
 export const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
 
+/**
+ * 音量ボタン（通常・チームバトル両対応）のUIを最新状態に更新
+ */
+export function updateMuteButtonsUI() {
+    const btns = [document.getElementById('btn-mute'), document.getElementById('tb-btn-mute')];
+    btns.forEach(btn => {
+        if (!btn) return;
+        if (runtimeState.isMuted) {
+            btn.innerText = "🔇 音量: OFF";
+            btn.style.background = "#95a5a6";
+            btn.style.borderColor = "#7f8c8d";
+        } else {
+            btn.innerText = "🔊 音量: ON";
+            btn.style.background = "#34495e";
+            btn.style.borderColor = "#2c3e50";
+        }
+    });
+}
+
 export function toggleMute() { 
     runtimeState.isMuted = !runtimeState.isMuted;
-    const btn = document.getElementById('btn-mute'); 
+    updateMuteButtonsUI();
     if(runtimeState.isMuted) { 
-        if(btn) { btn.innerText = "🔇 音量: OFF"; btn.style.background = "#95a5a6"; btn.style.borderColor = "#7f8c8d"; }
         stopBGM(); 
     } else { 
-        if(btn) { btn.innerText = "🔊 音量: ON"; btn.style.background = "#34495e"; btn.style.borderColor = "#2c3e50"; }
         playSE('hit'); playBGM(); 
     } 
 }

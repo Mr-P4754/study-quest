@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.0';
-import { getDisplayName, playSE, playBGM, stopBGM } from '../utils.js?v=9.4.0';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.0';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=9.4.1';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=9.4.1';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=9.4.1';
 
 // ----------------------------------------------------
 // 内部状態管理
@@ -805,7 +805,7 @@ export function tbGameLoop() {
                         if (!tbState.isActive) return;
                         await showAlert(`⚠️ ${activePlayer.name} が倒れた！\n${tbState.party[nextAliveIndex].name} が出撃！`);
                         if (!tbState.isActive) return;
-                        switchTbActiveChar(nextAliveIndex);
+                        switchTbActiveChar(nextAliveIndex, true); // 強制交替
                         tbState.isPaused = false;
                         nextTbQuestion();
                     }, 100);
@@ -831,6 +831,9 @@ export function tbGameLoop() {
 function applyTbPenalty(reason) {
     if (!tbState.isActive || tbState.isPaused || !tbState.enemy || tbState.enemy.hp <= 0) return;
 
+    // 即座にポーズ状態にして、100ms周期の重複実行を完全に防止（1問につき1回のみ発動）
+    tbState.isPaused = true;
+
     const activePlayer = tbState.party[tbState.activeSlot];
     if (!activePlayer || !activePlayer.isAlive) return;
 
@@ -854,13 +857,12 @@ function applyTbPenalty(reason) {
         activePlayer.isAlive = false;
         const nextAliveIndex = tbState.party.findIndex(p => p.isAlive);
         if (nextAliveIndex !== -1) {
-            // 生きている控えキャラへ強制交替（モーダル表示中はポーズ）
-            tbState.isPaused = true;
+            // 生きている控えキャラへ強制交替（モーダル表示中はポーズを維持）
             setTimeout(async () => {
                 if (!tbState.isActive) return;
                 await showAlert(`⚠️ ${reason}\n${activePlayer.name} が倒れた！\n${tbState.party[nextAliveIndex].name} が出撃！`);
                 if (!tbState.isActive) return;
-                switchTbActiveChar(nextAliveIndex);
+                switchTbActiveChar(nextAliveIndex, true); // 強制交替
                 tbState.isPaused = false;
                 nextTbQuestion();
             }, 100);
@@ -872,10 +874,10 @@ function applyTbPenalty(reason) {
         }
     }
 
-    // 即座に次の問題へ移行（タイマーリセット）
+    // 即座に次の問題へ移行（タイマーリセット＆ポーズ解除）
     setTimeout(() => {
-        if (tbState.isActive && !tbState.isPaused) {
-            nextTbQuestion();
+        if (tbState.isActive) {
+            nextTbQuestion(); // nextTbQuestion 冒頭で tbState.isPaused = false に解除される
         }
     }, 600);
 }
@@ -1086,12 +1088,14 @@ function showEnemyDamageFlash() {
 /**
  * アクティブな戦闘キャラクターを切り替える（残りタイム割合を正確に引き継ぎ）
  * @param {number} slotIndex (0: 前衛, 1: 後衛1, 2: 後衛2)
+ * @param {boolean} [isForce=false] 自動交替等の強制切り替えフラグ（ポーズ中も実行可能）
  */
-export function switchTbActiveChar(slotIndex) {
-    if (!tbState.isActive || tbState.isPaused) return;
+export function switchTbActiveChar(slotIndex, isForce = false) {
+    if (!tbState.isActive) return;
+    if (!isForce && tbState.isPaused) return;
     if (slotIndex < 0 || slotIndex >= tbState.party.length) return;
     const targetChar = tbState.party[slotIndex];
-    if (!targetChar || !targetChar.isAlive) {
+    if (!targetChar || (!isForce && !targetChar.isAlive)) {
         return alert("そのキャラクターは戦闘不能です！");
     }
 
@@ -1106,8 +1110,8 @@ export function switchTbActiveChar(slotIndex) {
     const stats = getTbCharaStats(targetChar);
     tbState.maxTime = 10 * (stats.time || 1.0);
 
-    // 4. 割合を適用して残り時間を引き継ぎ
-    tbState.timeLeft = Math.max(0.1, tbState.maxTime * currentRatio);
+    // 4. 割合を適用して残り時間を引き継ぎ（強制交替時は満タンにリフレッシュ）
+    tbState.timeLeft = isForce ? tbState.maxTime : Math.max(0.1, tbState.maxTime * currentRatio);
 
     updateTbBattleUI();
 }
@@ -1172,7 +1176,7 @@ export function updateTbPlayerStatusUI() {
 }
 
 /**
- * 敵ステータス・グラフィック更新
+ * 敵ステータス・グラフィック更新（レア度 / 属性を表示）
  */
 export function updateTbEnemyStatusUI() {
     const enemy = tbState.enemy;
@@ -1186,7 +1190,8 @@ export function updateTbEnemyStatusUI() {
     const visualEl = document.getElementById('tb-enemy-visual');
 
     if (nameEl) nameEl.innerText = enemy.name;
-    if (typeEl) typeEl.innerText = getTypeEmoji(enemy.type) + ' ' + enemy.type;
+    // 「💧」ではなくレア度「SSR / TIME」を表示
+    if (typeEl) typeEl.innerText = `${enemy.rarity || 'N'} / ${enemy.type}`;
     if (lvEl) lvEl.innerText = `Lv.${enemy.level}`;
     if (hpTextEl) hpTextEl.innerText = `${enemy.hp} / ${enemy.maxHp}`;
 
@@ -1249,8 +1254,8 @@ export function updateTbReserveUI() {
             tagEl.style.color = char.isAlive ? '#38bdf8' : '#ef4444';
         }
 
-        // クリックで交替
-        slotEl.onclick = () => switchTbActiveChar(slotIdx);
+        // クリックで手動交替
+        slotEl.onclick = () => switchTbActiveChar(slotIdx, false);
         slotEl.style.opacity = char.isAlive ? '1.0' : '0.4';
         slotEl.style.cursor = char.isAlive ? 'pointer' : 'not-allowed';
     });
@@ -1269,6 +1274,7 @@ export function toggleTbPause() {
     const overlay = document.getElementById('tb-pause-overlay');
     if (overlay) {
         if (tbState.isPaused) {
+            updateMuteButtonsUI(); // 最新のミュート状態をボタンに反映
             overlay.classList.remove('hidden');
         } else {
             overlay.classList.add('hidden');
