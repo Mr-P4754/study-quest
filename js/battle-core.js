@@ -11,7 +11,7 @@ import {
     runtimeState,
     LV_BONUS_RATE,
     saveGame
-} from './state.js?v=9.2.0';
+} from './state.js?v=9.2.1';
 
 import {
     getDisplayName,
@@ -19,12 +19,12 @@ import {
     playSE,
     playBGM,
     stopBGM
-} from './utils.js?v=9.2.0';
+} from './utils.js?v=9.2.1';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=9.2.0';
+} from './gacha-shop.js?v=9.2.1';
 
 import {
     showAppModal,
@@ -32,7 +32,7 @@ import {
     showConfirm,
     updateTitleInfo,
     addCalcRecord
-} from './ui-manager.js?v=9.2.0';
+} from './ui-manager.js?v=9.2.1';
 
 export function showCutIn(t) { 
     const str = String(t);
@@ -312,11 +312,10 @@ export function finishGame(isClear) {
                 }
                 const cMaster = rawData.characters ? rawData.characters.find(c => c.id == charId) : null;
                 const cName = cMaster ? cMaster.name : '仲間';
-                dropInfo = { count: 1, icon: '📦' };
-                if (resDrop) resDrop.innerHTML = `仲間になった！: <span>📦</span> ${cName} (+1)`;
+                const cRarity = cMaster ? cMaster.rarity : 'N';
+                dropInfo = { count: 1, icon: '📦', name: cName, rarity: cRarity, isRogueChar: true };
             } else {
-                dropInfo = { count: 0, icon: '' };
-                if (resDrop) resDrop.innerHTML = `入手アイテム: なし`;
+                dropInfo = { count: 0, icon: '', isRogueChar: false };
             }
         } else {
             playSE('lose');
@@ -539,12 +538,29 @@ export function finishGame(isClear) {
     }
     if(resScoreSpan) resScoreSpan.innerText = playData.isCalculation ? playData.calcQIndex : gameState.score; 
     
-    const dropHtml = dropInfo.count > 0 ? `<span>${dropInfo.icon}</span> ${dropInfo.count} 個` : 'なし';
-    if(resDrop) resDrop.innerHTML = `入手アイテム: ${dropHtml}`;
+    if (typeof rogueData !== 'undefined' && rogueData.active) {
+        if (dropInfo.isRogueChar) {
+            if (resDrop) resDrop.innerHTML = `仲間になった！: <span style="font-size:1.2em;">📦</span> [${dropInfo.rarity}] <b>${dropInfo.name}</b> (+1)`;
+        } else {
+            if (resDrop) resDrop.innerHTML = `入手アイテム: なし`;
+        }
+    } else {
+        const dropHtml = dropInfo.count > 0 ? `<span>${dropInfo.icon}</span> ${dropInfo.count} 個` : 'なし';
+        if (resDrop) resDrop.innerHTML = `入手アイテム: ${dropHtml}`;
+    }
     
     const resDetails = document.getElementById('res-details');
     if (!playData.isSurvival) {
-        if (playData.isCalculation) {
+        if (typeof rogueData !== 'undefined' && rogueData.active) {
+            if (resXpSpan) resXpSpan.innerHTML = `+${earned} (探索中)`;
+            if (resDetails) {
+                if (dropInfo.isRogueChar) {
+                    resDetails.innerHTML = `<div style="font-size: 1.0em; font-weight: bold; color: #27ae60;">🎉 [${dropInfo.rarity}] ${dropInfo.name} を仲間にしました！</div>`;
+                } else {
+                    resDetails.innerHTML = `<div style="font-size: 0.9em; color: #7f8c8d;">ダンジョン攻略中...</div>`;
+                }
+            }
+        } else if (playData.isCalculation) {
             const duration = playData.calcMode === '3min' ? (180 - playData.calcTimeLeft).toFixed(1) : playData.calcElapsed.toFixed(1);
             const totalQ = playData.calcQIndex;
             const accuracy = totalQ > 0 ? ((playData.calcCorrect / totalQ) * 100).toFixed(1) : 0;
