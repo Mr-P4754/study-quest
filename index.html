@@ -9,11 +9,11 @@
     <title>STUDY QUEST RPG</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✏️</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/base.css?v=9.2.4">
-    <link rel="stylesheet" href="css/layout.css?v=9.2.4">
-    <link rel="stylesheet" href="css/components.css?v=9.2.4">
-    <link rel="stylesheet" href="css/quests.css?v=9.2.4">
-    <link rel="stylesheet" href="css/special-quest.css?v=9.2.4">
+    <link rel="stylesheet" href="css/base.css?v=9.3.0">
+    <link rel="stylesheet" href="css/layout.css?v=9.3.0">
+    <link rel="stylesheet" href="css/components.css?v=9.3.0">
+    <link rel="stylesheet" href="css/quests.css?v=9.3.0">
+    <link rel="stylesheet" href="css/special-quest.css?v=9.3.0">
 </head>
 <body>
 
@@ -30,7 +30,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 9.2.4</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 9.3.0</div>
     
     <div class="menu-btn-container title-menu-container">
         <button class="rich-menu-btn border-left-red" onclick="openCategory('main')">
@@ -92,6 +92,10 @@
     <div class="modal modal-w450">
         <h2 class="text-purple mt-0">✨ スペシャルクエスト</h2>
         <div class="sub-menu-grid">
+            <button class="rich-menu-btn" onclick="openTeamBattleSetup();">
+                <div class="rich-btn-title">⚔️ チームバトル</div>
+                <div class="rich-btn-desc">3体パーティーで挑む属性相性バトル！</div>
+            </button>
             <button class="rich-menu-btn" onclick="openRogueMenu();">
                 <div class="rich-btn-title">🧭 探索</div>
                 <div class="rich-btn-desc">ローグライク形式で大量XPを獲得！</div>
@@ -209,6 +213,119 @@
         <div class="text-right font-bold text-dark mb-10">獲得XP: <span id="rogue-shop-xp" class="text-orange">0</span></div>
         <div id="rogue-shop-list" class="modal-scroll-area"></div>
         <button class="menu-btn mt-20 btn-gray" onclick="closeRogueShop()">探索に戻る</button>
+    </div>
+</div>
+
+<div id="team-battle-screen" class="screen tb-screen-bg hidden">
+    <div class="tb-header">
+        <div id="tb-progress-text" class="tb-progress-badge">⚔️ STAGE 1/3</div>
+        <button id="tb-escape-btn" class="tb-escape-btn" type="button">🏃 撤退</button>
+    </div>
+    <div class="tb-arena-area">
+        <!-- 敵エリア (左上ステータス / 右上グラフィック) -->
+        <div class="tb-enemy-row">
+            <div class="tb-status-card tb-enemy-status">
+                <div class="tb-status-name-row">
+                    <span id="tb-enemy-name" class="tb-status-name">シャドウドラゴン</span>
+                    <span id="tb-enemy-type" class="tb-type-pill">🔥 炎</span>
+                </div>
+                <div class="tb-hp-track">
+                    <div id="tb-enemy-hp-fill" class="tb-hp-fill"></div>
+                </div>
+                <div class="tb-status-meta">
+                    <span id="tb-enemy-lv">Lv.15</span>
+                    <span id="tb-enemy-hp-text">1200 / 1200</span>
+                </div>
+            </div>
+            <div class="tb-enemy-visual-wrapper">
+                <div id="tb-enemy-visual" class="tb-enemy-sprite">👾</div>
+                <div class="tb-enemy-platform"></div>
+            </div>
+        </div>
+
+        <!-- 自陣前衛＆控えエリア (左下グラフィック / 右下ステータス & 控え) -->
+        <div class="tb-player-row">
+            <div class="tb-player-visual-wrapper">
+                <div id="tb-player-visual" class="tb-player-sprite">✏️</div>
+                <div class="tb-player-platform"></div>
+            </div>
+            <div class="tb-player-side-container">
+                <!-- 控え2体交替パネル -->
+                <div class="tb-reserve-panel">
+                    <div id="tb-reserve-slot-1" class="tb-reserve-card">
+                        <div class="tb-reserve-icon">📦</div>
+                        <div class="tb-reserve-info">
+                            <div class="tb-reserve-name">控え1</div>
+                            <div class="tb-reserve-hp-track"><div class="tb-reserve-hp-fill"></div></div>
+                        </div>
+                        <span class="tb-swap-hint-tag">交替</span>
+                    </div>
+                    <div id="tb-reserve-slot-2" class="tb-reserve-card">
+                        <div class="tb-reserve-icon">📦</div>
+                        <div class="tb-reserve-info">
+                            <div class="tb-reserve-name">控え2</div>
+                            <div class="tb-reserve-hp-track"><div class="tb-reserve-hp-fill"></div></div>
+                        </div>
+                        <span class="tb-swap-hint-tag">交替</span>
+                    </div>
+                </div>
+                <!-- 自陣前衛ステータス -->
+                <div class="tb-status-card tb-player-status">
+                    <div id="tb-affinity-badge" class="tb-affinity-badge advantage">有利 ⚔️ 1.5倍</div>
+                    <div class="tb-status-name-row">
+                        <span id="tb-player-name" class="tb-status-name">えんぴつ勇者</span>
+                        <span id="tb-player-type" class="tb-type-pill">💧 水</span>
+                    </div>
+                    <div class="tb-hp-track">
+                        <div id="tb-player-hp-fill" class="tb-hp-fill"></div>
+                    </div>
+                    <div class="tb-status-meta">
+                        <span id="tb-player-lv">Lv.10</span>
+                        <span id="tb-player-hp-text">800 / 800</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- クイズ・コマンドエリア (最下部) -->
+    <div class="tb-quiz-container">
+        <div class="tb-timer-track">
+            <div id="tb-timer-fill" class="tb-timer-fill"></div>
+        </div>
+        <div class="tb-quiz-inner">
+            <div id="tb-question-text" class="tb-question-box">READY?</div>
+            <div id="tb-choices-grid" class="tb-choices-grid">
+                <button class="tb-choice-btn" type="button">選択肢 1</button>
+                <button class="tb-choice-btn" type="button">選択肢 2</button>
+                <button class="tb-choice-btn" type="button">選択肢 3</button>
+                <button class="tb-choice-btn" type="button">選択肢 4</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. チームバトル出撃準備画面 -->
+<div id="team-battle-setup-modal" class="overlay overlay-z250 hidden">
+    <div class="modal tb-setup-modal">
+        <div class="modal-header-row-sm">
+            <h2 class="text-dark m-0">⚔️ チームバトル出撃準備</h2>
+            <button class="help-btn" type="button" onclick="GuideModule.open('special')">❓</button>
+        </div>
+        <p class="text-sm text-gray">挑戦する単元とパーティーを確認してください</p>
+        <div class="cat-box-gray">
+            <select id="tb-grade-select" aria-label="学年を選択" class="select-box cat-select-full" onchange="filterTbSubjects()"><option value="">学年を選択</option></select>
+            <select id="tb-subject-select" aria-label="教科を選択" class="select-box cat-select-full" onchange="filterTbUnits()"><option value="">教科を選択</option></select>
+            <select id="tb-unit-select" aria-label="単元を選択" class="select-box cat-select-full"><option value="">単元を選択</option></select>
+        </div>
+        <div class="tb-setup-preview-box">
+            <div class="tb-setup-preview-label">出撃パーティー（前衛1枠・後衛2枠）</div>
+            <div id="tb-setup-preview-slots" class="tb-setup-slots-mini">
+                <!-- JS動的レンダリング枠 -->
+            </div>
+            <button class="menu-btn btn-blue btn-full-w mt-10" type="button" onclick="openPartyFormation()">👥 パーティー編成</button>
+        </div>
+        <button id="tb-start-battle-btn" class="menu-btn btn-red btn-full-w mb-10" type="button" onclick="startTeamBattle()">⚔️ 出撃する</button>
+        <button class="menu-btn btn-gray" type="button" onclick="closeTeamBattleSetup()">キャンセル</button>
     </div>
 </div>
 
@@ -508,6 +625,92 @@
     </div>
 </div>
 
+<!-- 1. パーティー編成画面 -->
+<div id="party-formation-overlay" class="overlay overlay-z300 hidden">
+    <div class="modal party-formation-modal">
+        <div class="party-formation-header">
+            <h2 class="party-formation-title">⚔️ パーティー編成</h2>
+            <div class="party-formation-desc">手持ちキャラクターから前衛1体・後衛2体の計3体を編成してください</div>
+        </div>
+
+        <!-- 上部：現在セットされている3体のスロット -->
+        <div class="party-slots-container">
+            <!-- 前衛スロット (メイン) -->
+            <div id="party-slot-0" class="party-slot-card main-slot filled">
+                <span class="party-slot-badge">👑 前衛</span>
+                <button class="party-slot-remove-btn" type="button">×</button>
+                <img id="party-slot-0-img" src="" class="party-slot-img hidden" alt="前衛キャラ">
+                <div id="party-slot-0-empty" class="party-slot-empty">
+                    <div class="party-slot-empty-icon">➕</div>
+                    <div class="party-slot-empty-text">前衛を選択</div>
+                </div>
+                <div id="party-slot-0-info" class="party-slot-info hidden">
+                    <div id="party-slot-0-name" class="party-slot-name">キャラ名</div>
+                    <div class="party-slot-meta">
+                        <span id="party-slot-0-rarity" class="rarity-UR">UR</span>
+                        <span id="party-slot-0-type">🔥 炎</span>
+                        <span id="party-slot-0-lv">Lv.1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 後衛スロット 1 (サポート) -->
+            <div id="party-slot-1" class="party-slot-card">
+                <span class="party-slot-badge">🛡️ 後衛1</span>
+                <button class="party-slot-remove-btn" type="button">×</button>
+                <img id="party-slot-1-img" src="" class="party-slot-img hidden" alt="後衛1キャラ">
+                <div id="party-slot-1-empty" class="party-slot-empty">
+                    <div class="party-slot-empty-icon">➕</div>
+                    <div class="party-slot-empty-text">後衛1を選択</div>
+                </div>
+                <div id="party-slot-1-info" class="party-slot-info hidden">
+                    <div id="party-slot-1-name" class="party-slot-name">キャラ名</div>
+                    <div class="party-slot-meta">
+                        <span id="party-slot-1-rarity" class="rarity-SSR">SSR</span>
+                        <span id="party-slot-1-type">💧 水</span>
+                        <span id="party-slot-1-lv">Lv.1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 後衛スロット 2 (サポート) -->
+            <div id="party-slot-2" class="party-slot-card">
+                <span class="party-slot-badge">🛡️ 後衛2</span>
+                <button class="party-slot-remove-btn" type="button">×</button>
+                <img id="party-slot-2-img" src="" class="party-slot-img hidden" alt="後衛2キャラ">
+                <div id="party-slot-2-empty" class="party-slot-empty">
+                    <div class="party-slot-empty-icon">➕</div>
+                    <div class="party-slot-empty-text">後衛2を選択</div>
+                </div>
+                <div id="party-slot-2-info" class="party-slot-info hidden">
+                    <div id="party-slot-2-name" class="party-slot-name">キャラ名</div>
+                    <div class="party-slot-meta">
+                        <span id="party-slot-2-rarity" class="rarity-SR">SR</span>
+                        <span id="party-slot-2-type">⚡ 雷</span>
+                        <span id="party-slot-2-lv">Lv.1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 下部：手持ちキャラクター一覧 -->
+        <div class="party-select-list-title">
+            <span>📚 手持ちキャラクター一覧（タップして編成）</span>
+        </div>
+        <div class="party-zukan-scroll">
+            <div id="party-zukan-grid" class="zukan-grid">
+                <!-- JS動的レンダリング枠 -->
+            </div>
+        </div>
+
+        <!-- ボタン -->
+        <div class="modal-btn-grid mt-10">
+            <button id="party-formation-save-btn" class="menu-btn btn-orange" type="button" onclick="savePartyFormation()">決定</button>
+            <button id="party-formation-close-btn" class="menu-btn btn-gray" type="button" onclick="closePartyFormation()">閉じる</button>
+        </div>
+    </div>
+</div>
+
 <div id="random-overlay" class="overlay overlay-z290 hidden">
     <div class="modal modal-w400">
         <div class="modal-header-row">
@@ -608,6 +811,10 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 9.3.0</h4>
+            <ul>
+                <li>新戦闘モード「チームバトルクエスト」実装（前衛・後衛の3体パーティー編成、リアルタイム相性バトル、スリップダメージ、交替システム）</li>
+            </ul>
             <h4>Ver 9.2.4</h4>
             <ul>
                 <li>キャラクターレベル管理の不具合修正（獲得時・セーブデータ読み込み時・図鑑表示時・タイトル表示時の初期レベルLv.1保証処理を徹底強化）</li>
@@ -712,6 +919,6 @@
     </div>
 </div>
 
-<script type="module" src="js/main.js?v=9.2.4"></script>
+<script type="module" src="js/main.js?v=9.3.0"></script>
 </body>
 </html>

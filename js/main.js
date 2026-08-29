@@ -31,7 +31,7 @@ import {
     initUserId,
     loadSaveData,
     saveGame
-} from './state.js?v=9.2.4';
+} from './state.js?v=9.3.0';
 
 import {
     getRarityIndex,
@@ -46,13 +46,13 @@ import {
     stopBGM,
     playMmlBGM,
     BGM_MML
-} from './utils.js?v=9.2.4';
+} from './utils.js?v=9.3.0';
 
 import {
     uploadData,
     downloadData,
     fetchData
-} from './api.js?v=9.2.4';
+} from './api.js?v=9.3.0';
 
 import {
     showCutIn,
@@ -67,7 +67,7 @@ import {
     finishGame,
     handleResultClose,
     backToTitle
-} from './battle-core.js?v=9.2.4';
+} from './battle-core.js?v=9.3.0';
 
 import {
     startNormalGameCheck,
@@ -102,7 +102,7 @@ import {
     toggleRelief,
     startOathGame,
     startReliefGame
-} from './quest-normal.js?v=9.2.4';
+} from './quest-normal.js?v=9.3.0';
 
 import {
     addRogueLog,
@@ -125,7 +125,7 @@ import {
     updateRogueUI,
     escapeRogueConfirm,
     exitRogueSystem
-} from './quest-explore.js?v=9.2.4';
+} from './quest-explore.js?v=9.3.0';
 
 import {
     openGacha,
@@ -172,7 +172,7 @@ import {
     checkLoginBonus,
     closeLoginBonus,
     checkMissionDate
-} from './gacha-shop.js?v=9.2.4';
+} from './gacha-shop.js?v=9.3.0';
 
 import {
     initTitle,
@@ -218,7 +218,36 @@ import {
     showAlert,
     showConfirm,
     GuideModule
-} from './ui-manager.js?v=9.2.4';
+} from './ui-manager.js?v=9.3.0';
+
+import {
+    openTeamBattleSetup,
+    closeTeamBattleSetup,
+    openPartyFormation,
+    closePartyFormation,
+    savePartyFormation,
+    selectPartySlot,
+    setPartyMember,
+    removePartyMember,
+    renderPartyFormation,
+    updateTeamBattleSetupPreview,
+    initTbGradeSelect,
+    filterTbSubjects,
+    filterTbUnits,
+    tbState,
+    calcTbMaxHp,
+    getTbAffinityMultiplier,
+    getTbAffinityInfo,
+    calcTbTickDamage,
+    startTeamBattle,
+    tbGameLoop,
+    nextTbQuestion,
+    judgeTbAnswer,
+    switchTbActiveChar,
+    updateTbBattleUI,
+    escapeTeamBattle,
+    finishTeamBattle
+} from './special-quest/special-quest-engine.js?v=9.3.0';
 
 // ==========================================
 // インライン onclick / 動的UI互換用 window 一括バインド
@@ -434,7 +463,35 @@ Object.assign(globalScope, {
     showAppModal,
     showAlert,
     showConfirm,
-    GuideModule
+    GuideModule,
+    
+    // チームバトルクエスト関連
+    openTeamBattleSetup,
+    closeTeamBattleSetup,
+    openPartyFormation,
+    closePartyFormation,
+    savePartyFormation,
+    selectPartySlot,
+    setPartyMember,
+    removePartyMember,
+    renderPartyFormation,
+    updateTeamBattleSetupPreview,
+    initTbGradeSelect,
+    filterTbSubjects,
+    filterTbUnits,
+    tbState,
+    calcTbMaxHp,
+    getTbAffinityMultiplier,
+    getTbAffinityInfo,
+    calcTbTickDamage,
+    startTeamBattle,
+    tbGameLoop,
+    nextTbQuestion,
+    judgeTbAnswer,
+    switchTbActiveChar,
+    updateTbBattleUI,
+    escapeTeamBattle,
+    finishTeamBattle
 });
 
 // ==========================================

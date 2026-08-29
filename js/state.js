@@ -275,6 +275,7 @@ export const gameState = {
     equipped: '1',
     itemLevels: {},
     charaInventory: {},
+    teamParty: [null, null, null],
     stats: {
         totalPlay: 0,
         totalKill: 0,
@@ -437,6 +438,23 @@ export function loadSaveData() {
     gameState.unitProgress = safeParse('sq_unit_progress', {});
     gameState.calcRecords = safeParse('sq_calc_records', {});
     
+    // チームバトル用パーティーデータのロードと検証
+    const loadedParty = safeParse('sq_team_party', [null, null, null]);
+    if (Array.isArray(loadedParty) && loadedParty.length === 3) {
+        gameState.teamParty = [
+            (loadedParty[0] && gameState.charaInventory[loadedParty[0]]) ? String(loadedParty[0]) : null,
+            (loadedParty[1] && gameState.charaInventory[loadedParty[1]]) ? String(loadedParty[1]) : null,
+            (loadedParty[2] && gameState.charaInventory[loadedParty[2]]) ? String(loadedParty[2]) : null
+        ];
+    } else {
+        gameState.teamParty = [null, null, null];
+    }
+    
+    // デフォルト編成（もし未編成かつ装備キャラがいる場合、前衛にセット）
+    if (!gameState.teamParty[0] && gameState.equipped && gameState.charaInventory[gameState.equipped]) {
+        gameState.teamParty[0] = String(gameState.equipped);
+    }
+    
     const loadedInv = safeParse('sq_item_inventory', {});
     gameState.inventory = {
         redPages: Number(loadedInv.redPages) || 0,
@@ -463,6 +481,7 @@ export function saveGame() {
     localStorage.setItem('sq_equip', gameState.equipped);
     localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
     localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
+    localStorage.setItem('sq_team_party', JSON.stringify(gameState.teamParty));
     localStorage.setItem('sq_missions', JSON.stringify(dailyMissions));
     localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
     localStorage.setItem('sq_subject_stats', JSON.stringify(gameState.subjectStats || {}));
