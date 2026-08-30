@@ -264,6 +264,8 @@ import {
     resumeTbGame,
     escapeTeamBattleFromPause,
     generatePartyPassword,
+    openQrScanner,
+    closeQrScanner,
     startTbQrScanner,
     stopTbQrScanner
 } from './special-quest/special-quest-engine.js?v=10.0.1';
@@ -528,6 +530,8 @@ Object.assign(globalScope, {
     resumeTbGame,
     escapeTeamBattleFromPause,
     generatePartyPassword,
+    openQrScanner,
+    closeQrScanner,
     startTbQrScanner,
     stopTbQrScanner
 });

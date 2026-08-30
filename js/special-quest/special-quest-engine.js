@@ -1968,7 +1968,7 @@ let qrScanAnimId = null;
 /**
  * QRコードスキャナー（カメラ）を起動
  */
-export async function startTbQrScanner() {
+export async function openQrScanner() {
     const overlay = document.getElementById('qr-scanner-overlay');
     const video = document.getElementById('qr-scanner-video');
     const statusEl = document.getElementById('qr-scanner-status');
@@ -2002,6 +2002,9 @@ export async function startTbQrScanner() {
     }
 }
 
+// 互換エイリアス
+export const startTbQrScanner = openQrScanner;
+
 /**
  * QRコード毎フレーム解析ループ
  */
@@ -2010,7 +2013,7 @@ function tickQrScan() {
     const video = document.getElementById('qr-scanner-video');
     const canvas = document.getElementById('qr-scanner-canvas');
     if (!overlay || overlay.classList.contains('hidden') || !video || !canvas) {
-        stopTbQrScanner();
+        closeQrScanner();
         return;
     }
 
@@ -2039,7 +2042,7 @@ function tickQrScan() {
 /**
  * QRスキャナーを停止してモーダルを閉じる
  */
-export function stopTbQrScanner() {
+export function closeQrScanner() {
     if (qrScanAnimId) {
         cancelAnimationFrame(qrScanAnimId);
         qrScanAnimId = null;
@@ -2051,6 +2054,9 @@ export function stopTbQrScanner() {
     const overlay = document.getElementById('qr-scanner-overlay');
     if (overlay) overlay.classList.add('hidden');
 }
+
+// 互換エイリアス
+export const stopTbQrScanner = closeQrScanner;
 
 /**
  * スキャン結果の文字列からパスワードを抽出し、入力欄にセット

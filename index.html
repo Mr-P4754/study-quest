@@ -330,7 +330,7 @@
             <label class="font-bold text-dark text-sm tb-password-label">フレンド対戦（任意）</label>
             <div class="tb-password-input-row">
                 <input type="text" id="tb-password-input" placeholder="パスワード入力またはQR読取" class="tb-password-input" autocomplete="off">
-                <button id="tb-qr-scan-btn" class="tb-qr-scan-btn" type="button" onclick="startTbQrScanner()" title="カメラでQRコードを読み取る">📷 読取</button>
+                <button id="tb-qr-scan-btn" class="tb-qr-scan-btn" type="button" onclick="openQrScanner()" title="カメラでQRコードを読み取る">📷 読取</button>
             </div>
         </div>
         <div class="tb-setup-preview-box">
@@ -733,7 +733,7 @@
             </div>
         </div>
 
-        <button class="menu-btn btn-blue btn-full-w mt-10" type="button" onclick="generatePartyPassword()">📱 対戦QRコードを発行</button>
+        <button class="menu-btn btn-blue btn-full-w mt-10" type="button" onclick="generatePartyPassword()">📤 自分のパスワード（QR）を発行する</button>
 
         <!-- ボタン -->
         <div class="modal-btn-grid mt-10">
@@ -929,11 +929,11 @@
             <video id="qr-scanner-video" class="qr-video-feed" muted></video>
             <canvas id="qr-scanner-canvas" class="hidden"></canvas>
             <div class="qr-scanner-guide-box">
-                <div class="qr-scanner-laser"></div>
+                <div class="qr-scan-line"></div>
             </div>
         </div>
         <p id="qr-scanner-status" class="text-sm text-gray mt-5">カメラを起動中...</p>
-        <button class="menu-btn mt-10 btn-gray" type="button" onclick="stopTbQrScanner()">キャンセル</button>
+        <button class="menu-btn mt-10 btn-gray" type="button" onclick="closeQrScanner()">キャンセル</button>
     </div>
 </div>
 

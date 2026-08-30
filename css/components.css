@@ -478,3 +478,30 @@
 .cat-box-warn { background: #fdedec; border: 2px solid #e74c3c; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
 .cat-select-full { width: 100%; margin-bottom: 10px; font-size: 1.1em; }
 .cat-select-large { width: 100%; margin-top: 5px; font-size: 1.1em; padding: 10px; }
+
+/* QRコードスキャン グリーンスキャンライン演出 */
+.qr-scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #22c55e;
+    box-shadow: 0 0 10px #22c55e, 0 0 18px #4ade80;
+    animation: scanLineAnim 2s infinite ease-in-out;
+}
+
+@keyframes scanLineAnim {
+    0% {
+        top: 0%;
+        opacity: 0.85;
+    }
+    50% {
+        top: 98%;
+        opacity: 1;
+    }
+    100% {
+        top: 0%;
+        opacity: 0.85;
+    }
+}
