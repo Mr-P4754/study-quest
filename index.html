@@ -328,9 +328,13 @@
             
             <hr class="tb-setup-divider">
             <label class="font-bold text-dark text-sm tb-password-label">フレンド対戦（任意）</label>
-            <div class="tb-password-input-row">
-                <input type="text" id="tb-password-input" placeholder="パスワード入力またはQR読取" class="tb-password-input" autocomplete="off">
-                <button id="tb-qr-scan-btn" class="tb-qr-scan-btn" type="button" onclick="openQrScanner()" title="カメラでQRコードを読み取る">📷 読取</button>
+            
+            <div id="tb-scanned-status" class="tb-scanned-status">✅ 対戦データ読取完了</div>
+            <input type="hidden" id="tb-password-input" value="">
+            
+            <div class="tb-password-btn-row">
+                <button class="menu-btn btn-green tb-action-btn" type="button" onclick="openQrScanner()">📷 読取</button>
+                <button id="tb-clear-btn" class="menu-btn btn-gray tb-action-btn" type="button" onclick="clearScannedData()" disabled>🗑️ 削除</button>
             </div>
         </div>
         <div class="tb-setup-preview-box">

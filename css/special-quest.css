@@ -315,69 +315,34 @@
     margin-bottom: 5px;
 }
 
-.tb-password-input-row {
+.tb-scanned-status {
+    font-size: 0.85em;
+    color: #27ae60;
+    margin-bottom: 6px;
+    font-weight: bold;
+    display: none;
+    text-align: left;
+}
+
+.tb-password-btn-row {
     display: flex !important;
-    flex-direction: row !important;
     gap: 8px !important;
-    align-items: center !important;
-    justify-content: space-between !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    margin: 0 !important;
 }
 
-.tb-password-input-row .tb-password-input,
-#tb-password-input {
-    flex: 1 1 auto !important;
-    width: calc(100% - 88px) !important;
-    max-width: none !important;
+.modal .menu-btn.tb-action-btn,
+.tb-action-btn {
+    flex: 1 !important;
+    font-size: 0.9em !important;
     height: 42px !important;
-    padding: 6px 12px !important;
-    font-size: 0.95rem !important;
-    font-weight: bold !important;
-    border-radius: 8px !important;
-    border: 2px solid #95a5a6 !important;
-    background: #ffffff !important;
-    color: #2c3e50 !important;
-    box-sizing: border-box !important;
+    padding: 0 10px !important;
     margin: 0 !important;
-}
-
-.modal .menu-btn.tb-qr-scan-btn,
-.modal .tb-qr-scan-btn,
-.tb-qr-scan-btn,
-#tb-qr-scan-btn {
-    flex: 0 0 80px !important;
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
-    height: 42px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: #2563eb !important;
-    color: #ffffff !important;
-    font-size: 0.85rem !important;
-    font-weight: bold !important;
-    border: none !important;
-    border-radius: 8px !important;
-    border-bottom: 3px solid #1d4ed8 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-    cursor: pointer !important;
-    display: inline-flex !important;
+    display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    text-align: center !important;
-    white-space: nowrap !important;
+    border-radius: 8px !important;
     box-sizing: border-box !important;
-    line-height: 1 !important;
-}
-
-.modal .menu-btn.tb-qr-scan-btn:active,
-.modal .tb-qr-scan-btn:active,
-.tb-qr-scan-btn:active,
-#tb-qr-scan-btn:active {
-    transform: translateY(2px) !important;
-    border-bottom: 1px solid #1d4ed8 !important;
 }
 
 .tb-setup-preview-box {

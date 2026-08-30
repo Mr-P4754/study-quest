@@ -2059,13 +2059,10 @@ export function closeQrScanner() {
 export const stopTbQrScanner = closeQrScanner;
 
 /**
- * スキャン結果の文字列からパスワードを抽出し、入力欄にセット
+ * スキャン結果の文字列からパスワードを抽出し、入力欄にセット＆UI更新
  * @param {string} rawDataStr
  */
 function handleQrCodeResult(rawDataStr) {
-    stopTbQrScanner();
-    playSE('hit');
-
     let pass = (rawDataStr || '').trim();
     // URLの場合は tb_pass クエリパラメータを抽出
     if (pass.includes('tb_pass=')) {
@@ -2078,9 +2075,47 @@ function handleQrCodeResult(rawDataStr) {
         }
     }
 
-    const inputEl = document.getElementById('tb-password-input');
-    if (inputEl) {
-        inputEl.value = pass;
+    if (pass) {
+        playSE('hit');
+        setScannedData(pass);
+        closeQrScanner();
+        showAlert('🎉 対戦QRコードを読み取りました！\nフレンド対戦の準備が完了しました。');
     }
-    showAlert('🎉 QRコードを読み取りました！\n出撃準備が完了しました。');
+}
+
+/**
+ * 読み取り完了時のデータ設定＆UI更新
+ * @param {string} pass
+ */
+export function setScannedData(pass) {
+    const input = document.getElementById('tb-password-input');
+    if (input) input.value = pass;
+    
+    const status = document.getElementById('tb-scanned-status');
+    if (status) status.style.display = 'block';
+
+    const clearBtn = document.getElementById('tb-clear-btn');
+    if (clearBtn) {
+        clearBtn.disabled = false;
+        clearBtn.classList.remove('btn-gray');
+        clearBtn.classList.add('btn-red');
+    }
+}
+
+/**
+ * 読み取り済み対戦データの削除＆UI初期化
+ */
+export function clearScannedData() {
+    const input = document.getElementById('tb-password-input');
+    if (input) input.value = '';
+    
+    const status = document.getElementById('tb-scanned-status');
+    if (status) status.style.display = 'none';
+
+    const clearBtn = document.getElementById('tb-clear-btn');
+    if (clearBtn) {
+        clearBtn.disabled = true;
+        clearBtn.classList.add('btn-gray');
+        clearBtn.classList.remove('btn-red');
+    }
 }

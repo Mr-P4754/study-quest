@@ -267,7 +267,9 @@ import {
     openQrScanner,
     closeQrScanner,
     startTbQrScanner,
-    stopTbQrScanner
+    stopTbQrScanner,
+    setScannedData,
+    clearScannedData
 } from './special-quest/special-quest-engine.js?v=10.0.1';
 
 // ==========================================
@@ -533,7 +535,9 @@ Object.assign(globalScope, {
     openQrScanner,
     closeQrScanner,
     startTbQrScanner,
-    stopTbQrScanner
+    stopTbQrScanner,
+    setScannedData,
+    clearScannedData
 });
 
 // ==========================================
@@ -554,15 +558,19 @@ async function initApp() {
     const urlParams = new URLSearchParams(window.location.search);
     const tbPass = urlParams.get('tb_pass');
     if (tbPass) {
-        const inputEl = document.getElementById('tb-password-input');
-        if (inputEl) {
-            inputEl.value = tbPass;
-            // データロード完了後、自動でチームバトル出撃準備画面を開く
-            setTimeout(() => {
-                openTeamBattleSetup();
-            }, 500);
+        if (typeof setScannedData === 'function') {
+            setScannedData(tbPass);
+        } else {
+            const inputEl = document.getElementById('tb-password-input');
+            if (inputEl) inputEl.value = tbPass;
         }
-        // URLをクリーンに戻す（リロード時の再発動防止）
+        
+        setTimeout(() => {
+            if (typeof openTeamBattleSetup === 'function') {
+                openTeamBattleSetup();
+            }
+        }, 500);
+        
         window.history.replaceState(null, '', window.location.pathname);
     }
 }
