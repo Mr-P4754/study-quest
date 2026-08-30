@@ -790,14 +790,13 @@ export function calcTbEnemyAtk(enemy) {
 }
 
 /**
- * 敵からアクティブな味方への1秒ごとのスリップダメージ（0.2倍 ＋ 相性補正）計算
- * 計算式: Math.max(1, Math.floor(calcTbEnemyAtk(enemy) * 0.2 * affinity))
+ * 敵からアクティブな味方への1秒ごとのスリップダメージ（通常0.3倍 / フレンド0.4倍 ＋ 相性補正）計算
  * @param {Object} enemy
  * @param {Object} [activePlayer]
  * @returns {number}
  */
 export function calcTbTickDamage(enemy, activePlayer) {
-    if (!enemy) return 20;
+    if (!enemy) return 50;
     const baseAtk = calcTbEnemyAtk(enemy);
     let affinity = 1.0;
     if (activePlayer) {
@@ -805,7 +804,11 @@ export function calcTbTickDamage(enemy, activePlayer) {
         const playerSkills = activePlayer.skills || ['ATK'];
         affinity = getTbAffinityMultiplier(enemySkills, playerSkills, true);
     }
-    return Math.max(1, Math.floor(baseAtk * 0.2 * affinity));
+    
+    // フレンド敵なら0.4倍、通常敵なら0.3倍
+    const damageMultiplier = enemy.isFriend ? 0.4 : 0.3;
+    
+    return Math.max(1, Math.floor(baseAtk * damageMultiplier * affinity));
 }
 
 // ----------------------------------------------------
@@ -1923,6 +1926,13 @@ export function generateTbEnemyTeamFromPassword(password, playerParty) {
 
         if (!Array.isArray(extract) || extract.length !== 3) throw new Error("Format Error");
 
+        // レア度の低い順（コストの低い順）にソート
+        extract.sort((a, b) => {
+            const costA = TB_RARITY_COST[a[1]] || 2;
+            const costB = TB_RARITY_COST[b[1]] || 2;
+            return costA - costB;
+        });
+
         const enemyTeam = [];
         extract.forEach((data, index) => {
             const [charId, rarity, skillsStr, baseValue] = data;
@@ -1950,7 +1960,8 @@ export function generateTbEnemyTeamFromPassword(password, playerParty) {
                 hp: enemyMaxHp,
                 imageUrl: imageUrl,
                 icon: '👤',
-                master: cMaster
+                master: cMaster,
+                isFriend: true
             });
         });
         return enemyTeam;
