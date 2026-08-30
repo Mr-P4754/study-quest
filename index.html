@@ -325,9 +325,9 @@
             <select id="tb-subject-select" aria-label="教科を選択" class="select-box cat-select-full" onchange="filterTbUnits()"><option value="">教科を選択</option></select>
             <select id="tb-unit-select" aria-label="単元を選択" class="select-box cat-select-full"><option value="">単元を選択</option></select>
             
-            <hr style="border: 1px dashed #bdc3c7; margin: 10px 0;">
-            <label class="font-bold text-dark text-sm" style="display:block; text-align:left; margin-bottom:5px;">フレンド対戦（任意）</label>
-            <input type="text" id="tb-password-input" placeholder="パスワードを入力して対戦" class="select-box cat-select-full m-0" style="width:100%; box-sizing:border-box;">
+            <hr class="tb-setup-divider">
+            <label class="font-bold text-dark text-sm tb-password-label">フレンド対戦（任意）</label>
+            <input type="text" id="tb-password-input" placeholder="パスワードを入力して対戦" class="select-box cat-select-full m-0 tb-password-input">
         </div>
         <div class="tb-setup-preview-box">
             <div class="tb-setup-preview-label">出撃パーティー（前衛1枠・後衛2枠）</div>
@@ -729,7 +729,7 @@
             </div>
         </div>
 
-        <button class="menu-btn btn-blue btn-full-w mt-10" type="button" onclick="generatePartyPassword()">📤 自分のパスワードを発行</button>
+        <button class="menu-btn btn-blue btn-full-w mt-10" type="button" onclick="generatePartyPassword()">📱 対戦QRコードを発行</button>
 
         <!-- ボタン -->
         <div class="modal-btn-grid mt-10">
@@ -849,7 +849,7 @@
                         <li><b>公平な敵選出＆属性3すくみ相性</b>: 敵チームも合計コスト10以下で公平生成。炎(ATK)＞水(TIME)＞雷(EXP)＞炎(ATK)の3すくみ相性関係（攻撃時最大1.5倍/不利0.5倍、ALL属性1.25倍保証）。出題後2秒間のスリップ無効安全時間を経て1秒ごとに敵攻撃力の0.2倍スリップダメージ、時間切れ・不正解時に1.0倍ペナルティ（敵攻撃時にも属性相性補正適用）。</li>
                         <li><b>報酬保証＆撃破モンスター獲得</b>: 全3ステージ制覇できなくても、そこまでに倒した敵キャラクターを直接獲得（インベントリ追加＆図鑑登録）し、与えたダメージに応じた大量XPを確実に獲得。</li>
                         <li><b>演出・操作性向上</b>: 3秒前カウントダウンカットイン演出（カウントダウン中のポーズロック対応）、浮遊待機アニメーション、戦闘BGM再生、タイムバー即時同期。</li>
-                        <li><b>👥 フレンド擬似対戦機能</b>: パーティー編成画面から対戦パスワードを発行・共有可能！出撃準備画面に相手のパスワードを入力することで、友達が育てたパーティー（【友】プレフィックス付き）との腕試しバトルが可能に！</li>
+                        <li><b>👥 フレンドQR対戦機能</b>: パーティー編成画面から「対戦QRコード」をワンタップ発行！友達のスマホカメラでスキャンするだけで出撃準備画面が自動起動し、友達が育てたパーティー（【友】プレフィックス付き）との腕試しバトルが可能に！</li>
                     </ul>
                 </li>
                 <li>📊 <b>ガチャ・探索・バトルの確率テーブル刷新</b>: 全コンテンツのレアリティ抽選確率をリバランス。</li>
@@ -900,6 +900,19 @@
             </ul>
         </div>
         <button class="menu-btn mt-15 btn-gray" onclick="closeVersionHistory()">閉じる</button>
+    </div>
+</div>
+
+<!-- QRコード表示用モーダル -->
+<div id="qr-display-overlay" class="overlay overlay-z400 hidden">
+    <div class="modal modal-w350">
+        <h2 class="text-blue mt-0">📤 対戦QRコード</h2>
+        <p class="text-sm text-gray">友達の端末のカメラで読み取ってもらおう！</p>
+        <div class="qr-card-box">
+            <img id="qr-code-img" src="" alt="QR Code" class="qr-code-img">
+        </div>
+        <p class="text-sm font-bold text-dark">スキャンすると対戦準備画面が<br>自動で開きます</p>
+        <button class="menu-btn mt-10 btn-gray" type="button" onclick="document.getElementById('qr-display-overlay').classList.add('hidden')">閉じる</button>
     </div>
 </div>
 

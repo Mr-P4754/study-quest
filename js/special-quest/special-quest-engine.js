@@ -1871,7 +1871,7 @@ export function finishTeamBattle(isWin, isEscape = false) {
 // ----------------------------------------------------
 
 /**
- * 自分のパーティーから対戦用パスワードを発行する
+ * 自分のパーティーから対戦用QRコード（URL）を発行する
  */
 export function generatePartyPassword() {
     const partyIds = gameState.teamParty || [];
@@ -1879,6 +1879,7 @@ export function generatePartyPassword() {
         return alert("パーティーが3体編成されていません");
     }
 
+    // 最小限のデータを抽出 [キャラID, レアリティ, 属性スキル, 補正値]
     const extract = partyIds.map(charId => {
         const cMaster = rawData.characters ? rawData.characters.find(c => String(c.id) === String(charId)) : null;
         const inv = gameState.charaInventory[charId];
@@ -1894,14 +1895,17 @@ export function generatePartyPassword() {
     const jsonStr = JSON.stringify(extract);
     const password = btoa(encodeURIComponent(jsonStr)).replace(/=+$/, '');
     
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(password).then(() => {
-            alert(`フレンド対戦用のパスワードをコピーしました！\n\n${password}`);
-        }).catch(() => {
-            alert(`以下のパスワードをコピーしてください：\n${password}`);
-        });
-    } else {
-        alert(`以下のパスワードをコピーしてください：\n${password}`);
+    // 現在のゲームURLをベースに、クエリパラメータとしてパスワードを付与
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?tb_pass=${password}`;
+
+    const qrOverlay = document.getElementById('qr-display-overlay');
+    const qrImg = document.getElementById('qr-code-img');
+    
+    if (qrOverlay && qrImg) {
+        // QRコード生成APIを利用して画像をセット
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+        qrOverlay.classList.remove('hidden');
     }
 }
 

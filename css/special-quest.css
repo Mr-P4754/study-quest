@@ -303,6 +303,23 @@
     width: 92%;
 }
 
+.tb-setup-divider {
+    border: none;
+    border-top: 1px dashed #bdc3c7;
+    margin: 10px 0;
+}
+
+.tb-password-label {
+    display: block;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.tb-password-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .tb-setup-preview-box {
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
@@ -882,4 +899,22 @@
         transform: scale(1.2);
         opacity: 0;
     }
+}
+
+/* チームバトル QRコード表示モーダル */
+.qr-card-box {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 12px;
+    display: inline-block;
+    margin: 15px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.qr-code-img {
+    width: 200px;
+    height: 200px;
+    display: block;
+    object-fit: contain;
 }

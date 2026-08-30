@@ -541,6 +541,22 @@ async function initApp() {
     await fetchData();
     initTitle();
     checkLoginBonus();
+    
+    // URLから対戦パスワードを読み取って自動展開する処理
+    const urlParams = new URLSearchParams(window.location.search);
+    const tbPass = urlParams.get('tb_pass');
+    if (tbPass) {
+        const inputEl = document.getElementById('tb-password-input');
+        if (inputEl) {
+            inputEl.value = tbPass;
+            // データロード完了後、自動でチームバトル出撃準備画面を開く
+            setTimeout(() => {
+                openTeamBattleSetup();
+            }, 500);
+        }
+        // URLをクリーンに戻す（リロード時の再発動防止）
+        window.history.replaceState(null, '', window.location.pathname);
+    }
 }
 
 if (typeof window !== 'undefined') {
