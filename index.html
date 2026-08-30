@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/components.css?v=10.0.0">
     <link rel="stylesheet" href="css/quests.css?v=10.0.0">
     <link rel="stylesheet" href="css/special-quest.css?v=10.0.0">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -327,7 +328,10 @@
             
             <hr class="tb-setup-divider">
             <label class="font-bold text-dark text-sm tb-password-label">フレンド対戦（任意）</label>
-            <input type="text" id="tb-password-input" placeholder="パスワードを入力して対戦" class="select-box cat-select-full m-0 tb-password-input">
+            <div class="tb-password-input-row">
+                <input type="text" id="tb-password-input" placeholder="パスワード入力またはQR読取" class="select-box cat-select-full m-0 tb-password-input">
+                <button class="menu-btn btn-blue tb-qr-scan-btn" type="button" onclick="startTbQrScanner()" title="カメラでQRコードを読み取る">📷 読取</button>
+            </div>
         </div>
         <div class="tb-setup-preview-box">
             <div class="tb-setup-preview-label">出撃パーティー（前衛1枠・後衛2枠）</div>
@@ -905,7 +909,7 @@
 
 <!-- QRコード表示用モーダル -->
 <div id="qr-display-overlay" class="overlay overlay-z400 hidden">
-    <div class="modal modal-w350">
+    <div class="modal modal-w350 text-center">
         <h2 class="text-blue mt-0">📤 対戦QRコード</h2>
         <p class="text-sm text-gray">友達の端末のカメラで読み取ってもらおう！</p>
         <div class="qr-card-box">
@@ -913,6 +917,23 @@
         </div>
         <p class="text-sm font-bold text-dark">スキャンすると対戦準備画面が<br>自動で開きます</p>
         <button class="menu-btn mt-10 btn-gray" type="button" onclick="document.getElementById('qr-display-overlay').classList.add('hidden')">閉じる</button>
+    </div>
+</div>
+
+<!-- QRコードスキャン用カメラモーダル -->
+<div id="qr-scanner-overlay" class="overlay overlay-z450 hidden">
+    <div class="modal modal-w380 text-center">
+        <h2 class="text-blue mt-0">📷 QRコード読み取り</h2>
+        <p class="text-sm text-gray">友達の対戦QRコードをカメラにかざしてください</p>
+        <div class="qr-scanner-viewport">
+            <video id="qr-scanner-video" class="qr-video-feed" muted></video>
+            <canvas id="qr-scanner-canvas" class="hidden"></canvas>
+            <div class="qr-scanner-guide-box">
+                <div class="qr-scanner-laser"></div>
+            </div>
+        </div>
+        <p id="qr-scanner-status" class="text-sm text-gray mt-5">カメラを起動中...</p>
+        <button class="menu-btn mt-10 btn-gray" type="button" onclick="stopTbQrScanner()">キャンセル</button>
     </div>
 </div>
 

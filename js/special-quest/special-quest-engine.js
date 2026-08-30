@@ -1958,3 +1958,123 @@ export function generateTbEnemyTeamFromPassword(password, playerParty) {
         return null;
     }
 }
+
+// ----------------------------------------------------
+// QRコードカメラ読み取りスキャナー
+// ----------------------------------------------------
+let qrScanStream = null;
+let qrScanAnimId = null;
+
+/**
+ * QRコードスキャナー（カメラ）を起動
+ */
+export async function startTbQrScanner() {
+    const overlay = document.getElementById('qr-scanner-overlay');
+    const video = document.getElementById('qr-scanner-video');
+    const statusEl = document.getElementById('qr-scanner-status');
+    if (!overlay || !video) return;
+
+    overlay.classList.remove('hidden');
+    if (statusEl) statusEl.innerText = 'カメラを起動中...';
+
+    // カメラストリームの取得
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            if (statusEl) statusEl.innerText = 'お使いのブラウザはカメラに対応していません';
+            return;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } }
+        });
+        qrScanStream = stream;
+        video.srcObject = stream;
+        video.playsInline = true;
+        video.muted = true;
+        video.setAttribute('playsinline', 'true');
+        await video.play();
+
+        if (statusEl) statusEl.innerText = 'QRコードを枠内に合わせてください';
+        qrScanAnimId = requestAnimationFrame(tickQrScan);
+    } catch (err) {
+        console.error('Camera access error:', err);
+        if (statusEl) statusEl.innerText = 'カメラの起動に失敗しました（カメラ権限を許可してください）';
+    }
+}
+
+/**
+ * QRコード毎フレーム解析ループ
+ */
+function tickQrScan() {
+    const overlay = document.getElementById('qr-scanner-overlay');
+    const video = document.getElementById('qr-scanner-video');
+    const canvas = document.getElementById('qr-scanner-canvas');
+    if (!overlay || overlay.classList.contains('hidden') || !video || !canvas) {
+        stopTbQrScanner();
+        return;
+    }
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = (typeof window.jsQR !== 'undefined') ? window.jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert'
+            }) : null;
+
+            if (code && code.data) {
+                // QRコード検出成功
+                handleQrCodeResult(code.data);
+                return;
+            }
+        }
+    }
+    qrScanAnimId = requestAnimationFrame(tickQrScan);
+}
+
+/**
+ * QRスキャナーを停止してモーダルを閉じる
+ */
+export function stopTbQrScanner() {
+    if (qrScanAnimId) {
+        cancelAnimationFrame(qrScanAnimId);
+        qrScanAnimId = null;
+    }
+    if (qrScanStream) {
+        qrScanStream.getTracks().forEach(track => track.stop());
+        qrScanStream = null;
+    }
+    const overlay = document.getElementById('qr-scanner-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+/**
+ * スキャン結果の文字列からパスワードを抽出し、入力欄にセット
+ * @param {string} rawDataStr
+ */
+function handleQrCodeResult(rawDataStr) {
+    stopTbQrScanner();
+    playSE('hit');
+
+    let pass = (rawDataStr || '').trim();
+    // URLの場合は tb_pass クエリパラメータを抽出
+    if (pass.includes('tb_pass=')) {
+        try {
+            const urlObj = new URL(pass, window.location.origin);
+            pass = urlObj.searchParams.get('tb_pass') || pass;
+        } catch (e) {
+            const match = pass.match(/[?&]tb_pass=([^&#]+)/);
+            if (match) pass = match[1];
+        }
+    }
+
+    const inputEl = document.getElementById('tb-password-input');
+    if (inputEl) {
+        inputEl.value = pass;
+    }
+    showAlert('🎉 QRコードを読み取りました！\n出撃準備が完了しました。');
+}
