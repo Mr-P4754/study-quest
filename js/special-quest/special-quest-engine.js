@@ -1049,7 +1049,7 @@ function sampleRarityFromTable(probList) {
  * @param {number} stage ステージ番号 (1, 2, 3)
  * @param {string} rarity 敵のレア度 ('N', 'R', 'SR', 'SSR', 'UR')
  * @param {Array} [party] プレイヤーの出撃パーティー
- * @returns {number} 補正後の敵レベル (1〜30)
+ * @returns {number} 補正後の敵レベル (1〜)
  */
 export function calcTbEnemyDynamicLevel(stage, rarity, party) {
     const targetParty = (party && party.length > 0) ? party : (tbState.party || []);
@@ -1071,7 +1071,7 @@ export function calcTbEnemyDynamicLevel(stage, rarity, party) {
     const rarityBonusMap = { N: -1, R: 0, SR: 1, SSR: 2, UR: 3 };
     const rarityBonus = rarityBonusMap[rarity] || 0;
 
-    return Math.max(1, Math.min(30, baseLv + rarityBonus));
+    return Math.max(1, baseLv + rarityBonus);
 }
 
 /**
