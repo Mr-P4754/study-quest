@@ -884,8 +884,17 @@ export function startTeamBattle() {
         });
     }
 
-    // 敵チーム3体を合計コスト10以下ルール ＆ プレイヤー平均レベルスケーリングで事前生成
-    tbState.enemyTeam = generateTbEnemyTeam(tbState.party);
+    // 敵チームの生成（フレンド対戦パスワード入力時はパスワードから復元、未入力時は自動生成）
+    const passwordInput = document.getElementById('tb-password-input')?.value.trim();
+
+    if (passwordInput) {
+        tbState.enemyTeam = generateTbEnemyTeamFromPassword(passwordInput, tbState.party);
+        if (!tbState.enemyTeam) {
+            return alert("パスワードが間違っているか、無効なデータです。");
+        }
+    } else {
+        tbState.enemyTeam = generateTbEnemyTeam(tbState.party);
+    }
 
     // バトル状態初期化
     tbState.isActive = true;
@@ -1857,5 +1866,91 @@ export function finishTeamBattle(isWin, isEscape = false) {
     returnToCurrentCategory();
 }
 
+// ----------------------------------------------------
+// フレンド擬似対戦・パスワード生成＆解読
+// ----------------------------------------------------
 
+/**
+ * 自分のパーティーから対戦用パスワードを発行する
+ */
+export function generatePartyPassword() {
+    const partyIds = gameState.teamParty || [];
+    if (partyIds.filter(id => id).length < 3) {
+        return alert("パーティーが3体編成されていません");
+    }
 
+    const extract = partyIds.map(charId => {
+        const cMaster = rawData.characters ? rawData.characters.find(c => String(c.id) === String(charId)) : null;
+        const inv = gameState.charaInventory[charId];
+        if (!cMaster || !inv) return [charId, 'N', 'ATK', 1.0];
+
+        const rarity = inv.currentRarity || cMaster.rarity || 'N';
+        const skillsStr = (inv.skills && inv.skills.length > 0) ? inv.skills.join(',') : (cMaster.type || 'ATK');
+        const value = (inv.isEvolved && inv.customValue) ? Number(inv.customValue) : Number(cMaster.value || 1.0);
+
+        return [charId, rarity, skillsStr, value];
+    });
+
+    const jsonStr = JSON.stringify(extract);
+    const password = btoa(encodeURIComponent(jsonStr)).replace(/=+$/, '');
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(password).then(() => {
+            alert(`フレンド対戦用のパスワードをコピーしました！\n\n${password}`);
+        }).catch(() => {
+            alert(`以下のパスワードをコピーしてください：\n${password}`);
+        });
+    } else {
+        alert(`以下のパスワードをコピーしてください：\n${password}`);
+    }
+}
+
+/**
+ * パスワードから敵チームを生成する
+ * @param {string} password
+ * @param {Array} playerParty
+ * @returns {Array|null}
+ */
+export function generateTbEnemyTeamFromPassword(password, playerParty) {
+    try {
+        const pad = password.length % 4 === 0 ? '' : '='.repeat(4 - (password.length % 4));
+        const jsonStr = decodeURIComponent(atob(password + pad));
+        const extract = JSON.parse(jsonStr);
+
+        if (!Array.isArray(extract) || extract.length !== 3) throw new Error("Format Error");
+
+        const enemyTeam = [];
+        extract.forEach((data, index) => {
+            const [charId, rarity, skillsStr, baseValue] = data;
+            const cMaster = rawData.characters ? rawData.characters.find(c => String(c.id) === String(charId)) : null;
+            
+            const stageNum = index + 1;
+            const enemyLevel = calcTbEnemyDynamicLevel(stageNum, rarity, playerParty);
+            
+            const enemyValue = Number(baseValue) * (0.8 + stageNum * 0.25);
+            const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
+            
+            const name = cMaster ? `【友】${cMaster.name}` : `【友】謎の刺客`;
+            const imageUrl = cMaster ? cMaster.imageUrl : '';
+            const skillsArr = skillsStr ? skillsStr.split(',') : ['ATK'];
+
+            enemyTeam.push({
+                name: name,
+                level: enemyLevel,
+                type: skillsArr[0],
+                skills: skillsArr,
+                rarity: rarity,
+                cost: TB_RARITY_COST[rarity] || 2,
+                value: enemyValue,
+                maxHp: enemyMaxHp,
+                hp: enemyMaxHp,
+                imageUrl: imageUrl,
+                icon: '👤',
+                master: cMaster
+            });
+        });
+        return enemyTeam;
+    } catch (e) {
+        return null;
+    }
+}

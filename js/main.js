@@ -262,7 +262,8 @@ import {
     finishTeamBattle,
     toggleTbPause,
     resumeTbGame,
-    escapeTeamBattleFromPause
+    escapeTeamBattleFromPause,
+    generatePartyPassword
 } from './special-quest/special-quest-engine.js?v=10.0.0';
 
 // ==========================================
@@ -523,7 +524,8 @@ Object.assign(globalScope, {
     finishTeamBattle,
     toggleTbPause,
     resumeTbGame,
-    escapeTeamBattleFromPause
+    escapeTeamBattleFromPause,
+    generatePartyPassword
 });
 
 // ==========================================
