@@ -183,6 +183,7 @@ export function openCategory(categoryId) {
 export function closeCategory(categoryId) {
     runtimeState.currentCategory = null;
     document.getElementById('cat-' + categoryId + '-overlay')?.classList.add('hidden');
+    updateTitleInfo();
 }
 
 export function closeAllCategoryModals() {

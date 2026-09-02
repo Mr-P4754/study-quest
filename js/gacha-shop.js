@@ -61,6 +61,7 @@ export function openGacha() {
 export function closeGacha() { 
     document.getElementById('gacha-overlay')?.classList.add('hidden'); 
     returnToCurrentCategory();
+    updateTitleInfo();
 }
 
 export async function rollGacha(times) {
@@ -122,6 +123,7 @@ export function executeGacha(times, guaranteedRarity) {
     playSE('win');
     if(typeof updateMissionProgress === 'function') updateMissionProgress('gacha', 1);
     saveGame();
+    updateTitleInfo();
     showGachaResult(results);
 }
 
@@ -661,6 +663,7 @@ export async function sellCharaStock() {
 // ==========================================
 export function openShop() { 
     closeAllCategoryModals();
+    currentShopTab = 'buy';
     document.getElementById('shop-overlay')?.classList.remove('hidden'); 
     renderShop(); 
 }
@@ -668,12 +671,21 @@ export function openShop() {
 export function closeShop() { 
     document.getElementById('shop-overlay')?.classList.add('hidden'); 
     returnToCurrentCategory();
+    updateTitleInfo();
+}
+
+export function switchShopTab(tab) {
+    currentShopTab = tab;
+    renderShop();
+}
+if (typeof window !== 'undefined') {
+    window.switchShopTab = switchShopTab;
 }
 
 export function renderShop() {
     const shopXp = document.getElementById('shop-xp'); if(shopXp) shopXp.innerText = gameState.xp;
     const l=document.getElementById('shop-list'); if(!l) return;
-    l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="currentShopTab='buy'; renderShop();">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="currentShopTab='exchange'; renderShop();">アイテム交換</div></div>`; 
+    l.innerHTML=`<div class="page-counter-container"><div class="page-item">📕 <span>${gameState.inventory.redPages||0}</span></div><div class="page-item">📘 <span>${gameState.inventory.bluePages||0}</span></div></div><div class="item-tab-container"><div class="item-tab ${currentShopTab==='buy'?'active':''}" onclick="switchShopTab('buy')">学習アイテム</div><div class="item-tab ${currentShopTab==='exchange'?'active':''}" onclick="switchShopTab('exchange')">アイテム交換</div></div>`; 
     if(currentShopTab === 'buy') {
         if(rawData.shopItems) rawData.shopItems.forEach(i=>{ 
             const lv = (gameState.itemLevels && gameState.itemLevels[i.id]) ? gameState.itemLevels[i.id] : 0;
@@ -708,10 +720,11 @@ export function exchangeBook(bookId, cost) {
     if (gameState.inventory.redPages < cost || gameState.inventory.bluePages < cost) return; 
     gameState.inventory.redPages -= cost; 
     gameState.inventory.bluePages -= cost; 
-    gameState.inventory[bookId]++; 
+    gameState.inventory[bookId] = (gameState.inventory[bookId] || 0) + 1; 
     updateMissionProgress('shop', 1); 
     saveGame(); 
     renderShop(); 
+    updateTitleInfo();
     playSE('win'); 
 }
 
