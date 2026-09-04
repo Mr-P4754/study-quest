@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/components.css?v=10.0.1">
     <link rel="stylesheet" href="css/quests.css?v=10.0.1">
     <link rel="stylesheet" href="css/special-quest.css?v=10.0.1">
+    <link rel="stylesheet" href="css/studyel.css?v=10.0.1">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
@@ -31,7 +32,7 @@
         <div id="campaign-text" class="campaign-text"></div>
     </div>
     <div class="title-logo">STUDY QUEST</div>
-    <div class="version-text" onclick="openVersionHistory()">Ver 10.0.0</div>
+    <div class="version-text" onclick="openVersionHistory()">Ver 10.1.0</div>
     
     <div class="title-news-banner" onclick="openCategory('special')">
         <span class="title-news-badge">NEW!</span>
@@ -68,6 +69,14 @@
     <div class="title-footer">
         <div id="title-chara-img" class="title-chara-frame"></div>
         <div>装備: <span id="title-equipped-name" class="text-white font-bold">なし</span><br>所持XP: <span id="title-xp" class="text-gold">0</span></div>
+        <div id="studyel-mini-btn" class="studyel-mini-container" title="スタディエル育成ルームを開く">
+            <svg class="studyel-mini-svg-ring" viewBox="0 0 44 44">
+                <circle class="studyel-mini-ring-bg" cx="22" cy="22" r="18" />
+                <circle class="studyel-mini-ring-progress" cx="22" cy="22" r="18" />
+            </svg>
+            <div class="studyel-mini-avatar"></div>
+            <div class="studyel-mini-badge">S1</div>
+        </div>
     </div>
 </div>
 
@@ -847,6 +856,20 @@
     <div class="modal modal-w500">
         <h2 class="text-blue mt-0">📋 更新履歴</h2>
         <div class="version-list version-list-box">
+            <h4>Ver 10.1.0（大型アップデート：妖精「スタディエル」育成機能正式リリース）</h4>
+            <ul>
+                <li>🧚 <b>新機能「スタディエル育成システム（Ver 3.5）」正式リリース！</b>
+                    <ul>
+                        <li><b>たまごっち風長期ブリーディング</b>: 通常クエスト・ランダム演習・タイピング等の日々の学習を通じて、「なぞのタマゴ」から成体・超越期まで育成。</li>
+                        <li><b>進化に連動する世代表記</b>: 第1世代（タマゴ: 〜300問）➔ 第2世代（幼体: 〜1,000問）➔ 第3世代（若体: 〜2,000問）➔ 第4世代（成体覚醒: 2,000問〜）➔ 第5世代（超越期: 3,000問〜）。</li>
+                        <li><b>常時発動効果</b>: 得意教科の獲得EXPアップ、考える時間（タイマー）延長、5COMBOごとの攻撃力アップ、大ピンチの奇跡（残り1機＆時間切れ直前にタイマー全回復）など連れ歩くだけで全モードに有効な強力バフを発揮。</li>
+                        <li><b>全7種の成体分岐</b>: 剛理（理系特化）、叡文（文系特化）、機技（その他特化）、万象（万能）、および理文・理技・文技の複合3種。2,000問到達時に最高レア（UR・コスト6）として実戦出撃解禁。</li>
+                        <li><b>挑戦レベル（Lv.○.○○）＆学習診断</b>: 解いた問題の学年難易度（挑戦レベル）や正答率、解答速度、コンボ数に応じて成体時の属性効果（最大×3.00）や初期Lvが動的に決定。</li>
+                        <li><b>🕊️ 巣立ち（周回ブリーディング）</b>: 育て上げた成体は永久に仲間として残り、いつでも新しいタマゴから別系統のスタディエル育成を再スタート可能。</li>
+                    </ul>
+                </li>
+                <li>📖 <b>プレイガイド連携＆UI強化</b>: スタディエル部屋モーダルに「❓」ヘルプボタンを設置し、詳細な育成ガイド・進化ツリー・挑戦レベル解説へ瞬時に遷移可能に。</li>
+            </ul>
             <h4>Ver 10.0.0（大型アップデート：チームバトルクエスト正式リリース）</h4>
             <ul>
                 <li>⚔️ <b>新コンテンツ「チームバトルクエスト」正式リリース！</b>
@@ -964,6 +987,92 @@
         </div>
         <button class="menu-btn btn-deep-orange" onclick="startRogueMode()">探索開始</button>
         <button class="menu-btn mt-10 btn-gray" onclick="closeRogueMenu()">やめる</button>
+    </div>
+</div>
+
+<!-- スタディエル部屋（育成ルーム・モーダル） -->
+<div id="studyel-modal-overlay" class="overlay overlay-z250 hidden">
+    <div class="studyel-room-modal">
+        <!-- ヘッダー -->
+        <div class="studyel-room-header">
+            <span id="st-gen-badge" class="studyel-gen-badge">第1世代</span>
+            <div id="st-stage-title" class="studyel-stage-title">なぞのタマゴ</div>
+            <div class="studyel-header-actions">
+                <button id="btn-studyel-help" class="help-btn" type="button" title="あそびかた">❓</button>
+                <button id="st-close-btn" class="studyel-close-btn" type="button">✕</button>
+            </div>
+        </div>
+
+        <!-- 中央メイン：マスコットステージ -->
+        <div class="studyel-stage-area">
+            <div id="st-speech-bubble" class="studyel-speech-bubble">温かな光に包まれている。<br>学習を重ねることで孵化が近づくようだ。</div>
+            <div id="st-mascot-wrap" class="studyel-mascot-wrap studyel-float-anim"></div>
+        </div>
+
+        <!-- 進行度メーター -->
+        <div class="studyel-progress-card">
+            <div class="studyel-progress-label-row">
+                <span id="st-goal-label">孵化まで あと <b>300</b> 問<br>（0 / 300）</span>
+            </div>
+            <div class="studyel-bar-track">
+                <div id="st-progress-fill" class="studyel-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div id="st-milestone-info" class="studyel-milestone-text">次回節目ボーナスまで あと 100 問</div>
+        </div>
+
+        <!-- 系統オーラバランス (帯グラフ) -->
+        <div class="studyel-balance-card">
+            <div class="studyel-balance-header">
+                <span style="font-weight:bold;">教科系統バランス</span>
+                <span id="st-omen-badge" class="studyel-omen-badge">現在：万象の兆し</span>
+            </div>
+            <div class="studyel-stacked-bar">
+                <div id="st-bar-sci" class="studyel-seg-science" style="width: 33.3%;"></div>
+                <div id="st-bar-hum" class="studyel-seg-humanities" style="width: 33.3%;"></div>
+                <div id="st-bar-gen" class="studyel-seg-general" style="width: 33.4%;"></div>
+            </div>
+            <div class="studyel-balance-legend">
+                <span class="studyel-legend-item"><span class="studyel-dot" style="background:#e74c3c;"></span><span id="st-leg-sci">理系 33%</span></span>
+                <span class="studyel-legend-item"><span class="studyel-dot" style="background:#f1c40f;"></span><span id="st-leg-hum">文系 33%</span></span>
+                <span class="studyel-legend-item"><span class="studyel-dot" style="background:#3498db;"></span><span id="st-leg-gen">その他 34%</span></span>
+            </div>
+        </div>
+
+        <!-- 育ちの記録（キミの学習ログ） -->
+        <div class="studyel-diag-card">
+            <div class="studyel-diag-title">📊 育ちの記録（キミの学習ログ）</div>
+            <div class="studyel-diag-grid">
+                <div class="studyel-diag-item">
+                    <div class="studyel-diag-lbl">正解率</div>
+                    <div id="st-diag-acc" class="studyel-diag-val">100%</div>
+                </div>
+                <div class="studyel-diag-item">
+                    <div class="studyel-diag-lbl">平均解答スピード</div>
+                    <div id="st-diag-speed" class="studyel-diag-val">-</div>
+                </div>
+                <div class="studyel-diag-item">
+                    <div class="studyel-diag-lbl">最高コンボ数</div>
+                    <div id="st-diag-combo" class="studyel-diag-val">0 COMBO</div>
+                </div>
+                <div class="studyel-diag-item">
+                    <div class="studyel-diag-lbl">挑戦レベル</div>
+                    <div id="st-diag-grade" class="studyel-diag-val">Lv.1.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 発動効果 -->
+        <div class="studyel-buff-card">
+            <div class="studyel-buff-title">✨ 発動効果</div>
+            <div id="st-buff-desc" class="studyel-buff-desc">まだタマゴなので効果はありません。<br>（300問正解でタマゴから生まれたら発動します！）</div>
+        </div>
+
+        <!-- フッター操作ボタングループ -->
+        <div class="studyel-room-actions">
+            <button id="st-btn-quest" class="studyel-action-btn btn-studyel-primary" type="button">⚔️ クエストを解いて育てる</button>
+            <button id="st-btn-equip" class="studyel-action-btn btn-studyel-equip hidden" type="button">👑 出撃メンバーに選ぶ</button>
+            <button id="st-btn-retire" class="studyel-action-btn btn-studyel-retire hidden" type="button">🕊️ 巣立ち（次のタマゴへ）</button>
+        </div>
     </div>
 </div>
 

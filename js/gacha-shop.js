@@ -133,7 +133,7 @@ export function showGachaResult(charas) {
     if (charas.length === 1) {
         const c = charas[0];
         let imgTag = "";
-        if (c.imageUrl && c.imageUrl.startsWith('http')) {
+        if (c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) {
             imgTag = `<img src="${c.imageUrl}" style="width:100px;height:100px;object-fit:contain;margin:10px auto;display:block;">`;
         } else {
             imgTag = `<div style="font-size:60px;margin:10px 0;">📦</div>`;
@@ -150,7 +150,7 @@ export function showGachaResult(charas) {
         let gridHtml = `<div class="gr-grid">`;
         charas.forEach((c, index) => {
             let imgTag = "";
-            if (c.imageUrl && c.imageUrl.startsWith('http')) {
+            if (c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) {
                 imgTag = `<img src="${c.imageUrl}" class="gr-mini-img">`;
             } else {
                 imgTag = `<div style="font-size:30px; margin:5px 0;">📦</div>`;
@@ -212,7 +212,7 @@ export function renderZukan() {
         let decoName = "???"; 
         if(isOwned) {
             if (typeof data.level !== 'number' || data.level < 1) data.level = 1;
-            visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
+            visual = (c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) ? `<img src="${c.imageUrl}" class="char-img">` : `<div style="font-size:2em;line-height:50px">📦</div>`;
             const currentRarity = data.currentRarity || c.rarity; 
             decoName = getDisplayName(c, data); 
             nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
@@ -305,7 +305,7 @@ export function openCharaDetail(id) {
     const cdExpBar = document.getElementById('cd-exp-bar'); 
     if(cdExpBar) cdExpBar.style.width = isMax ? '100%' : (Math.min(100, ((o.exp || 0) / EXP_REQ * 100)) + '%');
     const cdImg = document.getElementById('cd-img');
-    if(cdImg) { if(c.imageUrl && c.imageUrl.startsWith('http')) cdImg.src = c.imageUrl; else cdImg.src = ''; }
+    if(cdImg) { if(c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) cdImg.src = c.imageUrl; else cdImg.src = ''; }
     document.getElementById('chara-detail-overlay')?.classList.remove('hidden'); 
     
     const evoContainer = document.getElementById('evo-container'); 
@@ -328,7 +328,7 @@ export function openCharaDetail(id) {
             evoContainer.appendChild(btn); 
             evoContainer.classList.remove('hidden');
         }
-        if (currentR === 'UR' && o.level >= maxLv && o.count >= EVO_STOCK_REQ) {
+        if (currentR === 'UR' && o.level >= maxLv && o.count >= EVO_STOCK_REQ && !c.isStudyel) {
             const btn = document.createElement('button'); 
             btn.className = 'detail-btn'; 
             btn.style.background = 'linear-gradient(to right, #3498db, #8e44ad)'; 
@@ -489,7 +489,7 @@ export function renderEnhanceList() {
         const selectCount = selectedMaterials[c.id] || 0; 
         const expVal = MAT_EXP[c.rarity] || 25; 
         if(selectCount > 0) totalGain += (expVal * selectCount);
-        let visual = (c.imageUrl && c.imageUrl.startsWith('http')) ? `<img src="${c.imageUrl}" style="width:40px;height:40px;">` : `<span>📦</span>`;
+        let visual = (c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) ? `<img src="${c.imageUrl}" style="width:40px;height:40px;">` : `<span>📦</span>`;
         let activeClass = selectCount > 0 ? 'selected' : ''; 
         let badge = selectCount > 0 ? `<div class="mat-select-badge">${selectCount}</div>` : '';
         list.innerHTML += `<div class="mat-card ${activeClass}" onclick="toggleMaterial('${c.id}', ${inv.count})">${badge}<div class="rarity-${c.rarity}">${c.rarity}</div>${visual}<div style="font-weight:bold; font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.name}</div><div style="font-size:0.7em;">所持: ${inv.count}</div><div class="mat-exp-val">+${expVal}</div></div>`;

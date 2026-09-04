@@ -22,7 +22,8 @@ export async function uploadData() {
         revengeList: gameState.revengeList,
         unitProgress: gameState.unitProgress,
         inventory: gameState.inventory,
-        calcRecords: gameState.calcRecords
+        calcRecords: gameState.calcRecords,
+        studyel: gameState.studyel
     };
     const btn = document.querySelector('#sync-overlay button');
     const originalText = btn ? btn.innerText : "送信";
@@ -108,6 +109,10 @@ export async function downloadData() {
                 xpBookMedium: Number(cInv.xpBookMedium) || 0,
                 xpBookLarge: Number(cInv.xpBookLarge) || 0
             };
+            if (data.studyel) {
+                const sData = forceObj(data.studyel);
+                Object.assign(gameState.studyel, sData);
+            }
             runtimeState.currentUserId = inputId;
             localStorage.setItem('sq_user_id', inputId);
             saveGame();
@@ -274,6 +279,9 @@ export async function fetchData() {
         
         if (typeof window.checkTitles === 'function') window.checkTitles(); 
         if (typeof window.checkAdminGifts === 'function') window.checkAdminGifts();
+        if (typeof window !== 'undefined' && typeof window.StudyelEngine?.restoreCharacters === 'function') {
+            window.StudyelEngine.restoreCharacters();
+        }
     } catch(e) {
         const errBox = document.getElementById('error-message');
         if (errBox) {

@@ -154,6 +154,9 @@ export function startGame() {
     gameState.maxTime = baseTime * charaStats.time;
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.resetBattleFlags === 'function') {
+        window.StudyelEngine.resetBattleFlags();
+    }
     
     document.getElementById('pause-overlay')?.classList.add('hidden'); 
     document.getElementById('title-screen')?.classList.add('hidden'); 
@@ -213,6 +216,9 @@ export function nextQuestion() {
     }
     const q = playData.questions[playData.qIndex]; 
     playData.currentQ = q;
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.onQuestionStart === 'function') {
+        window.StudyelEngine.onQuestionStart(q);
+    }
     const qBox = document.getElementById('ui-question'); 
     if(qBox) qBox.innerText = q.q;
     const choices = [...q.choices].sort(() => Math.random() - 0.5);
@@ -235,6 +241,14 @@ export function judge(isCorrect, btn) {
     clearInterval(gameState.timer);
     document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
     if(btn) btn.classList.add(isCorrect ? 'btn-correct' : 'btn-wrong');
+
+    // スタディエル育成通知（サバイバル・計算・探索モード時はスキップ）
+    if (!playData.isSurvival && !playData.isCalculation && !(typeof rogueData !== 'undefined' && rogueData.active)) {
+        const targetQ = playData.isTyping ? playData.typingTarget : playData.currentQ;
+        if (typeof window !== 'undefined' && typeof window.StudyelEngine?.onAnswer === 'function') {
+            window.StudyelEngine.onAnswer(isCorrect, targetQ);
+        }
+    }
     
     if(!isCorrect) {
         playSE('miss');
@@ -282,7 +296,10 @@ export function judge(isCorrect, btn) {
             const rawRatio = gameState.timeLeft / gameState.maxTime; 
             const timeFactor = 0.2 + (rawRatio * 0.8);
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); 
-            const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
+            const studyelBonusD = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getComboDamageBonus === 'function')
+                ? window.StudyelEngine.getComboDamageBonus(gameState.combo)
+                : 0.0;
+            const comboAdd = Math.min(gameState.combo * 0.025, 1.0) + studyelBonusD;
             damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); 
             gameState.score += damage; 
@@ -549,6 +566,9 @@ export function startRandomGame() {
     gameState.maxTime = baseTime * charaStats.time;
     runtimeState.isGameActive = false; 
     runtimeState.isPaused = false;
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.resetBattleFlags === 'function') {
+        window.StudyelEngine.resetBattleFlags();
+    }
     
     document.getElementById('random-overlay')?.classList.add('hidden'); 
     document.getElementById('title-screen')?.classList.add('hidden'); 
@@ -765,6 +785,9 @@ export function nextTypingQuestion() {
     playData.typingTarget = { ...playData.questions[playData.qIndex] };
     playData.typingIndex = 0;
     playData.typingMissed = false;
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.onQuestionStart === 'function') {
+        window.StudyelEngine.onQuestionStart(playData.typingTarget);
+    }
     renderTypingRomaji();
     startTimer();
 }
@@ -878,12 +901,19 @@ export function handleTypingInput(e) {
         renderTypingRomaji();
         if(playData.typingIndex >= playData.typingTarget.romaji.length) {
             clearInterval(gameState.timer);
+            // スタディエルへの単語正解通知
+            if (typeof window !== 'undefined' && typeof window.StudyelEngine?.onAnswer === 'function') {
+                window.StudyelEngine.onAnswer(true, playData.typingTarget);
+            }
             const stats = getCharaStats(); 
             const baseAtk = 100; 
             const rawRatio = gameState.timeLeft / gameState.maxTime; 
             const timeFactor = 0.2 + (rawRatio * 0.8);
             const statFactor = stats.atk + ((stats.time - 1) * 0.5); 
-            const comboAdd = Math.min(gameState.combo * 0.025, 1.0);
+            const studyelBonusD = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getComboDamageBonus === 'function')
+                ? window.StudyelEngine.getComboDamageBonus(gameState.combo)
+                : 0.0;
+            const comboAdd = Math.min(gameState.combo * 0.025, 1.0) + studyelBonusD;
             let damage = Math.floor(baseAtk * timeFactor * (statFactor + comboAdd));
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); 
             gameState.score += damage; 

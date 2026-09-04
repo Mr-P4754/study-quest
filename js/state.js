@@ -248,6 +248,48 @@ export const GUIDE_DATA = {
                 ・苦手な単元を確実にクリアしたい時や問題の復習に最適です（※獲得EXPは少し低下します）。</p>
             `
         },
+        'studyel': {
+            categoryId: 'gacha',
+            title: '妖精スタディエル育成',
+            icon: '🧚',
+            summary: '問題を解いてタマゴから成体へ！頼れる相棒を育てよう！',
+            contentHtml: `
+                <h4>① スタディエルって？</h4>
+                <p>キミの日々の学習を応援してくれる学習の妖精です。<br>
+                最初は小さな<b>「なぞのタマゴ」</b>ですが、通常クエストやランダム演習、タイピングを解くことでどんどん成長していきます！<br>
+                連れて歩くだけで、戦闘時間を伸ばしたり獲得EXPを増やしてくれる<b>「発動効果」</b>がいつでも発動します。</p>
+
+                <h4>② 成長の流れ（ステージ推移）</h4>
+                <p>・🥚 <b>なぞのタマゴ（〜300問）</b>: 問題を解いて温めよう！300問正解で殻を破って誕生！<br>
+                ・🐣 <b>幼体（〜1,000問）</b>: ベビー誕生！タイマーが少し伸びる！<br>
+                ・✨ <b>若体（〜2,000問）</b>: 得意教科のオーラが出現！解いた問題によって姿が変化していく！<br>
+                ・👑 <b>成体（2,000問〜）</b>: 最高レア（UR・コスト6）として実戦バトルに参加解禁！<br>
+                ・🌟 <b>超越期（3,000問〜）</b>: 鍛え続けることで、通常キャラの限界（×3.00）を超えて強くなる！</p>
+
+                <h4>③ どんな姿に進化する？（全7種類）</h4>
+                <p>幼体・若体の頃（301〜2,000問の間）にたくさん解いた教科のバランスで、2,000問達成時に進化先が決まります！<br>
+                ・🔥 <b>理系が多い</b>: 剛理のスタディエル（攻撃力に特化！）<br>
+                ・⚡ <b>文系が多い</b>: 叡文のスタディエル（もらえるEXPがアップ！）<br>
+                ・💧 <b>タイピング等が多い</b>: 機技のスタディエル（タイマーがさらに延長！）<br>
+                ・🌈 <b>まんべんなく解く</b>: 万象のスタディエル（虹色オーラの万能タイプ！）<br>
+                ※2教科の組み合わせ（理文融合・理技錬成・文技探究）の複合タイプもあるよ！</p>
+
+                <h4>④ 挑戦レベル（難しい問題ほど強く育つ！）</h4>
+                <p>解いた問題の学年（難易度）によって<b>「挑戦レベル（Lv.○.○○）」</b>が上がっていきます。<br>
+                ・<b>中学・高校生の問題に挑むほど</b>: 2,000問達成時の<b>属性の効果が最大×1.80</b>に！さらに初期レベルも<b>最大Lv.10</b>で誕生！<br>
+                ・<b>超越期（3,000問〜）の熟成速度が2倍</b>: 挑戦レベルが標準以上（小3以上 / Lv.1.00〜）なら、<b>100問正解ごとに属性の効果が+0.01アップ</b>します（低学年中心だと200問ごと・最大×3.00）。<br>
+                ※ぜひ自分の学年や難問にどんどん挑んで、最強のスタディエルを目指そう！</p>
+
+                <h4>⑤ より強いスタディエルを育てる3大コツ</h4>
+                <p>1. <b>難しい学年の問題に挑戦する</b>: 「挑戦レベル」が高くなり、覚醒時の初期レベルや属性の効果が大幅UP！<br>
+                2. <b>すばやく正確に解く</b>: 正答率が高くすばやく解くほど、<b>「タイマー延長（最大+1.5秒）」</b>がつきます。<br>
+                3. <b>連続正解（コンボ）を狙う</b>: 最大コンボ数が多いほど、<b>「5COMBOごとに攻撃力アップ（最大+20%）」</b>がつきます！</p>
+
+                <h4>⑥ 巣立ち（次のタマゴへ）</h4>
+                <p>成体まで育て上げたスタディエルは、ずっとキミの仲間として残り、いつでも出撃メンバーに選べます。<br>
+                「巣立ち」を選ぶと、育てた相棒を残したまま、次の世代のタマゴから新しいスタディエルを育て直すことができます！</p>
+            `
+        },
         'gacha': {
             categoryId: 'gacha',
             title: 'ガチャ＆文房具図鑑',
@@ -415,8 +457,42 @@ export const gameState = {
         xpBookMedium: 0,
         xpBookLarge: 0
     },
-    calcRecords: {}
+    calcRecords: {},
+    studyel: getDefaultStudyelState()
 };
+
+/**
+ * スタディエルの初期状態オブジェクトを生成するヘルパー関数
+ */
+export function getDefaultStudyelState(generation = 1, history = []) {
+    return {
+        stage: 1,            // 1:タマゴ, 2:幼体, 3:若体, 4:成体, 5:超越
+        totalCorrect: 0,     // 累計正解数 (0〜3000+)
+        nextMilestone: 100,  // 次回節目ボーナス基準値
+        generation: generation, // 世代数
+        categories: {
+            science: 0,      // 理系正解数
+            humanities: 0,   // 文系正解数
+            general: 0       // その他正解数
+        },
+        trainingStats: {
+            totalAttempts: 0,    // 正誤問わず解答試行総数
+            totalCorrect: 0,     // 幼体・若体期正解数
+            totalTimeSpent: 0,   // 総解答秒数
+            maxCombo: 0,         // 最大コンボ数
+            totalGradeWeight: 0  // 学年係数累計
+        },
+        finalStats: {
+            formId: null,        // 成体ID (例: studyel_science_gen1)
+            name: '',            // 成体表示名
+            baseValue: 1.50,     // 現在の補正値 (最大3.00)
+            bonusTime: 0.0,      // 追加秒数
+            bonusDamage: 0.0,    // コンボ追加ダメージ率
+            level: 1             // 覚醒初期レベル
+        },
+        history: Array.isArray(history) ? history : [] // 歴代成体IDリスト
+    };
+}
 
 export const dailyMissions = {
     date: "",
@@ -587,6 +663,22 @@ export function loadSaveData() {
         dailyMissions.progress = parsedMissions.progress || { play: 0, kill: 0, correct: 0, maxCombo: 0, enhance: 0, typing: 0, calc: 0, gacha: 0, shop: 0 };
         dailyMissions.claimed = parsedMissions.claimed || { play: false, kill: false, correct: false, maxCombo: false, enhance: false, typing: false, calc: false, gacha: false, shop: false, allClear: false };
     } catch(e) {}
+
+    // スタディエル育成データのロードと安全な初期値フォールバック復元
+    const loadedStudyel = safeParse('sq_studyel', null);
+    if (loadedStudyel && typeof loadedStudyel === 'object') {
+        gameState.studyel = Object.assign(getDefaultStudyelState(loadedStudyel.generation || 1, loadedStudyel.history || []), loadedStudyel);
+        if (!gameState.studyel.categories) gameState.studyel.categories = { science: 0, humanities: 0, general: 0 };
+        if (!gameState.studyel.trainingStats) gameState.studyel.trainingStats = { totalAttempts: 0, totalCorrect: 0, totalTimeSpent: 0, maxCombo: 0, totalGradeWeight: 0 };
+        if (!gameState.studyel.finalStats) gameState.studyel.finalStats = { formId: null, name: '', baseValue: 1.50, bonusTime: 0.0, bonusDamage: 0.0, level: 1 };
+        if (!Array.isArray(gameState.studyel.history)) gameState.studyel.history = [];
+    } else {
+        gameState.studyel = getDefaultStudyelState();
+    }
+
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.restoreCharacters === 'function') {
+        window.StudyelEngine.restoreCharacters();
+    }
 }
 
 export function saveGame() {
@@ -604,4 +696,5 @@ export function saveGame() {
     localStorage.setItem('sq_unit_progress', JSON.stringify(gameState.unitProgress || {}));
     localStorage.setItem('sq_calc_records', JSON.stringify(gameState.calcRecords || {}));
     localStorage.setItem('sq_item_inventory', JSON.stringify(gameState.inventory));
+    localStorage.setItem('sq_studyel', JSON.stringify(gameState.studyel));
 }

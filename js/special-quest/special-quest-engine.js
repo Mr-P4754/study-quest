@@ -248,7 +248,7 @@ export function renderPartyFormation() {
             const cost = getTbCharaCost(charMaster, invData);
 
             if (imgEl) {
-                if (charMaster.imageUrl && charMaster.imageUrl.startsWith('http')) {
+                if (charMaster.imageUrl && (charMaster.imageUrl.startsWith('http') || charMaster.imageUrl.startsWith('data:image'))) {
                     imgEl.src = charMaster.imageUrl;
                     imgEl.classList.remove('hidden');
                 } else {
@@ -382,7 +382,7 @@ function renderPartyZukanGrid() {
             badgeHtml = '<div class="char-party-badge slot-2">後衛2</div>';
         }
 
-        const visual = (c.imageUrl && c.imageUrl.startsWith('http')) 
+        const visual = (c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) 
             ? `<img src="${c.imageUrl}" class="char-img">` 
             : `<div style="font-size:2em;line-height:50px">📦</div>`;
 
@@ -425,7 +425,7 @@ export function updateTeamBattleSetupPreview() {
             const lv = (typeof invData.level === 'number' && invData.level >= 1) ? invData.level : 1;
             const displayName = getDisplayName(charMaster, invData, false);
             const cost = getTbCharaCost(charMaster, invData);
-            const imgTag = (charMaster.imageUrl && charMaster.imageUrl.startsWith('http'))
+            const imgTag = (charMaster.imageUrl && (charMaster.imageUrl.startsWith('http') || charMaster.imageUrl.startsWith('data:image')))
                 ? `<img src="${charMaster.imageUrl}" class="tb-mini-slot-img">`
                 : `<div style="font-size:1.6rem;line-height:36px;">📦</div>`;
 
@@ -1373,10 +1373,13 @@ export function nextTbQuestion() {
     tbState.currentQuestion = q;
     tbState.tickCount = 0; // 敵の攻撃周期（スリップダメージの1秒タイマー）をリセット
 
-    // 前衛キャラのTIMEボーナスを適用したタイマー初期化（基本10秒 × TIME補正）
+    // 前衛キャラのTIMEボーナスを適用したタイマー初期化（基本10秒 × TIME補正 + スタディエルバフ）
     const activePlayer = tbState.party[tbState.activeSlot];
     const stats = getTbCharaStats(activePlayer);
-    tbState.maxTime = 10 * (stats.time || 1.0);
+    const studyelTimeBuff = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getTimerBuff === 'function')
+        ? window.StudyelEngine.getTimerBuff()
+        : 0;
+    tbState.maxTime = (10 * (stats.time || 1.0)) + studyelTimeBuff;
     tbState.timeLeft = tbState.maxTime;
 
     // タイマーバーを即座に満タン状態にリセット・描画
@@ -1440,7 +1443,11 @@ export function judgeTbAnswer(selectedChoice, buttonElement) {
         const timeFactor = 0.5 + (rawRatio * 0.5); // 早い解答ほど高いダメージ
         const affinity = getTbAffinityMultiplier(activePlayer.skills || activePlayer.type, tbState.enemy.skills || tbState.enemy.type, true); // 属性相性倍率（攻撃側最大値採用・ALL保証）
         const statFactor = stats.atk + ((stats.time - 1) * 0.5);
-        const comboAdd = Math.min(tbState.score / 1000 * 0.025, 0.5);
+        const comboCount = Math.floor(tbState.score / 100);
+        const studyelBonusD = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getComboDamageBonus === 'function')
+            ? window.StudyelEngine.getComboDamageBonus(comboCount)
+            : 0.0;
+        const comboAdd = Math.min(tbState.score / 1000 * 0.025, 0.5) + studyelBonusD;
 
         const finalDamage = Math.max(10, Math.floor(baseAtk * timeFactor * (statFactor + comboAdd) * affinity));
 
@@ -1542,9 +1549,12 @@ export function switchTbActiveChar(slotIndex, isForce = false) {
     tbState.activeSlot = slotIndex;
     playSE('count');
 
-    // 3. 新キャラのTIMEボーナスから新しい maxTime を算出
+    // 3. 新キャラのTIMEボーナスから新しい maxTime を算出 (+ スタディエルバフ)
     const stats = getTbCharaStats(targetChar);
-    tbState.maxTime = 10 * (stats.time || 1.0);
+    const studyelTimeBuff = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getTimerBuff === 'function')
+        ? window.StudyelEngine.getTimerBuff()
+        : 0;
+    tbState.maxTime = (10 * (stats.time || 1.0)) + studyelTimeBuff;
 
     // 4. 割合を適用して残り時間を引き継ぎ（強制交替時は満タンにリフレッシュ）
     tbState.timeLeft = isForce ? tbState.maxTime : Math.max(0.1, tbState.maxTime * currentRatio);
@@ -1614,7 +1624,7 @@ export function updateTbPlayerStatusUI() {
 
     // グラフィック
     if (visualEl) {
-        if (activePlayer.imageUrl && activePlayer.imageUrl.startsWith('http')) {
+        if (activePlayer.imageUrl && (activePlayer.imageUrl.startsWith('http') || activePlayer.imageUrl.startsWith('data:image'))) {
             visualEl.innerHTML = `<img src="${activePlayer.imageUrl}" class="tb-player-sprite">`;
         } else {
             visualEl.innerHTML = `<div class="tb-player-sprite" style="font-size:3.5rem;line-height:88px;text-align:center;">✏️</div>`;
@@ -1675,7 +1685,7 @@ export function updateTbReserveUI() {
         if (!slotEl || !char) return;
 
         // アイコン HTML（画像がない場合はシンプルなアイコン）
-        const iconHtml = (char.imageUrl && char.imageUrl.startsWith('http'))
+        const iconHtml = (char.imageUrl && (char.imageUrl.startsWith('http') || char.imageUrl.startsWith('data:image')))
             ? `<img src="${char.imageUrl}" class="tb-reserve-img">`
             : `<span style="font-size:1.3rem;">✏️</span>`;
 

@@ -85,7 +85,7 @@ export function togglePause() {
             const name = getDisplayName(chara, inv);
             let val = Number(baseVal) + (inv.level * LV_BONUS_RATE);
             let visual = "";
-            if(chara.imageUrl && chara.imageUrl.startsWith('http')) visual = `<img src="${chara.imageUrl}" style="width:60px;height:60px;object-fit:contain;background:#fff;border-radius:5px;">`; else visual = `<div style="font-size:40px;">✏️</div>`;
+            if(chara.imageUrl && (chara.imageUrl.startsWith('http') || chara.imageUrl.startsWith('data:image'))) visual = `<img src="${chara.imageUrl}" style="width:60px;height:60px;object-fit:contain;background:#fff;border-radius:5px;">`; else visual = `<div style="font-size:40px;">✏️</div>`;
             infoBox.innerHTML = `<div style="display:flex; align-items:center; gap:10px; text-align:left;">${visual}<div><div style="font-weight:bold; color:#ecf0f1; font-size:0.9em;">${name}</div><div style="color:#f39c12; font-weight:bold; font-size:0.8em;">Lv.${inv.level}</div><div style="font-size:0.7em; color:#bdc3c7;"><span class="rarity-${r}" style="font-weight:bold; font-size:1.2em; margin-right:5px;">${r}</span>効果: x${val.toFixed(2)}</div></div></div>`;
         } else { infoBox.innerHTML = `<div style="color:#bdc3c7; font-size:0.8em;">装備なし</div>`; }
     }
@@ -210,10 +210,17 @@ export function startTimer() {
     if(gameState.timer) clearInterval(gameState.timer); 
     if(!runtimeState.isGameActive) return; 
     
+    // スタディエルの連れ歩きパッシブタイマー延長バフを取得
+    const studyelTimeBuff = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getTimerBuff === 'function')
+        ? window.StudyelEngine.getTimerBuff()
+        : 0;
+
+    const baseMaxTime = gameState.maxTime + studyelTimeBuff;
+
     if (!playData.isSurvival) {
-        gameState.timeLeft = gameState.maxTime; 
+        gameState.timeLeft = baseMaxTime; 
     } else if (!gameState.timeLeft || gameState.timeLeft <= 0) {
-        gameState.timeLeft = gameState.maxTime;
+        gameState.timeLeft = baseMaxTime;
     }
     
     const bar = document.getElementById('ui-timer'); 
@@ -224,8 +231,21 @@ export function startTimer() {
     gameState.timer = setInterval(() => { 
         if(runtimeState.isPaused || !runtimeState.isGameActive) return; 
         gameState.timeLeft = Math.max(0, gameState.timeLeft - 0.1); 
-        if(bar) bar.style.width = Math.max(0, (gameState.timeLeft / gameState.maxTime) * 100) + '%'; 
+        if(bar) bar.style.width = Math.max(0, (gameState.timeLeft / baseMaxTime) * 100) + '%'; 
         if(timerText) timerText.innerText = gameState.timeLeft.toFixed(1);
+
+        // スタディエルExピンチ時加護判定（ライフ1＆残り2秒以下でタイマー全回復）
+        if (gameState.lives === 1 && gameState.timeLeft <= 2.0 && gameState.timeLeft > 0) {
+            if (typeof window !== 'undefined' && typeof window.StudyelEngine?.canTriggerPinchHeal === 'function') {
+                if (window.StudyelEngine.canTriggerPinchHeal()) {
+                    window.StudyelEngine.triggerPinchHeal();
+                    gameState.timeLeft = baseMaxTime;
+                    if(bar) bar.style.width = '100%';
+                    if(timerText) timerText.innerText = gameState.timeLeft.toFixed(1);
+                }
+            }
+        }
+
         if(gameState.timeLeft <= 0) { 
             clearInterval(gameState.timer); 
             if (typeof window.judge === 'function') window.judge(false, null); 
@@ -498,8 +518,12 @@ export function finishGame(isClear) {
         }
         const partA = gameState.score * stats.exp; const partB = isClear ? (gameState.score * 0.2) : 0; const partC = gameState.score * (conditionRate - 1.0);
         const currentGrade = playData.context ? playData.context.grade : (playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '');
+        const currentSubject = playData.context ? playData.context.subject : (playData.currentQ ? playData.currentQ.subject : '');
         const gradeMultiplier = getGradeMultiplier(currentGrade);
-        earned = Math.floor((partA + partB + partC) * gradeMultiplier);
+        const studyelXpMult = (typeof window !== 'undefined' && typeof window.StudyelEngine?.getXpMultiplier === 'function')
+            ? window.StudyelEngine.getXpMultiplier(currentSubject)
+            : 1.0;
+        earned = Math.floor((partA + partB + partC) * gradeMultiplier * studyelXpMult);
         
         if (playData.activeReliefs && playData.activeReliefs.length > 0) {
             const rCount = playData.activeReliefs.length;

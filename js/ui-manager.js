@@ -114,7 +114,7 @@ export function updateTitleInfo() {
     if(tXp) tXp.innerText = gameState.xp;
     const imgContainer = document.getElementById('title-chara-img');
     if(imgContainer) {
-        if(chara?.imageUrl && chara.imageUrl.startsWith('http')) {
+        if(chara?.imageUrl && (chara.imageUrl.startsWith('http') || chara.imageUrl.startsWith('data:image'))) {
             imgContainer.innerHTML = `<img src="${chara.imageUrl}" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
             imgContainer.innerHTML = `<div style="text-align:center;line-height:40px;">✏️</div>`;
@@ -171,6 +171,10 @@ export function updateCategoryBadges() {
         const hasGift = gift && !gift.classList.contains('hidden');
         if (hasMission || hasTitle || hasGift) badgeAchievement.classList.remove('hidden');
         else badgeAchievement.classList.add('hidden');
+    }
+
+    if (typeof window !== 'undefined' && typeof window.StudyelEngine?.updateMiniView === 'function') {
+        window.StudyelEngine.updateMiniView();
     }
 }
 

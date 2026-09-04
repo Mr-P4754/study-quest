@@ -30,8 +30,12 @@ import {
     runtimeState,
     initUserId,
     loadSaveData,
-    saveGame
+    saveGame,
+    getDefaultStudyelState
 } from './state.js?v=10.0.1';
+
+import * as StudyelEngine from './studyel-engine.js?v=10.0.1';
+window.StudyelEngine = StudyelEngine;
 
 import {
     getRarityIndex,
@@ -539,7 +543,10 @@ Object.assign(globalScope, {
     startTbQrScanner,
     stopTbQrScanner,
     setScannedData,
-    clearScannedData
+    clearScannedData,
+
+    // スタディエル育成エンジン
+    StudyelEngine
 });
 
 // ==========================================
@@ -555,6 +562,36 @@ async function initApp() {
     await fetchData();
     initTitle();
     checkLoginBonus();
+    
+    // スタディエル育成エンジンの初期化とイベントリスナーバインド
+    StudyelEngine.init();
+    const miniBtn = document.getElementById('studyel-mini-btn');
+    if (miniBtn) miniBtn.addEventListener('click', StudyelEngine.openStudyelRoom);
+
+    const closeBtn = document.getElementById('st-close-btn');
+    if (closeBtn) closeBtn.addEventListener('click', StudyelEngine.closeStudyelRoom);
+
+    const helpBtn = document.getElementById('btn-studyel-help');
+    if (helpBtn) helpBtn.addEventListener('click', StudyelEngine.openStudyelGuide);
+
+    const questBtn = document.getElementById('st-btn-quest');
+    if (questBtn) questBtn.addEventListener('click', StudyelEngine.closeStudyelRoom);
+
+    const equipBtn = document.getElementById('st-btn-equip');
+    if (equipBtn) equipBtn.addEventListener('click', StudyelEngine.equipStudyel);
+
+    const retireBtn = document.getElementById('st-btn-retire');
+    if (retireBtn) retireBtn.addEventListener('click', StudyelEngine.retireStudyel);
+
+    const mascotWrap = document.getElementById('st-mascot-wrap');
+    if (mascotWrap) mascotWrap.addEventListener('click', StudyelEngine.onStudyelTap);
+
+    const modalOverlay = document.getElementById('studyel-modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) StudyelEngine.closeStudyelRoom();
+        });
+    }
     
     // URLから対戦パスワードを読み取って自動展開する処理
     const urlParams = new URLSearchParams(window.location.search);

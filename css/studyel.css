@@ -1,0 +1,605 @@
+/* ============================================================
+   css/studyel.css - スタディエル育成システム専用スタイルシート
+   Ver 3.5 完全無欠・最終確定版
+   ============================================================ */
+
+:root {
+    --st-color-primary: #f1c40f;
+    --st-color-glow: rgba(241, 196, 15, 0.4);
+    --st-science: #e74c3c;
+    --st-humanities: #f1c40f;
+    --st-general: #3498db;
+    --st-sci-hum: #e67e22;
+    --st-sci-gen: #8e44ad;
+    --st-hum-gen: #2ecc71;
+}
+
+/* ------------------------------------------------------------
+   タイトル画面 ミニスタディエル（常設フッター）
+   ------------------------------------------------------------ */
+.studyel-mini-container {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    margin-left: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.studyel-mini-container:hover {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 8px var(--st-color-glow));
+}
+
+.studyel-mini-container:active {
+    transform: scale(0.95);
+}
+
+.studyel-mini-svg-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 44px;
+    height: 44px;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.studyel-mini-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 3;
+}
+
+.studyel-mini-ring-progress {
+    fill: none;
+    stroke: var(--st-color-primary);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-dasharray: 113.1; /* 2 * PI * 18 */
+    stroke-dashoffset: 113.1;
+    transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+}
+
+.studyel-mini-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.4) 100%);
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.studyel-mini-avatar svg {
+    width: 30px;
+    height: 30px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+.studyel-mini-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 8px;
+    border: 1px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------
+   スタディエル部屋（育成ルーム・モーダル）
+   ------------------------------------------------------------ */
+#studyel-modal-overlay {
+    background: rgba(10, 15, 30, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 250;
+}
+
+.studyel-room-modal {
+    max-width: 480px;
+    width: 92%;
+    max-height: 90vh;
+    background: linear-gradient(160deg, #1a2238 0%, #0d1222 100%);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 30px var(--st-color-glow);
+    padding: 18px 20px;
+    overflow-y: auto;
+    position: relative;
+    color: #f1f5f9;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* ヘッダー */
+.studyel-room-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+}
+
+.studyel-gen-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.studyel-stage-title {
+    font-size: clamp(0.95rem, 3.8vw, 1.1rem);
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 10px var(--st-color-glow);
+    text-align: center;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 8px;
+}
+
+.studyel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.studyel-help-btn {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(14, 165, 233, 0.35));
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #38bdf8;
+    font-size: 0.74rem;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.studyel-help-btn:hover {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.5), rgba(14, 165, 233, 0.7));
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.studyel-help-btn:active {
+    transform: translateY(0);
+}
+
+.studyel-close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #94a3b8;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.studyel-close-btn:hover {
+    background: rgba(239, 68, 68, 0.8);
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+/* 中央メイン：マスコットステージ */
+.studyel-stage-area {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 190px;
+    margin-bottom: 14px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 16px;
+    padding: 10px 0;
+    overflow: visible;
+}
+
+/* 吹き出し台詞 */
+.studyel-speech-bubble {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-size: 0.82rem;
+    font-weight: bold;
+    max-width: 82%;
+    text-align: center;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    animation: studyel-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    line-height: 1.35;
+}
+
+.studyel-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.95) transparent;
+    display: block;
+    width: 0;
+}
+
+/* マスコットSVGコンテナ */
+.studyel-mascot-wrap {
+    width: 130px;
+    height: 130px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.15s ease;
+}
+
+.studyel-mascot-wrap svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* 浮遊アニメーション */
+.studyel-float-anim {
+    animation: studyel-float 3.2s ease-in-out infinite;
+}
+
+/* タップした時のバウンス */
+.studyel-bounce-anim {
+    animation: studyel-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ハートエフェクト */
+.studyel-heart-particle {
+    position: absolute;
+    color: #ec4899;
+    font-size: 1.4rem;
+    pointer-events: none;
+    animation: studyel-heart-float 0.8s ease-out forwards;
+    z-index: 10;
+}
+
+/* 進行度メーター */
+.studyel-progress-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.studyel-progress-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+    color: #cbd5e1;
+}
+
+.studyel-progress-label-row b {
+    color: #fff;
+}
+
+.studyel-bar-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.studyel-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+.studyel-milestone-text {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 6px;
+    text-align: right;
+}
+
+/* 系統オーラバランス (帯グラフ) */
+.studyel-balance-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.studyel-balance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+}
+
+.studyel-omen-badge {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--st-color-primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 0.72rem;
+    border: 1px solid var(--st-color-glow);
+}
+
+.studyel-stacked-bar {
+    display: flex;
+    width: 100%;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.studyel-seg-science {
+    background: #e74c3c;
+    transition: width 0.4s ease;
+}
+
+.studyel-seg-humanities {
+    background: #f1c40f;
+    transition: width 0.4s ease;
+}
+
+.studyel-seg-general {
+    background: #3498db;
+    transition: width 0.4s ease;
+}
+
+.studyel-balance-legend {
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.studyel-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.studyel-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* 学力深度診断パネル */
+.studyel-diag-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.studyel-diag-title {
+    font-size: 0.78rem;
+    font-weight: bold;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.studyel-diag-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.studyel-diag-item {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 6px 10px;
+}
+
+.studyel-diag-lbl {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.studyel-diag-val {
+    font-size: 0.92rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+/* パッシブバフ情報カード */
+.studyel-buff-card {
+    background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(230, 126, 34, 0.1));
+    border: 1px solid rgba(241, 196, 15, 0.3);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.studyel-buff-title {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #f1c40f;
+    margin-bottom: 4px;
+}
+
+.studyel-buff-desc {
+    font-size: 0.74rem;
+    color: #e2e8f0;
+    line-height: 1.4;
+}
+
+/* フッターボタングループ */
+.studyel-room-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.studyel-action-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 0.82rem;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.studyel-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.studyel-action-btn:active {
+    transform: translateY(0);
+}
+
+.btn-studyel-primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff;
+}
+
+.btn-studyel-equip {
+    background: linear-gradient(135deg, #10b981, #047857);
+    color: #fff;
+}
+
+.btn-studyel-retire {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: #fff;
+}
+
+/* ------------------------------------------------------------
+   アニメーション定義
+   ------------------------------------------------------------ */
+@keyframes studyel-float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-9px) rotate(1.5deg);
+    }
+}
+
+@keyframes studyel-bounce {
+    0% {
+        transform: scale(1, 1) translateY(0);
+    }
+    30% {
+        transform: scale(1.18, 0.82) translateY(-14px);
+    }
+    60% {
+        transform: scale(0.92, 1.08) translateY(0);
+    }
+    80% {
+        transform: scale(1.05, 0.95) translateY(-4px);
+    }
+    100% {
+        transform: scale(1, 1) translateY(0);
+    }
+}
+
+@keyframes studyel-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.7) translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes studyel-heart-float {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(0.6);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -45px) scale(1.3);
+    }
+}
+
+@keyframes studyel-pulse-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 6px var(--st-color-glow));
+    }
+    50% {
+        filter: drop-shadow(0 0 16px var(--st-color-glow));
+    }
+}
+
+/* レインボー用グラデーションアニメーション */
+@keyframes studyel-rainbow-shift {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+.studyel-rainbow-fx {
+    animation: studyel-rainbow-shift 8s linear infinite;
+}
