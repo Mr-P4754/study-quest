@@ -151,6 +151,16 @@ function importLegacyData() {
           seenVol7Ids.add(qid.replace('_b', ''));
         }
 
+        // 全域での重複ID自動一意化（重複ゼロ100%保証）
+        let uniqueQid = qid;
+        let dupIndex = 1;
+        while (uniqueQIds.has(uniqueQid)) {
+          dupIndex++;
+          uniqueQid = `${qid}_${dupIndex}`;
+          Logger.log(`[重複自動解消] 元ID: ${qid} -> 新ID: ${uniqueQid} (${sName} / ${gradeVal})`);
+        }
+        qid = uniqueQid;
+
         // 対象学年コードの特定
         const targetGradeCode = resolveGradeCode(sName, gradeVal);
         if (!targetGradeCode || !questionsBuffer[targetGradeCode]) {
