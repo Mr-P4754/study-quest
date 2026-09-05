@@ -3,10 +3,10 @@
 // Ver 3.5 完全無欠・最終確定版
 // ============================================================
 
-import { gameState, rawData, saveGame, playData, rogueData } from './state.js?v=10.0.2';
-import { playSE } from './utils.js?v=10.0.2';
-import { showCutIn } from './battle-core.js?v=10.0.2';
-import { GuideModule } from './ui-manager.js?v=10.0.2';
+import { gameState, rawData, saveGame, playData, rogueData } from './state.js?v=10.0.3';
+import { playSE } from './utils.js?v=10.0.3';
+import { showCutIn } from './battle-core.js?v=10.0.3';
+import { GuideModule } from './ui-manager.js?v=10.0.3';
 
 // ------------------------------------------------------------
 // 定数・設定定義

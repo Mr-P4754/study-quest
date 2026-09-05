@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.2';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI, ALL_GRADES, isGradeMatch } from '../utils.js?v=10.0.2';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.2';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.3';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI, ALL_GRADES, isGradeMatch } from '../utils.js?v=10.0.3';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.3';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -479,11 +479,18 @@ export function initTbGradeSelect() {
     ALL_GRADES.forEach(g => {
         sel.innerHTML += `<option value="${g}">${g}</option>`;
     });
-    if (rawData.config?.activeGrade) {
-        const opt = Array.from(sel.options).find(o => isGradeMatch(o.value, rawData.config.activeGrade));
-        if (opt) sel.value = opt.value;
+    sel.value = "";
+
+    const subSel = document.getElementById('tb-subject-select');
+    if (subSel) {
+        subSel.innerHTML = '<option value="">教科を選択...</option>';
+        subSel.value = "";
     }
-    filterTbSubjects();
+    const uSel = document.getElementById('tb-unit-select');
+    if (uSel) {
+        uSel.innerHTML = '<option value="">単元を選択...</option>';
+        uSel.value = "";
+    }
 }
 
 /**
@@ -505,15 +512,16 @@ export function filterTbSubjects() {
         const idxB = TB_SUBJECT_ORDER.indexOf(b);
         return (idxA >= 0 ? idxA : 99) - (idxB >= 0 ? idxB : 99);
     });
+
+    if (subjects.length === 0) {
+        subSel.innerHTML = '<option value="">（問題準備中）</option>';
+        return;
+    }
+
     subjects.forEach(s => {
         subSel.innerHTML += `<option value="${s}">${s}</option>`;
     });
-    if (rawData.config?.activeSubject && subjects.includes(rawData.config.activeSubject)) {
-        subSel.value = rawData.config.activeSubject;
-    } else if (subjects.length > 0) {
-        subSel.selectedIndex = 1;
-    }
-    filterTbUnits();
+    subSel.value = "";
 }
 
 /**
@@ -536,11 +544,7 @@ export function filterTbUnits() {
     units.forEach(u => {
         uSel.innerHTML += `<option value="${u}">${u}</option>`;
     });
-    if (rawData.config?.activeUnit && units.includes(rawData.config.activeUnit)) {
-        uSel.value = rawData.config.activeUnit;
-    } else if (units.length > 0) {
-        uSel.selectedIndex = 1;
-    }
+    uSel.value = "";
 }
 
 /**
