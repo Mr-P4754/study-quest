@@ -50,10 +50,19 @@ function buildGameJson() {
 
     try {
       const targetSs = SpreadsheetApp.openById(fileId.toString().trim());
-      const subjects = subjectStr.toString().split(',').map(s => s.trim());
-
       // 1. 通常教科シートの走査
-      subjects.forEach(subjectName => {
+      // ファイル設定の記載教科に加え、学年ファイル内に実際に存在する全教科シートも自動走査
+      const configuredSubjects = subjectStr ? subjectStr.toString().split(',').map(s => s.trim()).filter(Boolean) : [];
+      const ignoreSheets = ['タイピング', 'ファイル設定', 'Users', 'Config', 'ログ', 'シート1', 'Sheet1'];
+      const subjectNamesToScan = new Set(configuredSubjects);
+      targetSs.getSheets().forEach(s => {
+        const sName = s.getName().trim();
+        if (!ignoreSheets.includes(sName)) {
+          subjectNamesToScan.add(sName);
+        }
+      });
+
+      subjectNamesToScan.forEach(subjectName => {
         const sheet = targetSs.getSheetByName(subjectName);
         if (!sheet) return;
         const rows = sheet.getDataRange().getValues();

@@ -639,8 +639,113 @@ function onOpen() {
     .addItem('📝 開いている教科の4択問題を生成', 'showQuestionGeneratorModal')
     .addItem('⌨️ タイピング問題を生成', 'showTypingGeneratorModal')
     .addSeparator()
+    .addItem('🛠️ この学年に必要な全教科シートを自動作成・修復', 'setupGradeSheets')
+    .addSeparator()
     .addItem('🚀 ゲームに即時反映 (リモートビルド)', 'manualTriggerRemoteBuild')
     .addToUi();
+}
+
+/**
+ * 各学年に必要な全教科シートを自動作成・修復する機能
+ * （未作成の教科シートをヘッダー・列幅付きで自動追加し、既存データは完全保持）
+ */
+function setupGradeSheets() {
+  const ui = SpreadsheetApp.getUi();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const grade = resolveGradeCodeFromSpreadsheet(ss);
+
+  const gradeTable = STANDARD_UNITS_BY_GRADE[grade];
+  if (!gradeTable) {
+    ui.alert('エラー', `学年コード【${grade}】に対応する標準教科マスターが見つかりませんでした。`, ui.ButtonSet.OK);
+    return;
+  }
+
+  const subjectNames = Object.keys(gradeTable);
+  const confirm = ui.alert(
+    `🛠️ 全教科シートの自動セットアップ`,
+    `このスプレッドシート（${ss.getName()}）を【${grade}】向けにセットアップします。\n\n【対象教科（全${subjectNames.length}教科＋タイピング）】\n${subjectNames.join(', ')}, タイピング\n\n・未作成の教科シートを自動作成（11列ヘッダー・最適列幅・1行目固定）\n・既存シートのデータは一切削除せず、ヘッダーのみ自己修復\n\n実行しますか？`,
+    ui.ButtonSet.YES_NO
+  );
+
+  if (confirm !== ui.Button.YES) return;
+
+  ss.toast('全教科シートを自動セットアップ中...', '🛠️ セットアップ中', -1);
+
+  let createdCount = 0;
+  let verifiedCount = 0;
+
+  // 1. 通常教科シートの作成・修復
+  subjectNames.forEach(subj => {
+    let sheet = ss.getSheetByName(subj);
+    if (!sheet) {
+      sheet = ss.insertSheet(subj);
+      sheet.getRange(1, 1, 1, QUESTION_HEADERS.length).setValues([QUESTION_HEADERS]);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, QUESTION_HEADERS.length)
+        .setBackground('#f1f5f9')
+        .setFontWeight('bold');
+      sheet.setColumnWidth(1, 150); // ID
+      sheet.setColumnWidth(2, 60);  // 学年
+      sheet.setColumnWidth(3, 130); // 単元
+      sheet.setColumnWidth(4, 70);  // 教科
+      sheet.setColumnWidth(5, 260); // 問題文
+      sheet.setColumnWidth(6, 120); // 正解
+      sheet.setColumnWidth(7, 120); // 誤答1
+      sheet.setColumnWidth(8, 120); // 誤答2
+      sheet.setColumnWidth(9, 120); // 誤答3
+      sheet.setColumnWidth(10, 200); // 解説
+      sheet.setColumnWidth(11, 60);  // 有効
+      createdCount++;
+    } else {
+      ensureValidHeaders(sheet, QUESTION_HEADERS);
+      verifiedCount++;
+    }
+  });
+
+  // 2. タイピングシートの作成・修復
+  let typingSheet = ss.getSheetByName('タイピング');
+  if (!typingSheet) {
+    typingSheet = ss.insertSheet('タイピング');
+    typingSheet.getRange(1, 1, 1, TYPING_HEADERS.length).setValues([TYPING_HEADERS]);
+    typingSheet.setFrozenRows(1);
+    typingSheet.getRange(1, 1, 1, TYPING_HEADERS.length)
+      .setBackground('#f5f3ff')
+      .setFontWeight('bold');
+    typingSheet.setColumnWidth(1, 150); // ID
+    typingSheet.setColumnWidth(2, 60);  // 学年
+    typingSheet.setColumnWidth(3, 140); // 単元/ジャンル
+    typingSheet.setColumnWidth(4, 80);  // 教科
+    typingSheet.setColumnWidth(5, 160); // 日本語
+    typingSheet.setColumnWidth(6, 180); // ローマ字
+    typingSheet.setColumnWidth(7, 60);  // 有効
+    createdCount++;
+  } else {
+    ensureValidHeaders(typingSheet, TYPING_HEADERS);
+    verifiedCount++;
+  }
+
+  // 3. 空の初期シート（「シート1」や「Sheet1」）があればクリーンアップ
+  const dummySheet = ss.getSheetByName('シート1') || ss.getSheetByName('Sheet1');
+  if (dummySheet && ss.getSheets().length > 1 && dummySheet.getLastRow() === 0) {
+    try {
+      ss.deleteSheet(dummySheet);
+    } catch (e) {
+      // 無視
+    }
+  }
+
+  ss.toast('✅ 全教科シートのセットアップが完了しました！', '完了', 5);
+
+  const resultMsg = `🎉 【${grade}】の全教科シートセットアップが完了しました！\n\n` +
+    `・新規作成: ${createdCount} シート\n` +
+    `・既存確認: ${verifiedCount} シート\n\n` +
+    `【準備されたシート一覧】\n${subjectNames.join(', ')}, タイピング\n\n` +
+    `※親マスター（SQ_Master）は自動でこれら全教科シートを検知して集約します。\n今すぐゲーム本番（SQ_Master）へ反映しますか？`;
+
+  const buildConfirm = ui.alert('セットアップ完了', resultMsg, ui.ButtonSet.YES_NO);
+  if (buildConfirm === ui.Button.YES) {
+    manualTriggerRemoteBuild();
+  }
 }
 
 /**
