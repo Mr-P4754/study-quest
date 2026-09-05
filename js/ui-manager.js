@@ -27,28 +27,39 @@ const SUBJECT_ORDER = [
 
 // ==========================================
 // タイトル初期化・カテゴリー制御
+/**
+ * 学年プルダウンの共通生成・先行ロードリスナー登録ヘルパー
+ */
+export function populateGradeSelect(sel, defaultText = '学年を選択...') {
+    if (!sel) return;
+    sel.innerHTML = `<option value="">${defaultText}</option>`;
+    ALL_GRADES.forEach(g => {
+        sel.innerHTML += `<option value="${g}">${g}</option>`;
+    });
+    sel.value = "";
+    
+    // 学年選択時のオンデマンド先行ロードリスナー（二重登録防止）
+    if (!sel.dataset.listenerAttached) {
+        sel.dataset.listenerAttached = "true";
+        sel.addEventListener('change', (e) => {
+            const g = e.target.value;
+            if (g && typeof window.ensureGradeLoaded === 'function') {
+                window.ensureGradeLoaded(g);
+            }
+        });
+    }
+}
+
+// ==========================================
+// タイトル初期化・カテゴリー制御
 // ==========================================
 export function initTitle() {
-    if(!rawData.questions || rawData.questions.length === 0) return;
-
     // 全12学年（小1〜高3）の標準順序で選択肢を生成
-    const gradeSelectIds = [
-        'grade-select',
-        'survival-grade-select',
-        'random-grade-select',
-        'rogue-grade-select'
-    ];
-
-    gradeSelectIds.forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        const defaultText = id === 'grade-select' ? '学年を選択' : '学年を選択...';
-        sel.innerHTML = `<option value="">${defaultText}</option>`;
-        ALL_GRADES.forEach(g => {
-            sel.innerHTML += `<option value="${g}">${g}</option>`;
-        });
-        sel.value = "";
-    });
+    populateGradeSelect(document.getElementById('grade-select'), '学年を選択');
+    populateGradeSelect(document.getElementById('survival-grade-select'), '学年を選択...');
+    populateGradeSelect(document.getElementById('random-grade-select'), '学年を選択...');
+    populateGradeSelect(document.getElementById('rogue-grade-select'), '学年を選択...');
+    populateGradeSelect(document.getElementById('typing-grade-select'), '学年を選択...');
 
     const gSelect = document.getElementById('grade-select');
     if (gSelect) gSelect.value = "";
@@ -71,7 +82,7 @@ export function initTitle() {
     updateTitleInfo();
 }
 
-export function filterSubjects() {
+export async function filterSubjects() {
     const gSelect = document.getElementById('grade-select'); 
     if(!gSelect) return;
     const gVal = gSelect.value;
@@ -81,9 +92,16 @@ export function filterSubjects() {
     const uSelect = document.getElementById('unit-select'); 
     if(uSelect) uSelect.innerHTML = '<option value="">単元を選択</option>';
     if(!gVal) return;
+
+    // 学年別問題データのオンデマンド取得を保証
+    if (typeof window.ensureGradeLoaded === 'function') {
+        sSelect.innerHTML = '<option value="">読込中...</option>';
+        await window.ensureGradeLoaded(gVal);
+        sSelect.innerHTML = '<option value="">教科を選択</option>';
+    }
     
     // isGradeMatch で表記ゆれを吸収して抽出
-    let targetList = rawData.questions.filter(q => isGradeMatch(q.grade, gVal));
+    let targetList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, gVal));
     const subjects = [...new Set(targetList.map(q => q.subject))].filter(s => s);
     
     // 標準教科順でソート
@@ -194,33 +212,59 @@ export function updateTitleInfo() {
         if (rBtn) rBtn.disabled = (rCount === 0);
     }
 
+    // 1. 最上部のライナー型キャンペーンマーキーバナー (#campaign-banner)
     const banner = document.getElementById('campaign-banner'); 
     const bannerText = document.getElementById('campaign-text');
-    let bannerMsg = "";
+    let campaignBannerMsg = "";
+    let rawBannerMsg = "";
+
     if (rawData.config) {
         if (Array.isArray(rawData.config)) {
-            const activeConfigs = rawData.config.filter(c => c.message && c.message !== "");
+            const activeConfigs = rawData.config.filter(c => (c.message || c.bannerMessage));
             if (activeConfigs.length > 0) {
-                bannerMsg = activeConfigs.map(c => `📢 ${c.message} （強化対象: ${c.grade} ${c.subject} ${c.unit}）`).join("   ");
+                const first = activeConfigs[0];
+                rawBannerMsg = first.bannerMessage || first.message || '';
+                campaignBannerMsg = activeConfigs.map(c => {
+                    const m = c.bannerMessage || c.message || '';
+                    const target = (c.grade && c.subject && c.unit) ? ` （強化対象: ${c.grade} ${c.subject} ${c.unit}）` : '';
+                    return `📢 ${m}${target}`;
+                }).join("   ");
             }
         } else if (typeof rawData.config === 'object') {
             const cfg = rawData.config;
             const msg = cfg.bannerMessage || cfg.message || '';
+            rawBannerMsg = msg;
             if (msg) {
                 const targetInfo = (cfg.activeGrade && cfg.activeSubject && cfg.activeUnit)
                     ? ` （強化対象: ${cfg.activeGrade} ${cfg.activeSubject} ${cfg.activeUnit}）`
                     : '';
-                bannerMsg = `📢 ${msg}${targetInfo}`;
+                campaignBannerMsg = `📢 ${msg}${targetInfo}`;
             }
         }
     }
+
     if (banner && bannerText) {
-        if (bannerMsg) {
+        if (campaignBannerMsg) {
             banner.classList.remove('hidden');
             banner.style.display = 'block';
-            bannerText.innerText = bannerMsg;
+            bannerText.innerText = campaignBannerMsg;
         } else {
+            banner.classList.add('hidden');
             banner.style.display = 'none';
+            bannerText.innerText = '';
+        }
+    }
+
+    // 2. タイトル画面の告知ライナーバナー (#title-news-banner)
+    const titleNewsBanner = document.getElementById('title-news-banner');
+    const titleNewsText = document.getElementById('title-news-text');
+    if (titleNewsBanner) {
+        if (rawBannerMsg && rawBannerMsg.trim() !== '') {
+            titleNewsBanner.classList.remove('hidden');
+            if (titleNewsText) titleNewsText.innerText = rawBannerMsg.trim();
+        } else {
+            titleNewsBanner.classList.add('hidden');
+            if (titleNewsText) titleNewsText.innerText = '';
         }
     }
     
@@ -323,12 +367,7 @@ export function closeUnitSelection() {
 
 export function openRandomMenu() { 
     closeAllCategoryModals();
-    const sel = document.getElementById('random-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        ALL_GRADES.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-        sel.value = "";
-    }
+    populateGradeSelect(document.getElementById('random-grade-select'), '学年を選択...');
     const hpSelect = document.getElementById('random-boss-hp-select');
     if (hpSelect) hpSelect.value = "";
 
@@ -342,19 +381,7 @@ export function closeRandomMenu() {
 
 export function openTypingMenu() { 
     closeAllCategoryModals();
-    const sel = document.getElementById('typing-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        const typingGrades = rawData.typing ? [...new Set(rawData.typing.map(t => t.grade))].filter(g => g) : [];
-        ALL_GRADES.forEach(g => {
-            const hasT = typingGrades.some(tg => isGradeMatch(tg, g));
-            if (hasT) sel.innerHTML += `<option value="${g}">${g}</option>`;
-        });
-        if (sel.options.length <= 1) {
-            ALL_GRADES.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-        }
-        sel.value = "";
-    }
+    populateGradeSelect(document.getElementById('typing-grade-select'), '学年を選択...');
     const hpSelect = document.getElementById('typing-boss-hp-select');
     if (hpSelect) hpSelect.value = "";
 
@@ -371,12 +398,7 @@ export function openSurvivalMenu() {
     runtimeState.oathOrigin = 'normal';
     runtimeState.tempOaths = [];
     runtimeState.tempReliefs = [];
-    const sel = document.getElementById('survival-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        ALL_GRADES.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-        sel.value = "";
-    }
+    populateGradeSelect(document.getElementById('survival-grade-select'), '学年を選択...');
     document.getElementById('survival-overlay')?.classList.remove('hidden'); 
 }
 
@@ -397,12 +419,7 @@ export function closeCalcMenu() {
 
 export function openRogueMenu() { 
     closeAllCategoryModals();
-    const sel = document.getElementById('rogue-grade-select'); 
-    if(sel) {
-        sel.innerHTML = '<option value="">学年を選択...</option>';
-        ALL_GRADES.forEach(g => sel.innerHTML += `<option value="${g}">${g}</option>`);
-        sel.value = "";
-    }
+    populateGradeSelect(document.getElementById('rogue-grade-select'), '学年を選択...');
     document.getElementById('rogue-menu-overlay')?.classList.remove('hidden'); 
 }
 export function closeRogueMenu() { 

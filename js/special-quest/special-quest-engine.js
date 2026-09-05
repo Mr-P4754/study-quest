@@ -485,6 +485,16 @@ export function initTbGradeSelect() {
     });
     sel.value = "";
 
+    if (!sel.dataset.listenerAttached) {
+        sel.dataset.listenerAttached = "true";
+        sel.addEventListener('change', (e) => {
+            const g = e.target.value;
+            if (g && typeof window.ensureGradeLoaded === 'function') {
+                window.ensureGradeLoaded(g);
+            }
+        });
+    }
+
     const subSel = document.getElementById('tb-subject-select');
     if (subSel) {
         subSel.innerHTML = '<option value="">教科を選択...</option>';
@@ -500,7 +510,7 @@ export function initTbGradeSelect() {
 /**
  * 教科セレクトボックスの絞り込み
  */
-export function filterTbSubjects() {
+export async function filterTbSubjects() {
     const g = document.getElementById('tb-grade-select')?.value;
     const subSel = document.getElementById('tb-subject-select');
     const uSel = document.getElementById('tb-unit-select');
@@ -508,9 +518,15 @@ export function filterTbSubjects() {
 
     subSel.innerHTML = '<option value="">教科を選択...</option>';
     uSel.innerHTML = '<option value="">単元を選択...</option>';
-    if (!g || !rawData.questions) return;
+    if (!g) return;
 
-    const subjects = [...new Set(rawData.questions.filter(q => isGradeMatch(q.grade, g)).map(q => q.subject))].filter(s => s);
+    if (typeof window.ensureGradeLoaded === 'function') {
+        subSel.innerHTML = '<option value="">読込中...</option>';
+        await window.ensureGradeLoaded(g);
+        subSel.innerHTML = '<option value="">教科を選択...</option>';
+    }
+
+    const subjects = [...new Set((rawData.questions || []).filter(q => isGradeMatch(q.grade, g)).map(q => q.subject))].filter(s => s);
     subjects.sort((a, b) => {
         const idxA = TB_SUBJECT_ORDER.indexOf(a);
         const idxB = TB_SUBJECT_ORDER.indexOf(b);
@@ -850,12 +866,13 @@ export function calcTbTickDamage(enemy, activePlayer) {
 /**
  * チームバトルを開始する（出撃準備画面から呼び出し）
  */
-export function startTeamBattle() {
+export async function startTeamBattle() {
     const g = document.getElementById('tb-grade-select')?.value;
     const s = document.getElementById('tb-subject-select')?.value;
     const u = document.getElementById('tb-unit-select')?.value;
 
     if (!g) return alert("学年を選択してください。");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
 
     // 問題の抽出
     let qList = (rawData.questions || []).filter(q => {

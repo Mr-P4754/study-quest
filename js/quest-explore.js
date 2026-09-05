@@ -54,9 +54,10 @@ export function renderRogueLogs() {
     });
 }
 
-export function startRogueMode() {
+export async function startRogueMode() {
     const g = document.getElementById('rogue-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2 && q.subject !== 'タイピング' && q.unit !== 'タイピング');
     if(qList.length === 0) return alert("問題がありません");
 

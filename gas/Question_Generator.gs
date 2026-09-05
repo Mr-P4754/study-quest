@@ -1166,7 +1166,7 @@ function ensureValidHeaders(sheet, expectedHeaders) {
 }
 
 /**
- * リモートビルド実行（SQ_Masterへ集約要求を送信）
+ * リモートビルド実行（SQ_Masterへ学年別高速再構築要求を送信）
  */
 function triggerRemoteBuild() {
   const masterUrl = getMasterApiUrl();
@@ -1175,7 +1175,13 @@ function triggerRemoteBuild() {
     throw new Error('MASTER_API_URL が設定されていません。「プロジェクトの設定」のスクリプトプロパティを確認してください。');
   }
 
-  const payload = { action: 'build' };
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const currentGrade = resolveGradeCodeFromSpreadsheet(ss);
+
+  const payload = {
+    action: 'build',
+    grade: currentGrade
+  };
   const options = {
     method: 'post',
     contentType: 'application/json',
@@ -1198,14 +1204,17 @@ function triggerRemoteBuild() {
  */
 function manualTriggerRemoteBuild() {
   const ui = SpreadsheetApp.getUi();
-  const res = ui.alert('🚀 リモートビルド実行', '親マスター（SQ_Master）へ全学年データの集約再構築を要求します。\nよろしいですか？', ui.ButtonSet.YES_NO);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const currentGrade = resolveGradeCodeFromSpreadsheet(ss);
+
+  const res = ui.alert('🚀 リモートビルド実行', `親マスター（SQ_Master）へ【${currentGrade}】問題データの高速再構築を要求します。\nよろしいですか？`, ui.ButtonSet.YES_NO);
   if (res !== ui.Button.YES) return;
 
   try {
     const json = triggerRemoteBuild();
     ui.alert(
       '🚀 反映完了！',
-      `全学年データの集約ビルドが正常に完了しました！\n\n・通常問題総数: ${json.qCount}問\n・タイピング総数: ${json.tCount}問\n・更新日時: ${json.updatedAt}\n\nゲーム（study_quest_data.json）へ即座に反映されました。`,
+      `【${currentGrade}】のデータ構築が高速完了しました！\n\n・対象学年: ${json.grade || currentGrade}\n・通常問題数: ${json.qCount}問\n・タイピング数: ${json.tCount}問\n・更新日時: ${json.updatedAt}\n\nゲームへ即座に反映されました。`,
       ui.ButtonSet.OK
     );
   } catch (err) {

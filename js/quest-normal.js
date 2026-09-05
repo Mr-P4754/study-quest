@@ -358,9 +358,10 @@ export function judge(isCorrect, btn) {
 // ==========================================
 // サバイバルクエスト
 // ==========================================
-export function goToOathMenuSurvivalCheck() {
+export async function goToOathMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
@@ -377,9 +378,10 @@ export function goToOathMenuSurvivalCheck() {
     openOathMenu();
 }
 
-export function goToReliefMenuSurvivalCheck() {
+export async function goToReliefMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
@@ -396,9 +398,10 @@ export function goToReliefMenuSurvivalCheck() {
     openReliefMenu();
 }
 
-export function startSurvivalGame() {
+export async function startSurvivalGame() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
@@ -487,10 +490,11 @@ export function startRandomGameCheck() {
     startRandomGame();
 }
 
-export function goToOathMenuRandomCheck() {
+export async function goToOathMenuRandomCheck() {
     const g = document.getElementById('random-grade-select')?.value;
     const hp = document.getElementById('random-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題が見つかりません");
     playData.questions = qList;
@@ -500,10 +504,11 @@ export function goToOathMenuRandomCheck() {
     openOathMenu();
 }
 
-export function goToReliefMenuRandomCheck() {
+export async function goToReliefMenuRandomCheck() {
     const g = document.getElementById('random-grade-select')?.value;
     const hp = document.getElementById('random-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題が見つかりません");
     playData.questions = qList;
@@ -513,9 +518,10 @@ export function goToReliefMenuRandomCheck() {
     openReliefMenu();
 }
 
-export function startRandomGame() {
+export async function startRandomGame() {
     const g = document.getElementById('random-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
+    if (typeof window.ensureGradeLoaded === 'function') await window.ensureGradeLoaded(g);
     const qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2); 
     if(qList.length === 0) return alert("問題が見つかりません");
     

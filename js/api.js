@@ -3,6 +3,7 @@
 // ==========================================
 
 import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=10.0.3';
+import { isGradeMatch } from './utils.js?v=10.0.3';
 
 export async function uploadData() {
     if (typeof window.showConfirm === 'function') {
@@ -128,10 +129,194 @@ export async function downloadData() {
     }
 }
 
+// 全角・半角変換ヘルパー
+function toHalfWidth(str) {
+    if (!str) return '';
+    return str.toString().replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+}
+
+function toFullWidth(str) {
+    if (!str) return '';
+    return str.toString().replace(/[!-~]/g, s => String.fromCharCode(s.charCodeAt(0) + 0xFEE0));
+}
+
+// 学年別ロード管理
+if (!rawData.loadedGrades) {
+    rawData.loadedGrades = new Set();
+}
+const gradeLoadPromises = new Map();
+
+function getVal(obj, keys) {
+    if (!obj) return "";
+    for (const k of keys) {
+        const v = obj[k];
+        if (v !== undefined && v !== null && v !== "") return String(v);
+    }
+    return "";
+}
+
+/**
+ * 学年別問題・タイピングデータをパースして rawData にマージ
+ */
+export function parseAndMergeGradeData(data, targetGrade) {
+    if (!data) return;
+
+    if (!Array.isArray(rawData.questions)) rawData.questions = [];
+    if (!Array.isArray(rawData.typing)) rawData.typing = [];
+
+    const effectiveGrade = targetGrade || data.grade || data.gradeCode || '';
+
+    // 1. 通常問題 (questions)
+    if (Array.isArray(data.questions) && data.questions.length > 0) {
+        // targetGrade が明示されている場合、該当学年の既存データを一旦除去して最新ファイルでクリーンに置換
+        if (effectiveGrade) {
+            rawData.questions = rawData.questions.filter(q => !isGradeMatch(q.grade, effectiveGrade));
+        }
+        const existingIds = new Set(rawData.questions.map(q => String(q.id)));
+        const newQuestions = data.questions.map(q => {
+            const qText = q.question || q.q || getVal(q, ['問題', '問題文']);
+            const aText = q.answer || q.a || getVal(q, ['正解']);
+            const choices = (Array.isArray(q.choices) && q.choices.length > 0)
+                ? q.choices
+                : [
+                    aText,
+                    q.wrong1 !== undefined ? q.wrong1 : getVal(q, ['誤答1']),
+                    q.wrong2 !== undefined ? q.wrong2 : getVal(q, ['誤答2']),
+                    q.wrong3 !== undefined ? q.wrong3 : getVal(q, ['誤答3'])
+                ].filter(v => v !== undefined && v !== null && String(v).trim() !== '').map(String);
+
+            return {
+                ...q,
+                id: String(q.id || `q_${Math.abs(generateStringHash(qText + aText))}`),
+                grade: String(q.grade || getVal(q, ['学年']) || effectiveGrade || ''),
+                unit: String(q.unit || getVal(q, ['単元']) || ''),
+                subject: String(q.subject || getVal(q, ['教科']) || ''),
+                question: qText,
+                q: qText,
+                answer: aText,
+                a: aText,
+                choices: choices,
+                explain: String(q.explain !== undefined ? q.explain : (getVal(q, ['解説']) || ''))
+            };
+        });
+
+        newQuestions.forEach(q => {
+            if (!existingIds.has(q.id)) {
+                existingIds.add(q.id);
+                rawData.questions.push(q);
+            }
+        });
+    }
+
+    // 2. タイピング (typing)
+    if (Array.isArray(data.typing) && data.typing.length > 0) {
+        if (effectiveGrade) {
+            rawData.typing = rawData.typing.filter(t => !isGradeMatch(t.grade, effectiveGrade));
+        }
+        const existingTypingIds = new Set(rawData.typing.map(t => String(t.id)));
+        const newTyping = data.typing.map(t => {
+            const jp = String(t.japanese || t.display || getVal(t, ['日本語']) || '');
+            const rm = String(t.romaji || t.input || getVal(t, ['ローマ字']) || '').toLowerCase().replace(/\s+/g, '');
+            return {
+                ...t,
+                id: String(t.id || `t_${Math.abs(generateStringHash(jp))}`),
+                grade: String(t.grade || getVal(t, ['学年']) || effectiveGrade || ''),
+                unit: String(t.unit || getVal(t, ['単元', '単元/ジャンル']) || '全般'),
+                subject: 'タイピング',
+                japanese: jp,
+                romaji: rm
+            };
+        }).filter(t => t.japanese && t.romaji);
+
+        newTyping.forEach(t => {
+            if (!existingTypingIds.has(t.id)) {
+                existingTypingIds.add(t.id);
+                rawData.typing.push(t);
+            }
+        });
+    }
+
+    if (effectiveGrade) {
+        const gStr = effectiveGrade.toString().trim();
+        rawData.loadedGrades.add(gStr);
+        rawData.loadedGrades.add(toHalfWidth(gStr));
+        rawData.loadedGrades.add(toFullWidth(gStr));
+    }
+}
+
+/**
+ * 指定学年の問題データをオンデマンド非同期ロード（全角半角リトライ対応）
+ */
+export async function ensureGradeLoaded(gradeCode) {
+    if (!gradeCode) return true;
+    const cleanGrade = gradeCode.toString().trim();
+    if (!cleanGrade) return true;
+
+    const halfG = toHalfWidth(cleanGrade);
+    const fullG = toFullWidth(cleanGrade);
+
+    if (!rawData.loadedGrades) rawData.loadedGrades = new Set();
+    if (rawData.loadedGrades.has(cleanGrade) || rawData.loadedGrades.has(halfG) || rawData.loadedGrades.has(fullG)) {
+        return true;
+    }
+
+    if (gradeLoadPromises.has(cleanGrade)) {
+        return gradeLoadPromises.get(cleanGrade);
+    }
+
+    const loadPromise = (async () => {
+        try {
+            const isDebug = window.location.search.includes('debug=true');
+            // 全角・半角の候補を用意して順にリクエスト（ドライブ上のファイル名ゆれや未デプロイGASに対応）
+            const candidateGrades = [...new Set([cleanGrade, fullG, halfG])];
+            let data = null;
+            let successGrade = cleanGrade;
+
+            for (const tryGrade of candidateGrades) {
+                const url = isDebug
+                    ? ('http://localhost:8000/sample_api.json?grade=' + encodeURIComponent(tryGrade) + '&t=' + Date.now())
+                    : (API_URL + '?grade=' + encodeURIComponent(tryGrade) + '&t=' + Date.now());
+
+                const res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && !json.error && (Array.isArray(json.questions) || Array.isArray(json.typing))) {
+                        data = json;
+                        successGrade = tryGrade;
+                        break;
+                    }
+                }
+            }
+
+            if (!data) throw new Error(`学年データの取得に失敗しました (候補: ${candidateGrades.join(', ')})`);
+
+            parseAndMergeGradeData(data, cleanGrade);
+            rawData.loadedGrades.add(cleanGrade);
+            rawData.loadedGrades.add(halfG);
+            rawData.loadedGrades.add(fullG);
+            console.log(`[SQ-Data] 学年【${cleanGrade}】読込完了 (取得学年: ${successGrade}): 通常${(data.questions || []).length}問 / タイピング${(data.typing || []).length}問`);
+            return true;
+        } catch (e) {
+            console.warn(`[SQ-Data] 学年【${cleanGrade}】読込失敗:`, e);
+            return false;
+        } finally {
+            gradeLoadPromises.delete(cleanGrade);
+        }
+    })();
+
+    gradeLoadPromises.set(cleanGrade, loadPromise);
+    return loadPromise;
+}
+
+if (typeof window !== 'undefined') {
+    window.ensureGradeLoaded = ensureGradeLoaded;
+}
+
 export async function fetchData() {
     try {
         const isDebug = window.location.search.includes('debug=true');
-        const url = isDebug ? ('http://localhost:8000/sample_api.json?t=' + Date.now()) : (API_URL + '?t=' + Date.now());
+        // 初回起動時は共通マスター（キャラ・ボス・ショップ等）のみを高速取得
+        const url = isDebug ? ('http://localhost:8000/sample_api.json?action=master&t=' + Date.now()) : (API_URL + '?action=master&t=' + Date.now());
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP通信エラー: ${res.status}`);
         const data = await res.json();
@@ -152,62 +337,10 @@ export async function fetchData() {
             return url;
         };
 
-        const getVal = (obj, keys) => {
-            if (!obj) return "";
-            for (const k of keys) {
-                const v = obj[k];
-                if (v !== undefined && v !== null && v !== "") return String(v);
-            }
-            return "";
-        };
-
-        // 1. 通常問題 (questions)
-        rawData.questions = [];
-        if (Array.isArray(data.questions)) {
-            rawData.questions = data.questions.map(q => {
-                const qText = q.question || q.q || getVal(q, ['問題', '問題文']);
-                const aText = q.answer || q.a || getVal(q, ['正解']);
-                const choices = (Array.isArray(q.choices) && q.choices.length > 0)
-                    ? q.choices
-                    : [
-                        aText,
-                        q.wrong1 !== undefined ? q.wrong1 : getVal(q, ['誤答1']),
-                        q.wrong2 !== undefined ? q.wrong2 : getVal(q, ['誤答2']),
-                        q.wrong3 !== undefined ? q.wrong3 : getVal(q, ['誤答3'])
-                    ].filter(v => v !== undefined && v !== null && String(v).trim() !== '').map(String);
-
-                return {
-                    ...q,
-                    id: String(q.id || `q_${Math.abs(generateStringHash(qText + aText))}`),
-                    grade: String(q.grade || getVal(q, ['学年']) || ''),
-                    unit: String(q.unit || getVal(q, ['単元']) || ''),
-                    subject: String(q.subject || getVal(q, ['教科']) || ''),
-                    question: qText,
-                    q: qText,
-                    answer: aText,
-                    a: aText,
-                    choices: choices,
-                    explain: String(q.explain !== undefined ? q.explain : (getVal(q, ['解説']) || ''))
-                };
-            });
-        }
-
-        // 2. タイピング (typing)
-        rawData.typing = [];
-        const rawTyping = Array.isArray(data.typing) ? data.typing : [];
-        rawData.typing = rawTyping.map(t => {
-            const jp = String(t.japanese || t.display || getVal(t, ['日本語']) || '');
-            const rm = String(t.romaji || t.input || getVal(t, ['ローマ字']) || '').toLowerCase().replace(/\s+/g, '');
-            return {
-                ...t,
-                id: String(t.id || `t_${Math.abs(generateStringHash(jp))}`),
-                grade: String(t.grade || getVal(t, ['学年']) || ''),
-                unit: String(t.unit || getVal(t, ['単元', '単元/ジャンル']) || '全般'),
-                subject: 'タイピング',
-                japanese: jp,
-                romaji: rm
-            };
-        }).filter(t => t.japanese && t.romaji);
+        // 1. 問題データ・タイピングデータ（含まれている場合はマージ）
+        rawData.questions = rawData.questions || [];
+        rawData.typing = rawData.typing || [];
+        parseAndMergeGradeData(data, data.grade);
 
         // 3. キャラクター (characters)
         rawData.characters = [];
@@ -349,14 +482,24 @@ export async function fetchData() {
         // 復習リスト（revengeList）のクリーンアップ（存在しない過去問IDによる停止を防止）
         cleanupMissingRevengeIds();
 
-        if (!rawData.questions || rawData.questions.length === 0) throw new Error("問題データが見つかりません。");
+        // 旧形式統合データで全学年問題が入っている場合はその学年を登録
+        if (rawData.questions && rawData.questions.length > 0) {
+            rawData.questions.forEach(q => {
+                if (q.grade) rawData.loadedGrades.add(q.grade.toString().trim());
+            });
+        }
+
         document.getElementById('loading-screen')?.classList.add('hidden');
         document.getElementById('title-screen')?.classList.remove('hidden');
 
         if (typeof window.checkTitles === 'function') window.checkTitles();
         if (typeof window.checkAdminGifts === 'function') window.checkAdminGifts();
 
-        console.log(`[SQ-Data] 読込完了: 通常${data.questionCount || rawData.questions.length}問 / タイピング${data.typingCount || rawData.typing.length}問 / キャラ${rawData.characters.length}体 (更新: ${data.updatedAt || 'N/A'})`);
+        // 初期学年のバックグラウンド先行ロード（前回学年、ConfigのactiveGrade、または小4）
+        const defaultGrade = (rawData.config && rawData.config.activeGrade) || (gameState && gameState.lastGrade) || '小4';
+        ensureGradeLoaded(defaultGrade).catch(err => console.warn('[SQ-Data] 初期学年先読みエラー:', err));
+
+        console.log(`[SQ-Data] マスター読込完了: キャラ${rawData.characters.length}体 / ボス${rawData.bosses.length}体 (更新: ${data.updatedAt || 'N/A'})`);
     } catch(e) {
         console.error('[SQ-Data] データフェッチ失敗:', e);
         const errBox = document.getElementById('error-message');
