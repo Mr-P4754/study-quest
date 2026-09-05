@@ -131,162 +131,255 @@ export async function downloadData() {
 export async function fetchData() {
     try {
         const isDebug = window.location.search.includes('debug=true');
-        const url = isDebug ? ('http://localhost:8000/sample_api.json?t=' + new Date().getTime()) : (API_URL + '?t=' + new Date().getTime());
+        const url = isDebug ? ('http://localhost:8000/sample_api.json?t=' + Date.now()) : (API_URL + '?t=' + Date.now());
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Network response was not ok");
+        if (!res.ok) throw new Error(`HTTP通信エラー: ${res.status}`);
         const data = await res.json();
+
+        const convertDriveUrl = (url) => {
+            if (!url || typeof url !== 'string' || !url.startsWith('http')) return url || '';
+            if (url.includes('lh3.googleusercontent.com')) return url;
+            if (url.includes('drive.google.com')) {
+                let id = "";
+                const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (match1) id = match1[1];
+                else {
+                    const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                    if (match2) id = match2[1];
+                }
+                if (id) return `https://lh3.googleusercontent.com/d/${id}`;
+            }
+            return url;
+        };
+
         const getVal = (obj, keys) => {
+            if (!obj) return "";
             for (const k of keys) {
                 const v = obj[k];
                 if (v !== undefined && v !== null && v !== "") return String(v);
             }
             return "";
         };
-        const getFuzzyVal = (obj, keyword, defaultVal) => {
-            const key = Object.keys(obj).find(k => k.includes(keyword));
-            const val = key ? obj[key] : "";
-            return (val !== undefined && val !== null && val !== "") ? String(val) : defaultVal;
-        };
-        const convertDriveUrl = (url) => {
-            if (!url || !url.startsWith('http')) return url;
-            if (url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('id='))) {
-                let id = "";
-                const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-                if (match1) id = match1[1];
-                else {
-                    const match2 = url.match(/id=([a-zA-Z0-9_-]+)/);
-                    if (match2) id = match2[1];
-                }
-                if (id) return `https://drive.google.com/thumbnail?sz=w1000&id=${id}`;
-            }
-            return url;
-        };
-        
+
+        // 1. 通常問題 (questions)
         rawData.questions = [];
-        rawData.characters = [];
-        rawData.bosses = [];
-        rawData.shopItems = [];
-        rawData.typing = [];
-        rawData.randomBosses = [];
-        rawData.config = [];
-        rawData.gifts = [];
+        if (Array.isArray(data.questions)) {
+            rawData.questions = data.questions.map(q => {
+                const qText = q.question || q.q || getVal(q, ['問題', '問題文']);
+                const aText = q.answer || q.a || getVal(q, ['正解']);
+                const choices = (Array.isArray(q.choices) && q.choices.length > 0)
+                    ? q.choices
+                    : [
+                        aText,
+                        q.wrong1 !== undefined ? q.wrong1 : getVal(q, ['誤答1']),
+                        q.wrong2 !== undefined ? q.wrong2 : getVal(q, ['誤答2']),
+                        q.wrong3 !== undefined ? q.wrong3 : getVal(q, ['誤答3'])
+                    ].filter(v => v !== undefined && v !== null && String(v).trim() !== '').map(String);
 
-        const generateHashId = (str, prefix) => {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i) | 0;
-            return prefix + "_" + Math.abs(hash);
-        };
-
-        for (let key in data) {
-            const lowerKey = key.toLowerCase();
-            try {
-                if (lowerKey.includes('questions') || lowerKey.includes('question')) {
-                    const newQs = data[key].filter(d => d).map(q => {
-                        const qText = getVal(q, ['q', 'question', '問題', '問題文']);
-                        const aText = getVal(q, ['a', 'answer', '正解']);
-                        let hash = 0;
-                        const str = qText + aText;
-                        for (let i = 0; i < str.length; i++) {
-                            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                            hash |= 0;
-                        }
-                        return {
-                            id: "q_" + Math.abs(hash),
-                            grade: getVal(q, ['grade', '学年']),
-                            subject: getVal(q, ['subject', '教科']),
-                            unit: getVal(q, ['unit', '単元']),
-                            q: qText,
-                            a: aText,
-                            choices: q.choices ? String(q.choices).split(',') : [
-                                getVal(q, ['誤答1']),
-                                getVal(q, ['誤答2']),
-                                getVal(q, ['誤答3']),
-                                getVal(q, ['a', '正解'])
-                            ].filter(x => x !== "")
-                        };
-                    });
-                    rawData.questions = rawData.questions.concat(newQs);
-                } else if (lowerKey.includes('character')) {
-                    rawData.characters = data[key].filter(d => d).map(c => {
-                        const name = getVal(c, ['name', '名前']) || "Unknown";
-                        return {
-                            id: String(c.id || c.ID || generateHashId(name, 'chara')),
-                            name: name,
-                            rarity: getVal(c, ['rarity', 'レア']) || "N",
-                            type: getVal(c, ['type', 'タイプ']) || "ATK",
-                            value: Number(getVal(c, ['value', '補正値', '効果値']) || 1.0),
-                            desc: getVal(c, ['desc', '解説']),
-                            imageUrl: convertDriveUrl(getVal(c, ['imageUrl', '画像URL', '画像']))
-                        };
-                    });
-                } else if (lowerKey.includes('boss')) {
-                    rawData.bosses = data[key].filter(d => d).map(b => ({
-                        grade: getVal(b, ['grade', '学年']),
-                        unit: getVal(b, ['unit', '単元']),
-                        name: getVal(b, ['name', 'bossName', 'ボス名']) || "Boss",
-                        hp: Number(getVal(b, ['hp', 'bossHP', 'ボスHP']) || 3000),
-                        icon: convertDriveUrl(getFuzzyVal(b, 'ボス画像', "👾"))
-                    }));
-                } else if (lowerKey.includes('shop')) {
-                    rawData.shopItems = data[key].filter(d => d).map(i => {
-                        const name = getVal(i, ['name', 'アイテム名']) || "Item";
-                        return {
-                            id: String(i.id || i.ID || generateHashId(name, 'item')),
-                            name: name,
-                            price: Number(getVal(i, ['price', '価格']) || 1000),
-                            type: getVal(i, ['type', 'タイプ']) || "ATK",
-                            value: Number(getVal(i, ['value', '効果値']) || 0.1),
-                            desc: getVal(i, ['desc', '説明']),
-                            icon: getVal(i, ['icon', 'アイコン']) || "🎁"
-                        };
-                    });
-                } else if (lowerKey.includes('typing')) {
-                    rawData.typing = data[key].filter(d => d).map(t => ({
-                        id: String(t.id || t.ID || generateHashId(getVal(t, ['japanese','日本語']), 'type')),
-                        japanese: getVal(t, ['japanese', '日本語', 'display']),
-                        romaji: getVal(t, ['romaji', 'ローマ字', 'input']).toLowerCase().replace(/\s+/g, ''),
-                        grade: getVal(t, ['grade', '学年'])
-                    })).filter(t => t.japanese && t.romaji);
-                } else if (lowerKey.includes('randomboss')) {
-                    rawData.randomBosses = data[key].map(b => ({...b}));
-                } else if (lowerKey.includes('config')) {
-                    rawData.config = data[key];
-                } else if (lowerKey.includes('gift')) {
-                    rawData.gifts = data[key];
-                }
-            } catch(e) {}
+                return {
+                    ...q,
+                    id: String(q.id || `q_${Math.abs(generateStringHash(qText + aText))}`),
+                    grade: String(q.grade || getVal(q, ['学年']) || ''),
+                    unit: String(q.unit || getVal(q, ['単元']) || ''),
+                    subject: String(q.subject || getVal(q, ['教科']) || ''),
+                    question: qText,
+                    q: qText,
+                    answer: aText,
+                    a: aText,
+                    choices: choices,
+                    explain: String(q.explain !== undefined ? q.explain : (getVal(q, ['解説']) || ''))
+                };
+            });
         }
 
+        // 2. タイピング (typing)
+        rawData.typing = [];
+        const rawTyping = Array.isArray(data.typing) ? data.typing : [];
+        rawData.typing = rawTyping.map(t => {
+            const jp = String(t.japanese || t.display || getVal(t, ['日本語']) || '');
+            const rm = String(t.romaji || t.input || getVal(t, ['ローマ字']) || '').toLowerCase().replace(/\s+/g, '');
+            return {
+                ...t,
+                id: String(t.id || `t_${Math.abs(generateStringHash(jp))}`),
+                grade: String(t.grade || getVal(t, ['学年']) || ''),
+                unit: String(t.unit || getVal(t, ['単元', '単元/ジャンル']) || '全般'),
+                subject: 'タイピング',
+                japanese: jp,
+                romaji: rm
+            };
+        }).filter(t => t.japanese && t.romaji);
+
+        // 3. キャラクター (characters)
+        rawData.characters = [];
+        const rawChars = Array.isArray(data.characters) ? data.characters : [];
+        rawData.characters = rawChars.map(c => {
+            const strId = String(c.ID !== undefined ? c.ID : (c.id !== undefined ? c.id : ''));
+            const name = String(c['名前'] || c.name || 'Unknown');
+            const rarity = String(c['レア'] || c.rarity || 'N');
+            const type = String(c['タイプ'] || c.type || 'ATK');
+            const val = Number(c['補正値'] !== undefined ? c['補正値'] : (c.value !== undefined ? c.value : 1.0));
+            const desc = String(c['解説'] || c.desc || '');
+            const category = String(c['カテゴリ'] || c.category || '');
+            const imgUrl = convertDriveUrl(c['画像URL'] || c.imageUrl || c.image || '');
+
+            return {
+                ...c,
+                id: strId,
+                ID: strId,
+                name: name,
+                '名前': name,
+                rarity: rarity,
+                'レア': rarity,
+                type: type,
+                'タイプ': type,
+                value: val,
+                '補正値': val,
+                desc: desc,
+                '解説': desc,
+                category: category,
+                'カテゴリ': category,
+                imageUrl: imgUrl,
+                '画像URL': imgUrl
+            };
+        });
+
+        // 4. ボス (bosses)
+        const rawBosses = Array.isArray(data.bosses) ? data.bosses : [];
+        rawData.bosses = rawBosses.map(b => ({
+            ...b,
+            grade: String(b['学年'] || b.grade || ''),
+            unit: String(b['単元'] || b.unit || ''),
+            name: String(b['ボス名'] || b.name || b.bossName || 'Boss'),
+            hp: Number(b['ボスHP'] !== undefined ? b['ボスHP'] : (b.hp !== undefined ? b.hp : (b.bossHP !== undefined ? b.bossHP : 3000))),
+            icon: convertDriveUrl(b['ボス画像（絵文字等）'] || b['ボス画像'] || b.icon || '👾'),
+            bgmUrl: String(b.bgmUrl || b['bgmUrl'] || '')
+        }));
+
+        // 5. ランダムボス (randomBoss / randomBosses)
+        const rawRBoss = Array.isArray(data.randomBoss) ? data.randomBoss : (Array.isArray(data.randomBosses) ? data.randomBosses : []);
+        rawData.randomBosses = rawRBoss.map(b => ({
+            ...b,
+            grade: String(b.grade || b['学年'] || ''),
+            name: String(b.name || b['名前'] || ''),
+            hp: Number(b.hp !== undefined ? b.hp : (b['HP'] !== undefined ? b['HP'] : 3000)),
+            icon: convertDriveUrl(b.icon || b['アイコン'] || '👾'),
+            bgmUrl: String(b.bgmUrl || b['bgmUrl'] || '')
+        }));
+        rawData.randomBoss = rawData.randomBosses;
+
+        // 6. ショップ (shop / shopItems)
+        const rawShop = Array.isArray(data.shop) ? data.shop : (Array.isArray(data.shopItems) ? data.shopItems : []);
+        rawData.shopItems = rawShop.map(i => ({
+            ...i,
+            id: String(i.ID !== undefined ? i.ID : (i.id !== undefined ? i.id : '')),
+            ID: String(i.ID !== undefined ? i.ID : (i.id !== undefined ? i.id : '')),
+            name: String(i['アイテム名'] || i.name || 'Item'),
+            price: Number(i['価格'] !== undefined ? i['価格'] : (i.price !== undefined ? i.price : 1000)),
+            type: String(i['タイプ'] || i.type || 'ATK'),
+            value: Number(i['効果値'] !== undefined ? i['効果値'] : (i.value !== undefined ? i.value : 0.1)),
+            desc: String(i['説明'] || i.desc || ''),
+            icon: String(i['アイコン'] || i.icon || '🎁')
+        }));
+        rawData.shop = rawData.shopItems;
+
+        // 7. ギフト (gift / gifts)
+        const rawGifts = Array.isArray(data.gift) ? data.gift : (Array.isArray(data.gifts) ? data.gifts : []);
+        rawData.gifts = rawGifts.map(g => ({
+            ...g,
+            id: String(g.ID !== undefined ? g.ID : (g.id !== undefined ? g.id : '')),
+            title: String(g['タイトル'] || g.title || ''),
+            message: String(g['メッセージ'] || g.message || ''),
+            exp: Number(g.EXP !== undefined ? g.EXP : (g.exp !== undefined ? g.exp : 0))
+        }));
+        rawData.gift = rawData.gifts;
+
+        // 8. コンフィグ (config)
+        rawData.config = data.config || {};
+
+        // 9. ボス討伐魔人キャラ枠（未登録の場合の自動補完）
         if (rawData.bosses && rawData.characters) {
             rawData.bosses.forEach(b => {
                 const bossCharId = "boss_" + b.name;
-                if (!rawData.characters.find(c => c.id === bossCharId)) {
+                if (!rawData.characters.find(c => String(c.id) === bossCharId)) {
                     rawData.characters.push({
                         id: bossCharId,
+                        ID: bossCharId,
                         name: "【魔人】" + b.name,
+                        '名前': "【魔人】" + b.name,
                         rarity: "UR",
+                        'レア': "UR",
                         type: "ALL",
+                        'タイプ': "ALL",
                         value: 1.3,
+                        '補正値': 1.3,
                         desc: "かつて立ちはだかった強敵。今は頼もしい味方だ。",
-                        imageUrl: b.icon
+                        '解説': "かつて立ちはだかった強敵。今は頼もしい味方だ。",
+                        imageUrl: b.icon,
+                        '画像URL': b.icon
                     });
                 }
             });
         }
-        if (!rawData.questions || rawData.questions.length === 0) throw new Error("Questions not found.");
-        document.getElementById('loading-screen')?.classList.add('hidden');
-        document.getElementById('title-screen')?.classList.remove('hidden');
-        
-        if (typeof window.checkTitles === 'function') window.checkTitles(); 
-        if (typeof window.checkAdminGifts === 'function') window.checkAdminGifts();
+
+        // ゼロ埋めエイリアス（"001" -> "1"）の解決マップを生成
+        normalizeCharacterDictionary();
+
+        // スタディエル復元（UR成体および動的ID chara_... の冪等登録）
         if (typeof window !== 'undefined' && typeof window.StudyelEngine?.restoreCharacters === 'function') {
             window.StudyelEngine.restoreCharacters();
         }
+
+        // 復習リスト（revengeList）のクリーンアップ（存在しない過去問IDによる停止を防止）
+        cleanupMissingRevengeIds();
+
+        if (!rawData.questions || rawData.questions.length === 0) throw new Error("問題データが見つかりません。");
+        document.getElementById('loading-screen')?.classList.add('hidden');
+        document.getElementById('title-screen')?.classList.remove('hidden');
+
+        if (typeof window.checkTitles === 'function') window.checkTitles();
+        if (typeof window.checkAdminGifts === 'function') window.checkAdminGifts();
+
+        console.log(`[SQ-Data] 読込完了: 通常${data.questionCount || rawData.questions.length}問 / タイピング${data.typingCount || rawData.typing.length}問 / キャラ${rawData.characters.length}体 (更新: ${data.updatedAt || 'N/A'})`);
     } catch(e) {
+        console.error('[SQ-Data] データフェッチ失敗:', e);
         const errBox = document.getElementById('error-message');
         if (errBox) {
             errBox.innerText = e.message;
             errBox.style.display = 'block';
         }
     }
+}
+
+/**
+ * キャラクターIDのゼロ埋め解決辞書を生成
+ */
+function normalizeCharacterDictionary() {
+    if (!Array.isArray(rawData.characters)) return;
+    const aliasMap = {};
+    rawData.characters.forEach(c => {
+        const strId = (c.id || c.ID || '').toString();
+        if (strId) {
+            aliasMap[strId] = c;
+            const numId = parseInt(strId, 10);
+            if (!isNaN(numId)) {
+                aliasMap[('000' + numId).slice(-3)] = c; // "001", "002"...
+            }
+        }
+    });
+    rawData.characterMap = aliasMap;
+}
+
+/**
+ * 存在しない問題IDを復習リストから除外
+ */
+function cleanupMissingRevengeIds() {
+    if (!gameState || !Array.isArray(gameState.revengeList)) return;
+    const validIds = new Set((rawData.questions || []).map(q => q.id));
+    gameState.revengeList = gameState.revengeList.filter(id => validIds.has(id));
+}
+
+function generateStringHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i) | 0;
+    return hash;
 }
