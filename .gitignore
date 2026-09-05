@@ -1,4 +1,16 @@
+# 依存パッケージ・一時ファイル
 node_modules/
-.DS_Store
+package-lock.json
 scratch/
 test_*.js
+
+# OS 生成ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# エディタ・IDE
+.vscode/
+.idea/
+*.swp
+*.swo
