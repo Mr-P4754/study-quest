@@ -2,7 +2,7 @@
 // js/state.js (マスター定数・ゲーム状態管理)
 // ==========================================
 
-export const API_URL = 'https://script.google.com/macros/s/AKfycbyG3MnjSn1D1flR3-LR1AzfoijF_ID7GJzZ1d5gYgemZd504kGwou02cV-M8c8kfJwi/exec';
+export const API_URL = 'https://script.google.com/macros/s/AKfycbz555Zht6Z6ULzHLqtYugytj0zIzfZgPCAB0C0UG-HENlhJw4EEQmsjELTby9yiDw0XtQ/exec';
 
 // Settings & Constants
 export const RARITY_CAPS = { 'N': 5, 'R': 10, 'SR': 15, 'SSR': 20, 'UR': 30 };
