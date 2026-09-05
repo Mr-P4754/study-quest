@@ -9,15 +9,16 @@ import {
     rogueData,
     runtimeState,
     saveGame
-} from './state.js?v=10.0.1';
+} from './state.js?v=10.0.2';
 
 import {
     getGradeMultiplier,
     generateCalcQuestion,
     playSE,
     playBGM,
-    stopBGM
-} from './utils.js?v=10.0.1';
+    stopBGM,
+    isGradeMatch
+} from './utils.js?v=10.0.2';
 
 import {
     showCutIn,
@@ -26,12 +27,12 @@ import {
     startTimer,
     getCharaStats,
     finishGame
-} from './battle-core.js?v=10.0.1';
+} from './battle-core.js?v=10.0.2';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=10.0.1';
+} from './gacha-shop.js?v=10.0.2';
 
 import {
     showAppModal,
@@ -40,7 +41,7 @@ import {
     updateTitleInfo,
     openOathMenu,
     openReliefMenu
-} from './ui-manager.js?v=10.0.1';
+} from './ui-manager.js?v=10.0.2';
 
 // ==========================================
 // 通常クエスト
@@ -51,7 +52,7 @@ export function startNormalGameCheck() {
     const u = document.getElementById('unit-select')?.value; 
     const hp = document.getElementById('boss-hp-select')?.value; 
     if(!g || !s || !u) return alert("全て選択してください"); 
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2); 
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2); 
     if(qList.length === 0) return alert("問題がありません"); 
     playData.selectedBossHp = hp ? Number(hp) : null; 
     runtimeState.oathOrigin = 'normal'; 
@@ -64,7 +65,7 @@ export function goToOathMenuCheck() {
     const u = document.getElementById('unit-select')?.value;
     const hp = document.getElementById('boss-hp-select')?.value;
     if(!g || !s || !u) return alert("全て選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
     playData.questions = qList;
@@ -87,7 +88,7 @@ export function goToReliefMenuCheck() {
     const u = document.getElementById('unit-select')?.value;
     const hp = document.getElementById('boss-hp-select')?.value;
     if(!g || !s || !u) return alert("全て選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
     playData.questions = qList;
@@ -112,10 +113,10 @@ export function startGame() {
     
     const g = gSelect.value, s = sSelect.value, u = uSelect.value;
     if(!g || !s || !u) return alert("全て選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.subject == s && q.unit == u && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
-    let boss = (rawData.bosses && rawData.bosses.length > 0) ? rawData.bosses.find(b => b.unit == u && b.grade == g) : null;
+    let boss = (rawData.bosses && rawData.bosses.length > 0) ? rawData.bosses.find(b => b.unit == u && isGradeMatch(b.grade, g)) : null;
     if(!boss) boss = { name: "テストの魔人", hp: 3000, icon: "😈" };
     if(playData.selectedBossHp) boss.hp = playData.selectedBossHp;
     
@@ -360,7 +361,7 @@ export function judge(isCorrect, btn) {
 export function goToOathMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
     playData.questions = qList;
@@ -379,7 +380,7 @@ export function goToOathMenuSurvivalCheck() {
 export function goToReliefMenuSurvivalCheck() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
     playData.questions = qList;
@@ -399,7 +400,7 @@ export function startSurvivalGame() {
     const g = document.getElementById('survival-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
     
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題がありません");
     
     let boss = { name: "エンドレス特訓", hp: 999999, icon: "🔥" };
@@ -479,7 +480,7 @@ export function startRandomGameCheck() {
     const g = document.getElementById('random-grade-select')?.value;
     const hp = document.getElementById('random-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題が見つかりません");
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     runtimeState.oathOrigin = 'random';
@@ -490,7 +491,7 @@ export function goToOathMenuRandomCheck() {
     const g = document.getElementById('random-grade-select')?.value;
     const hp = document.getElementById('random-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題が見つかりません");
     playData.questions = qList;
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
@@ -503,7 +504,7 @@ export function goToReliefMenuRandomCheck() {
     const g = document.getElementById('random-grade-select')?.value;
     const hp = document.getElementById('random-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     if(qList.length === 0) return alert("問題が見つかりません");
     playData.questions = qList;
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
@@ -515,12 +516,12 @@ export function goToReliefMenuRandomCheck() {
 export function startRandomGame() {
     const g = document.getElementById('random-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
-    const qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2); 
+    const qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2); 
     if(qList.length === 0) return alert("問題が見つかりません");
     
     let possibleBosses = []; 
     if (rawData.randomBosses) { 
-        possibleBosses = rawData.randomBosses.filter(b => b.grade == g || b.grade == '全学年'); 
+        possibleBosses = rawData.randomBosses.filter(b => isGradeMatch(b.grade, g) || b.grade == '全学年'); 
     }
     let boss; 
     if (possibleBosses.length > 0) { 
@@ -622,7 +623,7 @@ export function startTypingGameCheck() {
     const hp = document.getElementById('typing-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
     if(!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
-    const qList = rawData.typing.filter(t => t.grade == g);
+    const qList = rawData.typing.filter(t => isGradeMatch(t.grade, g));
     if(qList.length === 0) return alert("選択した学年の問題がありません");
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
     runtimeState.oathOrigin = 'typing';
@@ -634,7 +635,7 @@ export function goToOathMenuTypingCheck() {
     const hp = document.getElementById('typing-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
     if(!rawData.typing) return alert("タイピングデータが読み込めていません");
-    const qList = rawData.typing.filter(t => t.grade == g);
+    const qList = rawData.typing.filter(t => isGradeMatch(t.grade, g));
     if(qList.length === 0) return alert("選択した学年の問題がありません");
     playData.questions = qList;
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
@@ -648,7 +649,7 @@ export function goToReliefMenuTypingCheck() {
     const hp = document.getElementById('typing-boss-hp-select')?.value;
     if(!g) return alert("学年を選択してください");
     if(!rawData.typing) return alert("タイピングデータが読み込めていません");
-    const qList = rawData.typing.filter(t => t.grade == g);
+    const qList = rawData.typing.filter(t => isGradeMatch(t.grade, g));
     if(qList.length === 0) return alert("選択した学年の問題がありません");
     playData.questions = qList;
     playData.selectedBossHp = hp ? parseInt(hp, 10) : null;
@@ -661,18 +662,18 @@ export function startTypingGame() {
     const g = document.getElementById('typing-grade-select')?.value; 
     if(!g) return alert("学年を選択してください");
     if (!rawData.typing) return alert("タイピングデータが読み込めていません。リロードしてください。");
-    const qList = rawData.typing.filter(t => t.grade == g); 
+    const qList = rawData.typing.filter(t => isGradeMatch(t.grade, g)); 
     if(qList.length === 0) return alert("選択した学年の問題がありません");
     
     let boss = { name: "キーボードの魔人", hp: qList.length * 50, icon: "⌨️" };
     try { 
         if(rawData.bosses) { 
-            const specificBoss = rawData.bosses.find(b => b.grade == g && b.unit == 'タイピング'); 
+            const specificBoss = rawData.bosses.find(b => isGradeMatch(b.grade, g) && b.unit == 'タイピング'); 
             if(specificBoss) { 
                 boss = { ...specificBoss }; 
                 if(!boss.hp) boss.hp = qList.length * 50; 
             } else { 
-                const gradeBoss = rawData.bosses.find(b => b.grade == g); 
+                const gradeBoss = rawData.bosses.find(b => isGradeMatch(b.grade, g)); 
                 if(gradeBoss) { 
                     boss = { ...gradeBoss }; 
                     boss.hp = qList.length * 50; 

@@ -5,9 +5,9 @@
  * ==========================================
  */
 
-import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.1';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI } from '../utils.js?v=10.0.1';
-import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.1';
+import { gameState, rawData, saveGame, runtimeState, RARITY_CAPS, LV_BONUS_RATE } from '../state.js?v=10.0.2';
+import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI, ALL_GRADES, isGradeMatch } from '../utils.js?v=10.0.2';
+import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from '../ui-manager.js?v=10.0.2';
 
 // ----------------------------------------------------
 // 内部状態管理 & コスト定義
@@ -467,17 +467,22 @@ export function updateTeamBattleSetupPreview() {
     }
 }
 
+const TB_SUBJECT_ORDER = ['国語', '算数', '数学', '理科', '社会', '英語', '情報'];
+
 /**
  * 学年セレクトボックス初期化
  */
 export function initTbGradeSelect() {
     const sel = document.getElementById('tb-grade-select');
-    if (!sel || !rawData.questions) return;
-    const grades = [...new Set(rawData.questions.map(q => q.grade))].filter(g => g);
+    if (!sel) return;
     sel.innerHTML = '<option value="">学年を選択...</option>';
-    grades.forEach(g => {
+    ALL_GRADES.forEach(g => {
         sel.innerHTML += `<option value="${g}">${g}</option>`;
     });
+    if (rawData.config?.activeGrade) {
+        const opt = Array.from(sel.options).find(o => isGradeMatch(o.value, rawData.config.activeGrade));
+        if (opt) sel.value = opt.value;
+    }
     filterTbSubjects();
 }
 
@@ -494,10 +499,20 @@ export function filterTbSubjects() {
     uSel.innerHTML = '<option value="">単元を選択...</option>';
     if (!g || !rawData.questions) return;
 
-    const subjects = [...new Set(rawData.questions.filter(q => q.grade == g).map(q => q.subject))].filter(s => s);
+    const subjects = [...new Set(rawData.questions.filter(q => isGradeMatch(q.grade, g)).map(q => q.subject))].filter(s => s);
+    subjects.sort((a, b) => {
+        const idxA = TB_SUBJECT_ORDER.indexOf(a);
+        const idxB = TB_SUBJECT_ORDER.indexOf(b);
+        return (idxA >= 0 ? idxA : 99) - (idxB >= 0 ? idxB : 99);
+    });
     subjects.forEach(s => {
         subSel.innerHTML += `<option value="${s}">${s}</option>`;
     });
+    if (rawData.config?.activeSubject && subjects.includes(rawData.config.activeSubject)) {
+        subSel.value = rawData.config.activeSubject;
+    } else if (subjects.length > 0) {
+        subSel.selectedIndex = 1;
+    }
     filterTbUnits();
 }
 
@@ -513,10 +528,19 @@ export function filterTbUnits() {
     uSel.innerHTML = '<option value="">単元を選択...</option>';
     if (!g || !s || !rawData.questions) return;
 
-    const units = [...new Set(rawData.questions.filter(q => q.grade == g && q.subject == s).map(q => q.unit))].filter(u => u);
+    const units = [...new Set(rawData.questions.filter(q => isGradeMatch(q.grade, g) && q.subject == s).map(q => q.unit))].filter(u => u);
+    if (units.length === 0) {
+        uSel.innerHTML = '<option value="">（単元準備中）</option>';
+        return;
+    }
     units.forEach(u => {
         uSel.innerHTML += `<option value="${u}">${u}</option>`;
     });
+    if (rawData.config?.activeUnit && units.includes(rawData.config.activeUnit)) {
+        uSel.value = rawData.config.activeUnit;
+    } else if (units.length > 0) {
+        uSel.selectedIndex = 1;
+    }
 }
 
 /**
@@ -827,7 +851,7 @@ export function startTeamBattle() {
 
     // 問題の抽出
     let qList = (rawData.questions || []).filter(q => {
-        if (q.grade != g) return false;
+        if (!isGradeMatch(q.grade, g)) return false;
         if (s && q.subject != s) return false;
         if (u && q.unit != u) return false;
         return q.choices && q.choices.length >= 2;
@@ -835,7 +859,7 @@ export function startTeamBattle() {
 
     if (qList.length === 0) {
         // 単元指定で問題がなければ学年全体からフォールバック
-        qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2);
+        qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2);
     }
     if (qList.length === 0) return alert("該当する問題がありません。");
 

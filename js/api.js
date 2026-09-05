@@ -2,7 +2,7 @@
 // js/api.js (GASバックエンド通信・クラウド同期)
 // ==========================================
 
-import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=10.0.1';
+import { API_URL, rawData, gameState, dailyMissions, runtimeState, saveGame } from './state.js?v=10.0.2';
 
 export async function uploadData() {
     if (typeof window.showConfirm === 'function') {
@@ -294,7 +294,24 @@ export async function fetchData() {
         rawData.gift = rawData.gifts;
 
         // 8. コンフィグ (config)
-        rawData.config = data.config || {};
+        const cfgObj = data.config || {};
+        rawData.config = cfgObj;
+        // 後方互換エミュレーション: 配列メソッド（filter, some 等）の呼び出しを安全に処理
+        if (typeof cfgObj === 'object' && !Array.isArray(cfgObj)) {
+            const virtualList = (cfgObj.bannerMessage || cfgObj.message) ? [{
+                message: cfgObj.bannerMessage || cfgObj.message || '',
+                grade: cfgObj.activeGrade || '',
+                subject: cfgObj.activeSubject || '',
+                unit: cfgObj.activeUnit || ''
+            }] : [];
+            Object.defineProperties(rawData.config, {
+                filter: { value: (fn) => virtualList.filter(fn), writable: true, configurable: true },
+                some: { value: (fn) => virtualList.some(fn), writable: true, configurable: true },
+                forEach: { value: (fn) => virtualList.forEach(fn), writable: true, configurable: true },
+                find: { value: (fn) => virtualList.find(fn), writable: true, configurable: true },
+                length: { value: virtualList.length, writable: true, configurable: true }
+            });
+        }
 
         // 9. ボス討伐魔人キャラ枠（未登録の場合の自動補完）
         if (rawData.bosses && rawData.characters) {

@@ -2,7 +2,7 @@
 // js/utils.js (計算ロジック・チャート描画・音響制御)
 // ==========================================
 
-import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.1';
+import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.0.2';
 
 export const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 
@@ -27,19 +27,38 @@ export function getDisplayName(char, inv, isHtml = true) {
     return name;
 }
 
+export const ALL_GRADES = [
+    '小1', '小2', '小3', '小4', '小5', '小6',
+    '中1', '中2', '中3',
+    '高1', '高2', '高3'
+];
+
+/**
+ * 2つの学年表記が一致するかを判定（全角・半角・「○年」表記ゆれを吸収）
+ * 例: '中1' と '中１' -> true, '小4' と '4年' -> true
+ */
+export function isGradeMatch(g1, g2) {
+    if (!g1 || !g2) return false;
+    const norm = (s) => String(s).trim()
+        .replace('小学校', '小').replace('中学校', '中').replace('高等学校', '高').replace('高校', '高')
+        .replace(/[０-９]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0xFEE0))
+        .replace(/^(\d+)年$/, '小$1');
+    return norm(g1) === norm(g2);
+}
+
 export function getGradeMultiplier(gradeStr) {
     const g = String(gradeStr || '');
-    if (g.includes('高3')) return 2.20;
-    if (g.includes('高2')) return 2.10;
-    if (g.includes('高1')) return 2.00;
-    if (g.includes('中3')) return 1.90;
-    if (g.includes('中2')) return 1.80;
-    if (g.includes('中1')) return 1.70;
-    if (g.includes('小6')) return 1.60;
-    if (g.includes('小5')) return 1.50;
-    if (g.includes('小4')) return 1.40;
-    if (g.includes('小3')) return 1.30;
-    if (g.includes('小2')) return 1.10;
+    if (isGradeMatch(g, '高3')) return 2.20;
+    if (isGradeMatch(g, '高2')) return 2.10;
+    if (isGradeMatch(g, '高1')) return 2.00;
+    if (isGradeMatch(g, '中3')) return 1.90;
+    if (isGradeMatch(g, '中2')) return 1.80;
+    if (isGradeMatch(g, '中1')) return 1.70;
+    if (isGradeMatch(g, '小6')) return 1.60;
+    if (isGradeMatch(g, '小5')) return 1.50;
+    if (isGradeMatch(g, '小4')) return 1.40;
+    if (isGradeMatch(g, '小3')) return 1.30;
+    if (isGradeMatch(g, '小2')) return 1.10;
     return 1.00; // 小1 or 学年不明
 }
 

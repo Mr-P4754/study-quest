@@ -10,25 +10,26 @@ import {
     runtimeState,
     ROGUE_TILES,
     saveGame
-} from './state.js?v=10.0.1';
+} from './state.js?v=10.0.2';
 
 import {
     playSE,
-    playBGM
-} from './utils.js?v=10.0.1';
+    playBGM,
+    isGradeMatch
+} from './utils.js?v=10.0.2';
 
 import {
     updateUI,
     startCountdown,
     getCharaStats,
     backToTitle
-} from './battle-core.js?v=10.0.1';
+} from './battle-core.js?v=10.0.2';
 
 import {
     showAppModal,
     showConfirm,
     updateTitleInfo
-} from './ui-manager.js?v=10.0.1';
+} from './ui-manager.js?v=10.0.2';
 
 export function addRogueLog(text) {
     if (!rogueData.logs) rogueData.logs = [];
@@ -56,7 +57,7 @@ export function renderRogueLogs() {
 export function startRogueMode() {
     const g = document.getElementById('rogue-grade-select')?.value;
     if(!g) return alert("学年を選択してください");
-    let qList = (rawData.questions || []).filter(q => q.grade == g && q.choices && q.choices.length >= 2 && q.subject !== 'タイピング' && q.unit !== 'タイピング');
+    let qList = (rawData.questions || []).filter(q => isGradeMatch(q.grade, g) && q.choices && q.choices.length >= 2 && q.subject !== 'タイピング' && q.unit !== 'タイピング');
     if(qList.length === 0) return alert("問題がありません");
 
     // 選択された学年の問題を保存しておく

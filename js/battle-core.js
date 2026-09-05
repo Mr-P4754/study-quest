@@ -11,20 +11,21 @@ import {
     runtimeState,
     LV_BONUS_RATE,
     saveGame
-} from './state.js?v=10.0.1';
+} from './state.js?v=10.0.2';
 
 import {
     getDisplayName,
     getGradeMultiplier,
     playSE,
     playBGM,
-    stopBGM
-} from './utils.js?v=10.0.1';
+    stopBGM,
+    isGradeMatch
+} from './utils.js?v=10.0.2';
 
 import {
     updateMissionProgress,
     checkTitles
-} from './gacha-shop.js?v=10.0.1';
+} from './gacha-shop.js?v=10.0.2';
 
 import {
     showAppModal,
@@ -32,7 +33,7 @@ import {
     showConfirm,
     updateTitleInfo,
     addCalcRecord
-} from './ui-manager.js?v=10.0.1';
+} from './ui-manager.js?v=10.0.2';
 
 export function showCutIn(t) { 
     const str = String(t);
@@ -505,7 +506,12 @@ export function finishGame(isClear) {
         let conditionRate = 1.0;
         const CAMPAIGN_RATE = 3.0;
         if (playData.context && rawData.config && !playData.isRevenge && !playData.isRandom && !playData.isTyping) {
-            isCampaign = rawData.config.some(c => c.message && c.message !== "" && String(c.grade) === String(playData.context.grade) && String(c.subject) === String(playData.context.subject) && String(c.unit) === String(playData.context.unit));
+            if (Array.isArray(rawData.config)) {
+                isCampaign = rawData.config.some(c => c.message && c.message !== "" && isGradeMatch(c.grade, playData.context.grade) && String(c.subject) === String(playData.context.subject) && String(c.unit) === String(playData.context.unit));
+            } else if (typeof rawData.config === 'object') {
+                const cfg = rawData.config;
+                isCampaign = Boolean((cfg.bannerMessage || cfg.message) && isGradeMatch(cfg.activeGrade, playData.context.grade) && String(cfg.activeSubject) === String(playData.context.subject) && String(cfg.activeUnit) === String(playData.context.unit));
+            }
         }
         if (playData.activeOaths && playData.activeOaths.length > 0) {
             const count = playData.activeOaths.length;
