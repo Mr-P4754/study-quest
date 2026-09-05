@@ -4,6 +4,7 @@ package-lock.json
 scratch/
 test_*.js
 *.log
+gas/
 
 # OS 生成ファイル
 .DS_Store
