@@ -50,10 +50,24 @@ function doPost(e) {
     
     // ▼ 学年別シートからのリモートビルド要求受付 ▼
     if (json.action === 'build') {
+      // 学年が指定されている場合は超高速単独ビルド (2〜3秒)
+      if (json.grade) {
+        const res = buildGradeJson(json.grade);
+        return response({
+          status: 'success',
+          message: `Grade [${json.grade}] build completed`,
+          grade: json.grade,
+          qCount: res.qCount,
+          tCount: res.tCount,
+          updatedAt: res.updatedAt
+        });
+      }
+
+      // 学年未指定の場合は全学年ビルド
       const res = buildGameJson();
       return response({
         status: 'success',
-        message: 'Build completed',
+        message: 'All grades build completed',
         qCount: res.qCount,
         tCount: res.tCount,
         updatedAt: res.updatedAt
