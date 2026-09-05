@@ -163,7 +163,7 @@ function doGet(e) {
 }
 
 /**
- * Web API エンドポイント (POST: 生徒データのセーブ/ロード)
+ * Web API エンドポイント (POST: 生徒データのセーブ/ロード/リモートビルド)
  */
 function doPost(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -171,6 +171,19 @@ function doPost(e) {
     const json = JSON.parse(e.postData.contents);
     if (json.action === 'save') return saveUserData(json.userId, json.data, ss);
     if (json.action === 'load') return loadUserData(json.userId, ss);
+    
+    // ▼ 学年別シートからのリモートビルド要求受付 ▼
+    if (json.action === 'build') {
+      const res = buildGameJson();
+      return response({
+        status: 'success',
+        message: 'Build completed',
+        qCount: res.qCount,
+        tCount: res.tCount,
+        updatedAt: res.updatedAt
+      });
+    }
+    
     return response({ status: 'error', message: '無効なアクションです: ' + json.action });
   } catch (err) {
     return response({ status: 'error', message: err.toString() });
