@@ -3,7 +3,7 @@
 // Ver 10.5.1: 外部音源BGM再生＆Config連動対応
 // ============================================================================
 
-const CACHE_NAME = 'sq-static-v10.5.1';
+const CACHE_NAME = 'sq-static-v10.5.2';
 
 // プレキャッシュ対象静的アセット一覧 (FR-03)
 const PRECACHE_ASSETS = [
@@ -31,10 +31,7 @@ const PRECACHE_ASSETS = [
     './js/special-quest-engine.js?v=10.5.0',
     './js/avatar-engine.js?v=10.5.0',
     './js/farm-engine.js?v=10.5.0',
-    './bgm/battle.mp3',
-    './bgm/boss.mp3',
-    './bgm/explore.mp3',
-    './bgm/team_battle.mp3',
+    './bgm/おさかなシャトル.mp3',
     'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js',
     'https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap'
 ];

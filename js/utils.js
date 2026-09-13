@@ -229,10 +229,10 @@ export const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4
 
 // デフォルト音源マップ（Config未指定時またはオフライン時の標準音源）
 const DEFAULT_BGM_MAP = {
-    battleBgm: './bgm/battle.mp3',
-    bossBgm: './bgm/boss.mp3',
-    exploreBgm: './bgm/explore.mp3',
-    teamBattleBgm: './bgm/team_battle.mp3'
+    battleBgm: './bgm/おさかなシャトル.mp3',
+    bossBgm: './bgm/おさかなシャトル.mp3',
+    exploreBgm: './bgm/おさかなシャトル.mp3',
+    teamBattleBgm: './bgm/おさかなシャトル.mp3'
 };
 
 /**
