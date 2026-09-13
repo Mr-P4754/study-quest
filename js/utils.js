@@ -2,7 +2,7 @@
 // js/utils.js (計算ロジック・チャート描画・音響制御)
 // ==========================================
 
-import { RARITY_ORDER, runtimeState, rogueData } from './state.js?v=10.5.0';
+import { RARITY_ORDER, runtimeState, rogueData, rawData, playData } from './state.js?v=10.5.0';
 
 export const getRarityIndex = (r) => RARITY_ORDER.indexOf(r);
 
@@ -218,13 +218,74 @@ export function drawRadarChart(labels, data) {
 }
 
 // ==========================================
-// 音響管理 (Web Audio API)
+// 音響管理 (Web Audio API & HTML5 Audio ハイブリッド)
 // ==========================================
 export const audioCtx = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
 let bgmOscillators = []; 
 let bgmTimeout = null;
+let currentBgmAudio = null;
 
 export const BGM_MML = "T150 L8 O3 G G > C C D C E F G G A G F E D C < B > C4 R4";
+
+// デフォルト音源マップ（Config未指定時またはオフライン時の標準音源）
+const DEFAULT_BGM_MAP = {
+    battleBgm: './bgm/battle.mp3',
+    bossBgm: './bgm/boss.mp3',
+    exploreBgm: './bgm/explore.mp3',
+    teamBattleBgm: './bgm/team_battle.mp3'
+};
+
+/**
+ * モードまたはカスタムURLから適切なBGM音源URLを解決する
+ * （要件定義書 2.2 優先順位に準拠）
+ * 1. 引数のカスタムURL/パス
+ * 2. ボス個別の設定パス（playData.currentBoss.bgmUrl）
+ * 3. 各ゲームモードに対応する rawData.config 内のパス
+ * @param {string} [modeOrCustomUrl] 
+ * @returns {string|null}
+ */
+export function resolveBgmUrl(modeOrCustomUrl) {
+    const rawCfg = (rawData && rawData.config) ? rawData.config : {};
+
+    // 1. 引数に直接渡されたカスタムURL / パス
+    if (typeof modeOrCustomUrl === 'string' && modeOrCustomUrl.trim()) {
+        const trimmed = modeOrCustomUrl.trim();
+        // モード識別子（'explore', 'teamBattle', 'boss', 'battle'）以外のURL/パス文字列であれば最優先
+        if (!['explore', 'teambattle', 'boss', 'battle'].includes(trimmed.toLowerCase())) {
+            return trimmed;
+        }
+    }
+
+    const mode = typeof modeOrCustomUrl === 'string' ? modeOrCustomUrl.trim().toLowerCase() : '';
+
+    // 2. ボス個別の設定パス（playData.currentBoss.bgmUrl）
+    // （引数が明示的な別モード指定でない場合に適用）
+    if (!['explore', 'teambattle'].includes(mode) && playData && playData.currentBoss && playData.currentBoss.bgmUrl) {
+        const bossBgm = String(playData.currentBoss.bgmUrl).trim();
+        if (bossBgm) return bossBgm;
+    }
+
+    // 3. 各ゲームモードに対応する rawData.config 内のパス
+    // 3-a. 探索クエスト
+    if (mode === 'explore' || (typeof rogueData !== 'undefined' && rogueData && rogueData.active)) {
+        return rawCfg.exploreBgm || DEFAULT_BGM_MAP.exploreBgm;
+    }
+
+    // 3-b. チームバトルクエスト
+    const isTbActive = (typeof tbState !== 'undefined' && tbState && tbState.isActive) ||
+                       (typeof window !== 'undefined' && window.tbState && window.tbState.isActive);
+    if (mode === 'teambattle' || isTbActive) {
+        return rawCfg.teamBattleBgm || DEFAULT_BGM_MAP.teamBattleBgm;
+    }
+
+    // 3-c. ボス戦（未設定時は通常曲へ自動フォールバック）
+    if (mode === 'boss' || (playData && playData.currentBoss)) {
+        return rawCfg.bossBgm || rawCfg.battleBgm || DEFAULT_BGM_MAP.bossBgm || DEFAULT_BGM_MAP.battleBgm;
+    }
+
+    // 3-d. 通常クエスト、サバイバルモード、計算クエスト時
+    return rawCfg.battleBgm || DEFAULT_BGM_MAP.battleBgm;
+}
 
 /**
  * 音量ボタン（通常・チームバトル両対応）のUIを最新状態に更新
@@ -289,17 +350,88 @@ export function playSE(type) {
     } catch(e) {}
 }
 
-export function playBGM() {
+/**
+ * ハイブリッドBGM再生（HTML5 Audio優先、失敗時または未設定時はWeb Audio MMLへフォールバック）
+ * @param {string} [modeOrCustomUrl] モード名（'battle'|'boss'|'explore'|'teamBattle'）またはカスタムURL
+ */
+export function playBGM(modeOrCustomUrl) {
     if (runtimeState.isMuted) return; 
-    if (audioCtx.state === 'suspended') { 
+
+    // 直前のBGM（Audio / MML）を完全停止
+    stopBGM();
+
+    const targetUrl = resolveBgmUrl(modeOrCustomUrl);
+
+    // 実音源URLが存在する場合、HTML5 Audioでの再生を試行
+    if (targetUrl && typeof Audio !== 'undefined') {
+        try {
+            const audio = new Audio(targetUrl);
+            audio.loop = true;
+            audio.volume = 0.35;
+            currentBgmAudio = audio;
+
+            let fallbackTriggered = false;
+            const triggerFallback = (err) => {
+                if (fallbackTriggered) return;
+                fallbackTriggered = true;
+                console.warn('[BGM] 実音源の再生に失敗したためMML電子音にフォールバックします:', targetUrl, err);
+                if (currentBgmAudio === audio) {
+                    try { audio.pause(); } catch(e) {}
+                    currentBgmAudio = null;
+                }
+                playMmlFallback();
+            };
+
+            audio.onerror = (e) => triggerFallback(e);
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch((err) => {
+                    triggerFallback(err);
+                });
+            }
+            return;
+        } catch (e) {
+            console.warn('[BGM] Audio作成エラー、MMLフォールバック:', e);
+            currentBgmAudio = null;
+        }
+    }
+
+    // パス未設定またはAudio非対応時はMML電子音へ
+    playMmlFallback();
+}
+
+/**
+ * Web Audio API MMLフォールバック再生ヘルパー
+ */
+function playMmlFallback() {
+    if (runtimeState.isMuted) return;
+    if (audioCtx && audioCtx.state === 'suspended') { 
         audioCtx.resume().catch(e => console.warn('BGM resume blocked', e)); 
     }
-    stopBGM();
     playMmlBGM();
 }
 
+/**
+ * BGM停止（実音源AudioおよびMMLオシレーターを完全停止）
+ */
 export function stopBGM() { 
-    if (bgmTimeout) clearTimeout(bgmTimeout); 
+    // 1. HTML5 Audioの停止
+    if (currentBgmAudio) {
+        try {
+            currentBgmAudio.pause();
+            currentBgmAudio.currentTime = 0;
+            currentBgmAudio.src = '';
+            currentBgmAudio.load();
+        } catch(e) {}
+        currentBgmAudio = null;
+    }
+
+    // 2. MMLタイマーおよびオシレーターの停止
+    if (bgmTimeout) {
+        clearTimeout(bgmTimeout);
+        bgmTimeout = null;
+    }
     bgmOscillators.forEach(osc => { 
         try { osc.stop(); } catch(e){} 
     }); 

@@ -49,7 +49,8 @@ import {
     playBGM,
     stopBGM,
     playMmlBGM,
-    BGM_MML
+    BGM_MML,
+    resolveBgmUrl
 } from './utils.js?v=10.5.0';
 
 import {
@@ -402,6 +403,7 @@ Object.assign(globalScope, {
     stopBGM,
     playMmlBGM,
     BGM_MML,
+    resolveBgmUrl,
 
     // 通信
     uploadData,

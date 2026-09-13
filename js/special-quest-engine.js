@@ -1012,7 +1012,7 @@ export async function startTeamBattle() {
     if (choicesGrid) choicesGrid.innerHTML = '';
 
     // BGM開始
-    playBGM();
+    playBGM('teamBattle');
 
     // リアルタイムゲームループ開始 (100ms周期)
     if (tbState.timerId) clearInterval(tbState.timerId);

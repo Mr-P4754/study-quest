@@ -226,7 +226,7 @@ export async function startRogueMode() {
     // マップ＆エンティティ生成
     generateRogueFloor();
     renderRogueLogs();
-    playBGM();
+    playBGM('explore');
 
     // ゲームループ開始
     startRogueLoop();
