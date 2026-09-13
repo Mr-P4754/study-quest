@@ -699,10 +699,16 @@
         <div class="modal-header-row-sm mb-10">
             <span class="font-bold text-dark">所持XP: <span id="zukan-xp" class="text-orange">0</span></span>
             <div>
-                <select id="zukan-sort-select" aria-label="図鑑の並び順を選択" class="select-box zukan-sort-box" onchange="changeZukanSort()">
+                <select id="zukan-sort-select" aria-label="キャラ図鑑の並び順を選択" class="select-box zukan-sort-box" onchange="changeZukanSort()">
                     <option value="default">標準 (ID順)</option><option value="rarity_desc">レア度 (高い順)</option>
                     <option value="rarity_asc">レア度 (低い順)</option><option value="type">スキル属性順</option>
                     <option value="level">レベル順</option><option value="stock">在庫数順</option>
+                </select>
+                <select id="helditem-zukan-sort-select" aria-label="持ち物図鑑の並び順を選択" class="select-box zukan-sort-box hidden" onchange="changeHeldItemZukanSort()">
+                    <option value="rarity_desc">レア度 (高い順)</option>
+                    <option value="rarity_asc">レア度 (低い順)</option>
+                    <option value="default">標準 (ID順)</option>
+                    <option value="stock">所持数順</option>
                 </select>
             </div>
         </div>
@@ -890,7 +896,15 @@
             <h3 class="m-0 text-dark">🧰 持ち物を選択</h3>
             <button class="help-btn" onclick="GuideModule.open('gacha')">❓</button>
         </div>
-        <p class="text-xs text-gray mt-5 mb-10">装備させたい持ち物を選んでください</p>
+        <div class="helditem-select-filter-row">
+            <span class="text-xs text-gray">装備させたい持ち物を選んでください</span>
+            <select id="helditem-select-sort" aria-label="持ち物の並び順を選択" class="select-box select-box-sm" onchange="changeHeldItemSelectSort()">
+                <option value="rarity_desc">レア度 (高い順)</option>
+                <option value="rarity_asc">レア度 (低い順)</option>
+                <option value="default">標準 (ID順)</option>
+                <option value="stock">未装備数順</option>
+            </select>
+        </div>
         <div id="helditem-select-list" class="helditem-select-list"></div>
         <button class="menu-btn mt-15 btn-light-gray-action w-full" onclick="closeHeldItemSelectModal()">閉じる</button>
     </div>

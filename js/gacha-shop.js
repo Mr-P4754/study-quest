@@ -1668,6 +1668,8 @@ if (typeof window !== 'undefined') {
     window.executeMixerSynthesis = executeMixerSynthesis;
     window.renderAvatarShop = renderAvatarShop;
     window.buyAvatarItem = buyAvatarItem;
+    window.changeHeldItemZukanSort = changeHeldItemZukanSort;
+    window.changeHeldItemSelectSort = changeHeldItemSelectSort;
 }
 
 // ==========================================
@@ -1925,6 +1927,30 @@ export function getHeldItemAvailableCount(itemId) {
 }
 
 let selectingCharaIdForHeldItem = null;
+let heldItemSelectSortMode = 'rarity_desc';
+let heldItemZukanSortMode = 'rarity_desc';
+
+/**
+ * 持ち物選択モーダルの並び順変更
+ */
+export function changeHeldItemSelectSort() {
+    const sel = document.getElementById('helditem-select-sort');
+    if (!sel) return;
+    heldItemSelectSortMode = sel.value;
+    if (selectingCharaIdForHeldItem) {
+        openHeldItemSelectModal(selectingCharaIdForHeldItem);
+    }
+}
+
+/**
+ * 持ち物図鑑の並び順変更
+ */
+export function changeHeldItemZukanSort() {
+    const sel = document.getElementById('helditem-zukan-sort-select');
+    if (!sel) return;
+    heldItemZukanSortMode = sel.value;
+    renderHeldItemZukan();
+}
 
 /**
  * 持ち物選択モーダルを開く
@@ -1933,6 +1959,10 @@ export function openHeldItemSelectModal(charaId) {
     selectingCharaIdForHeldItem = charaId;
     const listEl = document.getElementById('helditem-select-list');
     if (!listEl) return;
+
+    // ソートプルダウンの選択状態を同期
+    const sortSel = document.getElementById('helditem-select-sort');
+    if (sortSel) sortSel.value = heldItemSelectSortMode;
 
     listEl.innerHTML = '';
     const chara = rawData.characters ? rawData.characters.find(c => String(c.id) === String(charaId)) : null;
@@ -1945,6 +1975,24 @@ export function openHeldItemSelectModal(charaId) {
         const avail = getHeldItemAvailableCount(item.id);
         const isCurrentlyEquippedByThis = String(currentEquippedId) === String(item.id);
         return avail > 0 || isCurrentlyEquippedByThis;
+    });
+
+    // 選択されたソート順で並び替え
+    const rOrder = { 'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 };
+    availableItems.sort((a, b) => {
+        const availA = getHeldItemAvailableCount(a.id);
+        const availB = getHeldItemAvailableCount(b.id);
+        if (heldItemSelectSortMode === 'rarity_desc' || heldItemSelectSortMode === 'rarity_asc') {
+            const valA = rOrder[a.rarity] || 0;
+            const valB = rOrder[b.rarity] || 0;
+            if (valA !== valB) {
+                return heldItemSelectSortMode === 'rarity_desc' ? valB - valA : valA - valB;
+            }
+        }
+        if (heldItemSelectSortMode === 'stock') {
+            if (availA !== availB) return availB - availA;
+        }
+        return 0;
     });
 
     if (availableItems.length === 0) {
@@ -1977,7 +2025,11 @@ export function openHeldItemSelectModal(charaId) {
             const card = document.createElement('div');
             card.className = 'helditem-select-card';
             card.innerHTML = `
-                <div class="helditem-icon-box">${iconHtml}</div>
+                <div class="helditem-visual-col">
+                    <div class="helditem-icon-box">${iconHtml}</div>
+                    <span class="helditem-stock-tag ${avail > 0 ? 'available' : ''}">未装備: ${avail}個</span>
+                    ${isEquippedHere ? '<span class="helditem-equipped-badge">装備中</span>' : ''}
+                </div>
                 <div class="helditem-info-col">
                     <div class="helditem-name-row">
                         <span class="rarity-${item.rarity || 'N'}" style="font-size:0.75em; font-weight:bold;">${item.rarity || 'N'}</span>
@@ -1985,11 +2037,7 @@ export function openHeldItemSelectModal(charaId) {
                     </div>
                     ${valText ? `<div class="helditem-effect-desc">📈 効果: ${valText}</div>` : ''}
                     ${specText ? `<div class="helditem-special-desc">${specText}</div>` : ''}
-                    <div style="font-size:0.72em; color:#64748b; margin-top:2px;">${item.desc || ''}</div>
-                </div>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
-                    <span class="helditem-stock-tag ${avail > 0 ? 'available' : ''}">未装備: ${avail}個</span>
-                    ${isEquippedHere ? '<span style="font-size:0.7em; color:#2563eb; font-weight:bold;">装備中</span>' : ''}
+                    <div class="helditem-flavor-desc">${item.desc || ''}</div>
                 </div>
             `;
             card.onclick = () => equipHeldItem(charaId, item.id);
@@ -2057,7 +2105,8 @@ export function switchZukanTab(tab) {
     const gridChara = document.getElementById('zukan-grid');
     const gridHeld = document.getElementById('helditem-zukan-grid');
     const titleEl = document.getElementById('zukan-modal-title');
-    const sortWrap = document.getElementById('zukan-sort-select')?.parentElement;
+    const charaSort = document.getElementById('zukan-sort-select');
+    const heldSort = document.getElementById('helditem-zukan-sort-select');
 
     if (tab === 'chara') {
         btnChara?.classList.add('active');
@@ -2065,7 +2114,8 @@ export function switchZukanTab(tab) {
         gridChara?.classList.remove('hidden');
         gridHeld?.classList.add('hidden');
         if (titleEl) titleEl.innerText = '📖 文房具キャラ図鑑';
-        if (sortWrap) sortWrap.style.display = '';
+        if (charaSort) charaSort.classList.remove('hidden');
+        if (heldSort) heldSort.classList.add('hidden');
         renderZukan();
     } else {
         btnChara?.classList.remove('active');
@@ -2073,7 +2123,11 @@ export function switchZukanTab(tab) {
         gridChara?.classList.add('hidden');
         gridHeld?.classList.remove('hidden');
         if (titleEl) titleEl.innerText = '🧰 持ち物図鑑';
-        if (sortWrap) sortWrap.style.display = 'none';
+        if (charaSort) charaSort.classList.add('hidden');
+        if (heldSort) {
+            heldSort.classList.remove('hidden');
+            heldSort.value = heldItemZukanSortMode;
+        }
         renderHeldItemZukan();
     }
 }
@@ -2086,11 +2140,29 @@ export function renderHeldItemZukan() {
     if (!grid) return;
     grid.innerHTML = '';
 
-    const allHeld = rawData.heldItems || [];
+    const allHeld = [...(rawData.heldItems || [])];
     if (allHeld.length === 0) {
         grid.innerHTML = '<div style="text-align:center; padding:30px; color:#64748b;">持ち物マスターデータを読み込み中または未登録です</div>';
         return;
     }
+
+    // 選択されたソート順で並び替え
+    const rOrder = { 'UR': 5, 'SSR': 4, 'SR': 3, 'R': 2, 'N': 1 };
+    allHeld.sort((a, b) => {
+        const countA = gameState.heldItemInventory && gameState.heldItemInventory[a.id] ? (Number(gameState.heldItemInventory[a.id].count) || 0) : 0;
+        const countB = gameState.heldItemInventory && gameState.heldItemInventory[b.id] ? (Number(gameState.heldItemInventory[b.id].count) || 0) : 0;
+        if (heldItemZukanSortMode === 'rarity_desc' || heldItemZukanSortMode === 'rarity_asc') {
+            const valA = rOrder[a.rarity] || 0;
+            const valB = rOrder[b.rarity] || 0;
+            if (valA !== valB) {
+                return heldItemZukanSortMode === 'rarity_desc' ? valB - valA : valA - valB;
+            }
+        }
+        if (heldItemZukanSortMode === 'stock') {
+            if (countA !== countB) return countB - countA;
+        }
+        return 0;
+    });
 
     const container = document.createElement('div');
     container.style.cssText = 'display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; padding:5px;';

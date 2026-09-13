@@ -215,7 +215,9 @@ import {
     renderHeldItemZukan,
     getHeldItemAssignedCount,
     getHeldItemAvailableCount,
-    buyFarmSlotPermit
+    buyFarmSlotPermit,
+    changeHeldItemZukanSort,
+    changeHeldItemSelectSort
 } from './gacha-shop.js?v=10.5.0';
 
 import {
@@ -557,6 +559,8 @@ Object.assign(globalScope, {
     getHeldItemAssignedCount,
     getHeldItemAvailableCount,
     buyFarmSlotPermit,
+    changeHeldItemZukanSort,
+    changeHeldItemSelectSort,
 
     // UIマネージャー・モーダル・ガイド
     initTitle,
