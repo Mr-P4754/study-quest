@@ -9,7 +9,7 @@
     <meta name="referrer" content="no-referrer">
     <title>STUDY QUEST RPG</title>
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#2c3e50">
+    <meta id="meta-theme-color" name="theme-color" content="#2c3e50">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,6 +23,17 @@
     <link rel="stylesheet" href="css/quests.css?v=10.5.0">
     <link rel="stylesheet" href="css/special-quest.css?v=10.5.0">
     <link rel="stylesheet" href="css/studyel.css?v=10.5.0">
+    <script>
+        // 起動時のテーマ即時判定（フラッシュ防止）
+        try {
+            if (localStorage.getItem('sq_theme') === 'light') {
+                document.documentElement.classList.add('theme-light');
+                window.addEventListener('DOMContentLoaded', () => {
+                    document.body.classList.add('theme-light');
+                });
+            }
+        } catch(e) {}
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         window.addEventListener('error', function(e) {
@@ -243,8 +254,53 @@
                 <div class="rich-btn-title">☁️ クラウドセーブ・引き継ぎ</div>
                 <div class="rich-btn-desc">固有IDでの手動保存やIDカードの画像保存！</div>
             </button>
+            <button class="rich-menu-btn" onclick="openSettingsModal();">
+                <div class="rich-btn-title">⚙️ 環境設定（背景色・視認性）</div>
+                <div class="rich-btn-desc">ダーク・ライトテーマの切り替えと視認性調整！</div>
+            </button>
         </div>
         <button class="menu-btn mt-20 btn-gray" onclick="closeCategory('sync')">閉じる</button>
+    </div>
+</div>
+
+<!-- 環境設定モーダル（背景色・視認性） -->
+<div id="settings-modal-overlay" class="overlay overlay-z250 hidden">
+    <div class="modal modal-w450">
+        <div class="modal-header-row-sm">
+            <h2 class="text-blue m-0">⚙️ 環境設定</h2>
+            <button class="modal-close-icon" onclick="closeSettingsModal()">✕</button>
+        </div>
+        <p class="text-xs text-gray mt-5 mb-10">画面の視認性や背景色を好みに合わせて調整できます。</p>
+
+        <div class="theme-select-grid">
+            <!-- ダークテーマ -->
+            <div id="theme-card-dark" class="theme-card active" onclick="selectTheme('dark')">
+                <div class="theme-preview-box theme-preview-dark">
+                    <div class="theme-mini-header"></div>
+                    <div class="theme-mini-content">
+                        <span class="theme-mini-text">Aa</span>
+                        <div class="theme-mini-btn"></div>
+                    </div>
+                </div>
+                <div class="theme-card-title">🌙 ダーク（標準）</div>
+                <div class="theme-card-desc">目に優しい深海ネイビー背景</div>
+            </div>
+
+            <!-- ライトテーマ -->
+            <div id="theme-card-light" class="theme-card" onclick="selectTheme('light')">
+                <div class="theme-preview-box theme-preview-light">
+                    <div class="theme-mini-header"></div>
+                    <div class="theme-mini-content">
+                        <span class="theme-mini-text">Aa</span>
+                        <div class="theme-mini-btn"></div>
+                    </div>
+                </div>
+                <div class="theme-card-title">☀️ ライト（明るい）</div>
+                <div class="theme-card-desc">日光下でも見やすい白基調</div>
+            </div>
+        </div>
+
+        <button class="menu-btn mt-20 btn-gray" onclick="closeSettingsModal()">閉じる</button>
     </div>
 </div>
     

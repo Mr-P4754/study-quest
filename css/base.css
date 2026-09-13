@@ -279,3 +279,124 @@ button { cursor: pointer; font-family: inherit; -webkit-user-select: none; user-
 .badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: white; width: 24px; height: 24px; border-radius: 50%; font-size: 0.9em; display: flex; justify-content: center; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border: 2px solid white; z-index: 10; }
 
 .battle-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; background: #222; background-image: radial-gradient(#333 15%, transparent 16%), radial-gradient(#333 15%, transparent 16%); background-size: 20px 20px; background-position: 0 0, 10px 10px; overflow: visible; padding: 10px 0; min-height: 0; width: 100%; }
+
+/* ==========================================
+   テーマ設定（ライトテーマ: theme-light）
+   ========================================== */
+body.theme-light {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+
+body.theme-light .screen {
+    background: #f1f5f9;
+}
+
+body.theme-light .title-screen-bg {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+body.theme-light .title-logo {
+    color: #d97706;
+    text-shadow: 2px 2px 0 #b45309, 0 0 12px rgba(217, 119, 6, 0.25);
+}
+
+body.theme-light .version-text {
+    color: #64748b;
+}
+body.theme-light .version-text:hover {
+    color: #1e293b;
+}
+
+body.theme-light .title-footer {
+    color: #1e293b;
+    border-top: 1px solid #cbd5e1;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+body.theme-light .title-footer span.text-white {
+    color: #1e293b !important;
+}
+
+body.theme-light .header {
+    background: #ffffff;
+    border-bottom: 3px solid #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+body.theme-light .stats-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.theme-light .timer-container {
+    background: #e2e8f0;
+    border: 2px solid #cbd5e1;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+}
+
+body.theme-light #ui-timer-text {
+    color: #1e293b;
+    text-shadow: none;
+}
+
+body.theme-light .battle-area {
+    background: #f8fafc;
+    background-image: radial-gradient(#cbd5e1 15%, transparent 16%), radial-gradient(#cbd5e1 15%, transparent 16%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+}
+
+body.theme-light #ui-enemy-name {
+    color: #1e293b;
+    text-shadow: none;
+}
+
+body.theme-light .enemy-hp-frame {
+    background: #e2e8f0;
+    border: 2px solid #94a3b8;
+}
+
+body.theme-light #ui-hp-text {
+    color: #1e293b;
+    text-shadow: none;
+}
+
+body.theme-light .typing-japanese {
+    color: #1e293b;
+    text-shadow: none;
+}
+
+body.theme-light .typing-area {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid #cbd5e1;
+}
+
+body.theme-light .calc-answer-display {
+    background: #ffffff;
+    color: #1e293b;
+    border: 2px solid #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .calc-progress-box {
+    color: #1e293b;
+}
+
+body.theme-light .pause-menu-box {
+    background: #ffffff;
+    border: 4px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.theme-light #pause-chara-info {
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
+    color: #1e293b;
+}
+
+body.theme-light .pause-note {
+    color: #64748b;
+}
+

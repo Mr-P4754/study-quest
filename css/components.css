@@ -1999,3 +1999,127 @@
     border-bottom: 1px solid #047857 !important;
 }
 
+/* ==========================================
+   環境設定（テーマ・背景色）モーダルスタイル
+   ========================================== */
+.theme-select-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 15px 0;
+}
+.theme-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.theme-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.15);
+}
+.theme-card.active {
+    border: 3px solid #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+.theme-card.active::after {
+    content: '✓ 選択中';
+    position: absolute;
+    top: -9px;
+    right: -6px;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 0.72em;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.theme-preview-box {
+    width: 100%;
+    height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    border: 1px solid #cbd5e1;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.theme-preview-dark {
+    background: #2c3e50;
+}
+.theme-preview-dark .theme-mini-header {
+    height: 14px;
+    background: #34495e;
+    border-bottom: 1px solid #1a252f;
+}
+.theme-preview-dark .theme-mini-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px 8px;
+}
+.theme-preview-dark .theme-mini-text {
+    color: #ecf0f1;
+    font-size: 16px;
+    font-weight: bold;
+}
+.theme-preview-dark .theme-mini-btn {
+    width: 28px;
+    height: 14px;
+    background: #e67e22;
+    border-radius: 4px;
+}
+
+.theme-preview-light {
+    background: #f8fafc;
+}
+.theme-preview-light .theme-mini-header {
+    height: 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #cbd5e1;
+}
+.theme-preview-light .theme-mini-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px 8px;
+}
+.theme-preview-light .theme-mini-text {
+    color: #1e293b;
+    font-size: 16px;
+    font-weight: bold;
+}
+.theme-preview-light .theme-mini-btn {
+    width: 28px;
+    height: 14px;
+    background: #3b82f6;
+    border-radius: 4px;
+}
+
+.theme-card-title {
+    font-weight: 800;
+    font-size: 0.95em;
+    color: #1e293b;
+    margin-bottom: 3px;
+}
+.theme-card-desc {
+    font-size: 0.72em;
+    color: #64748b;
+    line-height: 1.3;
+}
+

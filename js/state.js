@@ -495,7 +495,8 @@ export const gameState = {
         accessory: 0,
         msgId: 0
     },
-    unlockedAvatars: []
+    unlockedAvatars: [],
+    theme: 'dark'
 };
 
 /**
@@ -819,6 +820,13 @@ export function loadSaveData() {
     const loadedUnlockedAvatars = safeParse('sq_unlocked_avatars', []);
     gameState.unlockedAvatars = Array.isArray(loadedUnlockedAvatars) ? loadedUnlockedAvatars : [];
 
+    // 環境設定（テーマ）のロード
+    const loadedTheme = localStorage.getItem('sq_theme') || 'dark';
+    gameState.theme = loadedTheme === 'light' ? 'light' : 'dark';
+    if (typeof window !== 'undefined' && typeof window.applyTheme === 'function') {
+        window.applyTheme(gameState.theme);
+    }
+
     if (typeof window !== 'undefined' && typeof window.StudyelEngine?.restoreCharacters === 'function') {
         window.StudyelEngine.restoreCharacters();
     }
@@ -854,6 +862,7 @@ export function saveGame() {
     localStorage.setItem('sq_studyel', JSON.stringify(gameState.studyel));
     localStorage.setItem('sq_avatar', JSON.stringify(gameState.avatar));
     localStorage.setItem('sq_unlocked_avatars', JSON.stringify(gameState.unlockedAvatars || []));
+    localStorage.setItem('sq_theme', gameState.theme || 'dark');
 
     // 【自動バックアップ二重保存】万一の破損時に備え、正常なセーブデータのスナップショットを別キーへ退避保存
     try {
@@ -875,7 +884,8 @@ export function saveGame() {
             inventory: gameState.inventory,
             studyel: gameState.studyel,
             avatar: gameState.avatar,
-            unlockedAvatars: gameState.unlockedAvatars || []
+            unlockedAvatars: gameState.unlockedAvatars || [],
+            theme: gameState.theme || 'dark'
         };
         localStorage.setItem('sq_save_backup', JSON.stringify(backupSnapshot));
     } catch (backupErr) {

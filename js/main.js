@@ -269,7 +269,12 @@ import {
     renderQuestionCacheStatus,
     GuideModule,
     generateAndDownloadIdCard,
-    updateCloudSyncIndicator
+    updateCloudSyncIndicator,
+    applyTheme,
+    updateThemeSelectionUI,
+    selectTheme,
+    openSettingsModal,
+    closeSettingsModal
 } from './ui-manager.js?v=10.5.0';
 
 import {
@@ -612,6 +617,11 @@ Object.assign(globalScope, {
     GuideModule,
     generateAndDownloadIdCard,
     updateCloudSyncIndicator,
+    applyTheme,
+    updateThemeSelectionUI,
+    selectTheme,
+    openSettingsModal,
+    closeSettingsModal,
     
     // チームバトルクエスト関連
     openTeamBattleSetup,
@@ -699,11 +709,20 @@ async function initApp() {
     isAppInitialized = true;
     initUserId();
     loadSaveData();
+    applyTheme(gameState.theme || 'dark');
     checkMissionDate();
     await fetchData();
     initTitle();
     checkLoginBonus();
     
+    // 環境設定モーダルの背景クリックで閉じる
+    const settingsModal = document.getElementById('settings-modal-overlay');
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) closeSettingsModal();
+        });
+    }
+
     // スタディエル育成エンジンの初期化とイベントリスナーバインド
     StudyelEngine.init();
     const miniBtn = document.getElementById('studyel-mini-btn');

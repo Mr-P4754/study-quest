@@ -278,7 +278,8 @@ export function createSavePayload() {
             studyel: gameState.studyel || {},
             farm: gameState.farm || { unlockedSlots: FARM_DEFAULT_SLOTS, slots: Array(FARM_MAX_SLOTS).fill(null), totalCareCount: 0 },
             avatar: gameState.avatar || {},
-            unlockedAvatars: Array.isArray(gameState.unlockedAvatars) ? gameState.unlockedAvatars : []
+            unlockedAvatars: Array.isArray(gameState.unlockedAvatars) ? gameState.unlockedAvatars : [],
+            theme: gameState.theme || 'dark'
         }
     };
 }
@@ -674,6 +675,14 @@ export async function downloadData() {
             if (data.unlockedAvatars) {
                 gameState.unlockedAvatars = forceArr(data.unlockedAvatars);
                 localStorage.setItem('sq_unlocked_avatars', JSON.stringify(gameState.unlockedAvatars));
+            }
+
+            if (data.theme) {
+                gameState.theme = data.theme === 'light' ? 'light' : 'dark';
+                localStorage.setItem('sq_theme', gameState.theme);
+                if (typeof window.applyTheme === 'function') {
+                    window.applyTheme(gameState.theme);
+                }
             }
 
             if (data.farm) {

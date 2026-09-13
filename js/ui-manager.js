@@ -1377,3 +1377,78 @@ export const GuideModule = {
     }
 };
 
+// ==========================================
+// 環境設定（背景色・視認性コントロール）
+// ==========================================
+
+/**
+ * テーマ（ダーク / ライト）をDOMに反映
+ * @param {string} theme - 'dark' | 'light'
+ */
+export function applyTheme(theme) {
+    const isLight = theme === 'light';
+    if (document.body) {
+        document.body.classList.toggle('theme-light', isLight);
+    }
+    const metaTheme = document.getElementById('meta-theme-color');
+    if (metaTheme) {
+        metaTheme.setAttribute('content', isLight ? '#f1f5f9' : '#2c3e50');
+    }
+}
+
+/**
+ * テーマ選択UIのアクティブカード状態を更新
+ */
+export function updateThemeSelectionUI() {
+    const current = (gameState && gameState.theme) ? gameState.theme : 'dark';
+    const darkCard = document.getElementById('theme-card-dark');
+    const lightCard = document.getElementById('theme-card-light');
+    if (darkCard) {
+        darkCard.classList.toggle('active', current === 'dark');
+    }
+    if (lightCard) {
+        lightCard.classList.toggle('active', current === 'light');
+    }
+}
+
+/**
+ * ユーザーによるテーマ選択処理
+ * @param {string} theme - 'dark' | 'light'
+ */
+export function selectTheme(theme) {
+    const validTheme = theme === 'light' ? 'light' : 'dark';
+    gameState.theme = validTheme;
+    try {
+        localStorage.setItem('sq_theme', validTheme);
+    } catch (e) {
+        console.warn('localStorage access failed:', e);
+    }
+    applyTheme(validTheme);
+    updateThemeSelectionUI();
+    saveGame();
+    playSE('select');
+}
+
+/**
+ * 環境設定モーダルを開く
+ */
+export function openSettingsModal() {
+    hideCurrentCategoryOverlay();
+    const modal = document.getElementById('settings-modal-overlay');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+    updateThemeSelectionUI();
+    playSE('select');
+}
+
+/**
+ * 環境設定モーダルを閉じ、元のデータ管理モーダルへ復帰
+ */
+export function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal-overlay');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    returnToCurrentCategory();
+}
