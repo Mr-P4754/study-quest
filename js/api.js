@@ -18,12 +18,13 @@ const STORE_NAME = 'question_cache';
  */
 function openQuestionDB() {
     return new Promise((resolve) => {
-        if (typeof window === 'undefined' || !window.indexedDB) {
-            resolve(null);
-            return;
-        }
         try {
-            const req = window.indexedDB.open(DB_NAME, DB_VERSION);
+            const idb = typeof window !== 'undefined' ? window.indexedDB : null;
+            if (!idb) {
+                resolve(null);
+                return;
+            }
+            const req = idb.open(DB_NAME, DB_VERSION);
             req.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -253,7 +254,11 @@ if (typeof window !== 'undefined') {
  * （要件定義書 5. データモデルに準拠）
  */
 export function createSavePayload() {
-    const rawUserId = runtimeState?.currentUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('sq_user_id') : '') || '';
+    let storedUserId = '';
+    try {
+        if (typeof localStorage !== 'undefined') storedUserId = localStorage.getItem('sq_user_id') || '';
+    } catch (e) {}
+    const rawUserId = runtimeState?.currentUserId || storedUserId || '';
     return {
         action: 'save',
         userId: String(rawUserId).trim(),
@@ -271,6 +276,7 @@ export function createSavePayload() {
             subjectStats: gameState.subjectStats || {},
             unlockedTitles: Array.isArray(gameState.unlockedTitles) ? gameState.unlockedTitles : [],
             claimedGifts: Array.isArray(gameState.claimedGifts) ? gameState.claimedGifts : [],
+            claimedGiftCodes: Array.isArray(gameState.claimedGiftCodes) ? gameState.claimedGiftCodes : [],
             revengeList: Array.isArray(gameState.revengeList) ? gameState.revengeList : [],
             unitProgress: gameState.unitProgress || {},
             inventory: gameState.inventory || {},
@@ -650,6 +656,7 @@ export async function downloadData() {
             gameState.subjectStats = forceObj(data.subjectStats);
             gameState.unlockedTitles = forceArr(data.unlockedTitles);
             gameState.claimedGifts = forceArr(data.claimedGifts);
+            gameState.claimedGiftCodes = forceArr(data.claimedGiftCodes);
             gameState.revengeList = forceArr(data.revengeList);
             gameState.unitProgress = forceObj(data.unitProgress);
             gameState.calcRecords = forceObj(data.calcRecords);
@@ -1135,7 +1142,10 @@ export async function fetchData() {
         } catch (fetchErr) {
             console.warn('[SQ-Data] マスターデータ取得失敗（オフラインの可能性）:', fetchErr.message);
             // オフライン時のフォールバック: 前回のマスターキャッシュを展開
-            const cachedMasterRaw = localStorage.getItem('sq_master_cache');
+            let cachedMasterRaw = null;
+            try {
+                cachedMasterRaw = localStorage.getItem('sq_master_cache');
+            } catch (storageErr) {}
             if (cachedMasterRaw) {
                 try {
                     data = JSON.parse(cachedMasterRaw);
@@ -1417,4 +1427,73 @@ function generateStringHash(str) {
     for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash) + str.charCodeAt(i) | 0;
     return hash;
 }
+
+/**
+ * ギフトコードの正規化（前後空白除去・全角→半角・小文字→大文字）
+ */
+export function normalizeGiftCode(raw) {
+    if (!raw) return '';
+    return toHalfWidth(String(raw)).trim().toUpperCase();
+}
+
+/**
+ * ギフトコード（8文字）のサーバーサイド照合API呼び出し
+ */
+export async function redeemGiftCodeApi(rawCode) {
+    const code = normalizeGiftCode(rawCode);
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return {
+            status: 'error',
+            errorCode: 'OFFLINE',
+            message: 'オフラインのため照合できません。インターネットに接続してからお試しください。'
+        };
+    }
+
+    const rawUserId = runtimeState?.currentUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('sq_user_id') : '') || '';
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+                action: 'redeemGiftCode',
+                userId: String(rawUserId).trim(),
+                code: code
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timerId);
+
+        if (!res.ok) {
+            return {
+                status: 'error',
+                errorCode: 'HTTP_ERROR',
+                message: `サーバー通信エラーが発生しました（HTTP ${res.status}）。`
+            };
+        }
+
+        const json = await res.json();
+        if (json && json.status === 'error' && String(json.message || '').includes('無効なアクション')) {
+            return {
+                status: 'error',
+                errorCode: 'UNSUPPORTED_BACKEND',
+                message: 'サーバー側のギフトコード機能（GAS Web API）がまだ最新バージョンに更新されていません。管理者に連絡してください。'
+            };
+        }
+        return json;
+    } catch (e) {
+        clearTimeout(timerId);
+        const isAbort = e && e.name === 'AbortError';
+        return {
+            status: 'error',
+            errorCode: isAbort ? 'TIMEOUT' : 'NETWORK_ERROR',
+            message: isAbort
+                ? '通信がタイムアウトしました。電波の良い場所でもう一度お試しください。'
+                : '通信エラーが発生しました。インターネット接続を確認してください。'
+        };
+    }
+}
+
 

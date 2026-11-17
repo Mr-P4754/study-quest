@@ -19,7 +19,7 @@ import {
     renderSafeImg
 } from './utils.js?v=10.5.0';
 
-import { cloudSync } from './api.js?v=10.5.0';
+import { cloudSync, normalizeGiftCode, redeemGiftCodeApi } from './api.js?v=10.5.0';
 import { generateAvatarSvg } from './avatar-engine.js?v=10.5.0';
 
 const SUBJECT_ORDER = [
@@ -1100,6 +1100,323 @@ export function checkAdminGifts() {
     }
     
     updateCategoryBadges();
+}
+
+// ==========================================
+// ギフトコードシステム（8文字コード照合・報酬付与）
+// ==========================================
+let isSubmittingGiftCode = false;
+
+function escapeGiftHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function setGiftCodeFeedback(type, message) {
+    const el = document.getElementById('gift-code-feedback');
+    if (!el) return;
+    if (!type || !message) {
+        el.className = 'gift-code-feedback hidden';
+        el.textContent = '';
+        return;
+    }
+    el.className = `gift-code-feedback ${type === 'error' ? 'is-error' : 'is-success'}`;
+    el.textContent = message;
+}
+
+function updateGiftCodeInputUI(codeVal) {
+    const inputEl = document.getElementById('gift-code-input');
+    const countEl = document.getElementById('gift-code-char-count');
+    const len = (codeVal || '').length;
+    const ready = len === 8;
+
+    if (inputEl) {
+        inputEl.classList.toggle('is-ready', ready);
+    }
+    if (countEl) {
+        countEl.textContent = ready ? '✓ 8 / 8 文字' : `${len} / 8 文字`;
+        countEl.classList.toggle('is-ready', ready);
+    }
+}
+
+export function openGiftCodeMenu() {
+    closeAllCategoryModals();
+    const overlay = document.getElementById('gift-code-overlay');
+    const inputEl = document.getElementById('gift-code-input');
+    const resultCard = document.getElementById('gift-code-result-card');
+    const submitBtn = document.getElementById('btn-submit-gift-code');
+
+    if (inputEl) {
+        inputEl.value = '';
+        inputEl.disabled = false;
+    }
+    updateGiftCodeInputUI('');
+    setGiftCodeFeedback(null, '');
+    if (resultCard) {
+        resultCard.classList.add('hidden');
+        resultCard.innerHTML = '';
+    }
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerText = '🎁 コードを送信して受け取る';
+    }
+
+    overlay?.classList.remove('hidden');
+    setTimeout(() => {
+        inputEl?.focus();
+    }, 60);
+}
+
+export function closeGiftCodeMenu() {
+    document.getElementById('gift-code-overlay')?.classList.add('hidden');
+    returnToCurrentCategory();
+    updateTitleInfo();
+}
+
+export function handleGiftCodeInput(inputEl, evt) {
+    if (!inputEl) return;
+    if (evt && evt.isComposing) return;
+
+    const cleaned = normalizeGiftCode(inputEl.value).replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    if (inputEl.value !== cleaned) {
+        inputEl.value = cleaned;
+    }
+    updateGiftCodeInputUI(cleaned);
+    setGiftCodeFeedback(null, '');
+}
+
+/**
+ * サーバー照合済みギフトコード報酬を gameState に反映し、表示用HTMLを生成
+ */
+function applyGiftCodeReward(reward) {
+    const rType = String(reward.rewardType || 'EXP').toUpperCase();
+    const rId = String(reward.rewardId || '').trim();
+    const amount = Math.max(0, Math.floor(Number(reward.amount) || 0));
+    const bonusExp = Math.max(0, Math.floor(Number(reward.bonusExp) || 0));
+
+    let visualHtml = '';
+    let bonusBadgeHtml = '';
+
+    if (rType === 'EXP') {
+        const totalExp = amount + bonusExp;
+        gameState.xp = (Number(gameState.xp) || 0) + totalExp;
+        visualHtml = `
+            <div class="gift-code-reward-icon">✨</div>
+            <div class="gift-code-reward-main">+${totalExp.toLocaleString()} XP</div>
+        `;
+    } else if (rType === 'CHARA') {
+        const qty = Math.max(1, amount || 1);
+        const charaObj = (rawData.characterMap && rawData.characterMap[rId])
+            || (rawData.characters || []).find(c => String(c.id) === rId);
+        const targetId = charaObj ? String(charaObj.id) : rId;
+        const rarity = charaObj ? charaObj.rarity : 'R';
+        const charaName = charaObj ? charaObj.name : `キャラクター (ID: ${rId})`;
+
+        if (!gameState.charaInventory) gameState.charaInventory = {};
+        if (!gameState.charaInventory[targetId]) {
+            gameState.charaInventory[targetId] = {
+                level: 1,
+                count: qty,
+                exp: 0,
+                currentRarity: rarity,
+                heldItem: null
+            };
+        } else {
+            if (typeof gameState.charaInventory[targetId].level !== 'number' || gameState.charaInventory[targetId].level < 1) {
+                gameState.charaInventory[targetId].level = 1;
+            }
+            gameState.charaInventory[targetId].count = (Number(gameState.charaInventory[targetId].count) || 0) + qty;
+        }
+
+        const imgHtml = charaObj && charaObj.imageUrl
+            ? renderSafeImg(charaObj.imageUrl, '🐾', 'gift-code-reward-img')
+            : '<div class="gift-code-reward-icon">🐾</div>';
+
+        visualHtml = `
+            ${imgHtml}
+            <div class="gift-code-reward-main">[${escapeGiftHtml(rarity)}] ${escapeGiftHtml(charaName)} ×${qty}</div>
+        `;
+
+        if (bonusExp > 0) {
+            gameState.xp = (Number(gameState.xp) || 0) + bonusExp;
+            bonusBadgeHtml = `<div class="gift-code-reward-bonus">ボーナス +${bonusExp.toLocaleString()} XP</div>`;
+        }
+    } else if (rType === 'HELD_ITEM') {
+        const qty = Math.max(1, amount || 1);
+        const heldObj = (rawData.heldItems || []).find(h => String(h.id) === rId);
+        const targetId = heldObj ? String(heldObj.id) : rId;
+        const rarity = heldObj ? heldObj.rarity : 'R';
+        const itemName = heldObj ? heldObj.name : `持ち物 (ID: ${rId})`;
+
+        if (!gameState.heldItemInventory) gameState.heldItemInventory = {};
+        if (!gameState.heldItemInventory[targetId]) {
+            gameState.heldItemInventory[targetId] = { count: qty };
+        } else {
+            gameState.heldItemInventory[targetId].count = (Number(gameState.heldItemInventory[targetId].count) || 0) + qty;
+        }
+
+        const imgHtml = heldObj && heldObj.imageUrl
+            ? renderSafeImg(heldObj.imageUrl, '🧰', 'gift-code-reward-img')
+            : '<div class="gift-code-reward-icon">🧰</div>';
+
+        visualHtml = `
+            ${imgHtml}
+            <div class="gift-code-reward-main">[${escapeGiftHtml(rarity)}] ${escapeGiftHtml(itemName)} ×${qty}</div>
+        `;
+
+        if (bonusExp > 0) {
+            gameState.xp = (Number(gameState.xp) || 0) + bonusExp;
+            bonusBadgeHtml = `<div class="gift-code-reward-bonus">ボーナス +${bonusExp.toLocaleString()} XP</div>`;
+        }
+    } else if (rType === 'ITEM') {
+        const qty = Math.max(1, amount || 1);
+        const itemDict = {
+            xpBookSmall: { name: '小の書（経験の書・小）', icon: '📗' },
+            xpBookMedium: { name: '中の書（経験の書・中）', icon: '📕' },
+            xpBookLarge: { name: '大の書（経験の書・大）', icon: '📘' },
+            redPages: { name: '赤いページ', icon: '📕' },
+            bluePages: { name: '青いページ', icon: '📘' }
+        };
+        const meta = itemDict[rId] || { name: rId, icon: '🎁' };
+
+        if (!gameState.inventory) {
+            gameState.inventory = { redPages: 0, bluePages: 0, xpBookSmall: 0, xpBookMedium: 0, xpBookLarge: 0 };
+        }
+        gameState.inventory[rId] = (Number(gameState.inventory[rId]) || 0) + qty;
+
+        visualHtml = `
+            <div class="gift-code-reward-icon">${meta.icon}</div>
+            <div class="gift-code-reward-main">${escapeGiftHtml(meta.name)} ×${qty}</div>
+        `;
+
+        if (bonusExp > 0) {
+            gameState.xp = (Number(gameState.xp) || 0) + bonusExp;
+            bonusBadgeHtml = `<div class="gift-code-reward-bonus">ボーナス +${bonusExp.toLocaleString()} XP</div>`;
+        }
+    } else if (rType === 'AVATAR') {
+        if (!Array.isArray(gameState.unlockedAvatars)) gameState.unlockedAvatars = [];
+        const alreadyOwned = gameState.unlockedAvatars.includes(rId);
+        if (!alreadyOwned) {
+            gameState.unlockedAvatars.push(rId);
+        }
+
+        const shopList = (typeof window !== 'undefined' && Array.isArray(window.AVATAR_SHOP_ITEMS)) ? window.AVATAR_SHOP_ITEMS : [];
+        const avDef = shopList.find(x => x.key === rId);
+        const avName = avDef ? avDef.name : `アバターパーツ (${rId})`;
+
+        visualHtml = `
+            <div class="gift-code-reward-icon">👗</div>
+            <div class="gift-code-reward-main">${escapeGiftHtml(avName)}${alreadyOwned ? '（所持済）' : ' 解放！'}</div>
+        `;
+
+        if (bonusExp > 0) {
+            gameState.xp = (Number(gameState.xp) || 0) + bonusExp;
+            bonusBadgeHtml = `<div class="gift-code-reward-bonus">ボーナス +${bonusExp.toLocaleString()} XP</div>`;
+        }
+    }
+
+    return `
+        <div class="gift-code-result-title">🎉 ${escapeGiftHtml(reward.title || 'スペシャルギフト')}</div>
+        ${reward.message ? `<div class="gift-code-result-msg">${escapeGiftHtml(reward.message)}</div>` : ''}
+        <div class="gift-code-reward-box">
+            ${visualHtml}
+            ${bonusBadgeHtml}
+        </div>
+    `;
+}
+
+export async function submitGiftCode() {
+    if (isSubmittingGiftCode) return;
+
+    const inputEl = document.getElementById('gift-code-input');
+    const submitBtn = document.getElementById('btn-submit-gift-code');
+    const resultCard = document.getElementById('gift-code-result-card');
+    if (!inputEl) return;
+
+    const code = normalizeGiftCode(inputEl.value).replace(/\s+/g, '');
+    inputEl.value = code.slice(0, 8);
+    updateGiftCodeInputUI(inputEl.value);
+
+    if (!code) {
+        playSE('miss');
+        setGiftCodeFeedback('error', '⚠️ ギフトコードを入力してください。');
+        return;
+    }
+    if (!/^[A-Z0-9]{8}$/.test(code)) {
+        playSE('miss');
+        setGiftCodeFeedback('error', '⚠️ ギフトコードは半角英数字8文字で入力してください。');
+        return;
+    }
+
+    if (!Array.isArray(gameState.claimedGiftCodes)) {
+        gameState.claimedGiftCodes = [];
+    }
+    if (gameState.claimedGiftCodes.includes(code)) {
+        playSE('miss');
+        setGiftCodeFeedback('error', '⚠️ このギフトコードはすでに受け取り済みです。');
+        return;
+    }
+
+    isSubmittingGiftCode = true;
+    setGiftCodeFeedback(null, '');
+    if (resultCard) {
+        resultCard.classList.add('hidden');
+        resultCard.innerHTML = '';
+    }
+    if (inputEl) inputEl.disabled = true;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = '🔄 コードを照合中...';
+    }
+
+    try {
+        const res = await redeemGiftCodeApi(code);
+
+        if (!res || res.status !== 'success' || !res.reward) {
+            if (res && res.errorCode === 'ALREADY_CLAIMED' && !gameState.claimedGiftCodes.includes(code)) {
+                gameState.claimedGiftCodes.push(code);
+                saveGame();
+            }
+            playSE('miss');
+            setGiftCodeFeedback('error', `⚠️ ${(res && res.message) ? res.message : 'ギフトコードの照合に失敗しました。'}`);
+            return;
+        }
+
+        // 受取済みリストへ登録 ＆ 報酬付与
+        if (!gameState.claimedGiftCodes.includes(code)) {
+            gameState.claimedGiftCodes.push(code);
+        }
+        const cardHtml = applyGiftCodeReward(res.reward);
+
+        saveGame();
+        cloudSync.requestSync();
+        playSE('win');
+
+        updateTitleInfo();
+        if (typeof window !== 'undefined') {
+            if (typeof window.updateAllXpDisplays === 'function') window.updateAllXpDisplays();
+            if (typeof window.checkTitles === 'function') window.checkTitles();
+        }
+
+        inputEl.value = '';
+        updateGiftCodeInputUI('');
+        setGiftCodeFeedback('success', '✅ ギフトを受け取りました！');
+        if (resultCard) {
+            resultCard.innerHTML = cardHtml;
+            resultCard.classList.remove('hidden');
+        }
+    } finally {
+        isSubmittingGiftCode = false;
+        if (inputEl) inputEl.disabled = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = '🎁 コードを送信して受け取る';
+        }
+    }
 }
 
 // ==========================================

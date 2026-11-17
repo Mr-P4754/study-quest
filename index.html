@@ -218,6 +218,10 @@
                 <div class="rich-btn-title">🎁 ギフト <div id="gift-badge" class="badge hidden">0</div></div>
                 <div class="rich-btn-desc">運営からのプレゼント！</div>
             </button>
+            <button id="btn-gift-code" class="rich-menu-btn" onclick="openGiftCodeMenu();">
+                <div class="rich-btn-title">🔑 ギフトコード</div>
+                <div class="rich-btn-desc">8文字のコードを入力して特別報酬をGET！</div>
+            </button>
         </div>
         <button class="menu-btn mt-20 btn-gray" onclick="closeCategory('achievement')">閉じる</button>
     </div>
@@ -1008,6 +1012,33 @@
         <div id="gift-list" class="gift-list"></div>
         <button id="btn-receive-all-gifts" class="menu-btn mt-20 btn-green" onclick="receiveAllGifts()">まとめて受け取る</button>
         <button class="menu-btn mt-10 btn-gray" onclick="closeGiftMenu()">閉じる</button>
+    </div>
+</div>
+
+<div id="gift-code-overlay" class="overlay overlay-z350 hidden">
+    <div class="modal modal-w400">
+        <h2 class="text-orange mt-0">🔑 ギフトコード</h2>
+        <p class="text-sm gift-code-lead">8文字のギフトコードを入力して、特別な報酬を受け取ろう！</p>
+        <div class="gift-code-input-wrap">
+            <input
+                id="gift-code-input"
+                type="text"
+                class="gift-code-input"
+                maxlength="16"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                placeholder="ABCD1234"
+                oninput="handleGiftCodeInput(this, event)"
+                oncompositionend="handleGiftCodeInput(this, event)"
+                onkeydown="if(event.key==='Enter' && !event.isComposing){submitGiftCode();}"
+            >
+            <div id="gift-code-char-count" class="gift-code-char-count">0 / 8 文字</div>
+        </div>
+        <div id="gift-code-feedback" class="gift-code-feedback hidden"></div>
+        <div id="gift-code-result-card" class="gift-code-result-card hidden"></div>
+        <button id="btn-submit-gift-code" class="menu-btn mt-15 btn-green" onclick="submitGiftCode()">🎁 コードを送信して受け取る</button>
+        <button class="menu-btn mt-10 btn-gray" onclick="closeGiftCodeMenu()">閉じる</button>
     </div>
 </div>
 

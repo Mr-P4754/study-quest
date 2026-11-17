@@ -378,6 +378,9 @@ export const GUIDE_DATA = {
                 <h4>② 📋 デイリーミッション＆実績（称号）</h4>
                 <p>・毎日更新されるデイリーミッションを達成して「受取」を押すと、大量のXPを獲得できます。<br>
                 ・特定条件（撃破数、討伐、育成など）を満たすと実績が解除され、豪華な称号とXPボーナスを受け取れます。</p>
+
+                <h4>③ 🎁 ギフト＆🔑 ギフトコード</h4>
+                <p>・<b>「🏆 実績・ギフト」</b>＞<b>「🔑 ギフトコード」</b>から、運営から配布された<b>8文字のコード</b>を入力すると、特別なキャラクター・持ち物・育成アイテム・XPなどを受け取れます。</p>
             `
         }
     }
@@ -473,6 +476,7 @@ export const gameState = {
     subjectStats: {},
     unlockedTitles: [],
     claimedGifts: [], 
+    claimedGiftCodes: [],
     revengeList: [],
     unitProgress: {},
     inventory: {
@@ -590,12 +594,30 @@ export const runtimeState = {
     zukanCurrentSort: 'default'
 };
 
+// Safe Storage Helpers (Safari Private Mode / Sandboxed iframe fallback)
+const _memoryStorage = new Map();
+function safeStorageGet(key) {
+    try {
+        const val = localStorage.getItem(key);
+        return val !== null ? val : (_memoryStorage.has(key) ? _memoryStorage.get(key) : null);
+    } catch (e) {
+        return _memoryStorage.has(key) ? _memoryStorage.get(key) : null;
+    }
+}
+function safeStorageSet(key, value) {
+    const strVal = String(value);
+    _memoryStorage.set(key, strVal);
+    try {
+        localStorage.setItem(key, strVal);
+    } catch (e) {}
+}
+
 // Data Management Functions
 export function initUserId() {
-    let id = localStorage.getItem('sq_user_id');
+    let id = safeStorageGet('sq_user_id');
     if (!id) {
         id = Math.random().toString(36).substring(2, 10);
-        localStorage.setItem('sq_user_id', id);
+        safeStorageSet('sq_user_id', id);
     }
     runtimeState.currentUserId = id;
 }
@@ -603,7 +625,7 @@ export function initUserId() {
 export function loadSaveData() {
     const safeParse = (key, defaultVal) => {
         try {
-            const raw = localStorage.getItem(key);
+            const raw = safeStorageGet(key);
             if (raw === null || raw === undefined || raw === "undefined") return defaultVal;
             let parsed = JSON.parse(raw);
             if (typeof parsed === 'string') {
@@ -616,23 +638,23 @@ export function loadSaveData() {
     };
 
     try {
-        gameState.xp = parseInt(localStorage.getItem('sq_xp') || '0', 10);
+        gameState.xp = parseInt(safeStorageGet('sq_xp') || '0', 10);
     } catch(e) {
         gameState.xp = 0;
     }
     // スロット解放数および装備パーティーのロードとマイグレーション
-    const loadedSlots = parseInt(localStorage.getItem('sq_unlocked_slots') || '1', 10);
+    const loadedSlots = parseInt(safeStorageGet('sq_unlocked_slots') || '1', 10);
     gameState.unlockedSlots = Math.min(3, Math.max(1, isNaN(loadedSlots) ? 1 : loadedSlots));
 
     const loadedEquippedParty = safeParse('sq_equipped_party', null);
     if (Array.isArray(loadedEquippedParty) && loadedEquippedParty.length === 3) {
         gameState.equippedParty = [
-            (loadedEquippedParty[0] && gameState.charaInventory[loadedEquippedParty[0]]) ? String(loadedEquippedParty[0]) : (localStorage.getItem('sq_equip') || '1'),
+            (loadedEquippedParty[0] && gameState.charaInventory[loadedEquippedParty[0]]) ? String(loadedEquippedParty[0]) : (safeStorageGet('sq_equip') || '1'),
             (gameState.unlockedSlots >= 2 && loadedEquippedParty[1] && gameState.charaInventory[loadedEquippedParty[1]]) ? String(loadedEquippedParty[1]) : null,
             (gameState.unlockedSlots >= 3 && loadedEquippedParty[2] && gameState.charaInventory[loadedEquippedParty[2]]) ? String(loadedEquippedParty[2]) : null
         ];
     } else {
-        const oldEquipped = localStorage.getItem('sq_equip') || '1';
+        const oldEquipped = safeStorageGet('sq_equip') || '1';
         gameState.equippedParty = [String(oldEquipped), null, null];
     }
 
@@ -671,7 +693,7 @@ export function loadSaveData() {
     // もし charaInventory が空、または破損している場合、直近のバックアップまたは旧キーから復元を試行
     if (!gameState.charaInventory || Object.keys(gameState.charaInventory).length === 0) {
         // 1. 自動バックアップ (sq_save_backup) からの自動復元試行
-        const backupRaw = localStorage.getItem('sq_save_backup');
+        const backupRaw = safeStorageGet('sq_save_backup');
         if (backupRaw) {
             try {
                 const backup = JSON.parse(backupRaw);
@@ -691,11 +713,14 @@ export function loadSaveData() {
                     if (backup.inventory && (!gameState.inventory || gameState.inventory.redPages === 0)) gameState.inventory = backup.inventory;
                     if (backup.farm && typeof backup.farm === 'object') gameState.farm = backup.farm;
                     if (backup.heldItemInventory && typeof backup.heldItemInventory === 'object') gameState.heldItemInventory = backup.heldItemInventory;
+                    if (Array.isArray(backup.claimedGiftCodes) && !safeStorageGet('sq_claimed_gift_codes')) {
+                        safeStorageSet('sq_claimed_gift_codes', JSON.stringify(backup.claimedGiftCodes));
+                    }
                     // 復元した正常データをメインストレージへ再保存
-                    localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
-                    localStorage.setItem('sq_held_items', JSON.stringify(gameState.heldItemInventory || {}));
-                    localStorage.setItem('sq_xp', gameState.xp);
-                    localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
+                    safeStorageSet('sq_inventory', JSON.stringify(gameState.charaInventory));
+                    safeStorageSet('sq_held_items', JSON.stringify(gameState.heldItemInventory || {}));
+                    safeStorageSet('sq_xp', gameState.xp);
+                    safeStorageSet('sq_items_v2', JSON.stringify(gameState.itemLevels));
                 }
             } catch (e) {
                 console.warn('[SQ-Restore] バックアップ自動復元失敗:', e);
@@ -704,7 +729,7 @@ export function loadSaveData() {
 
         // 2. 旧キー (sq_charas) からの救出復元
         if (!gameState.charaInventory || Object.keys(gameState.charaInventory).length === 0) {
-            const oldCharas = localStorage.getItem('sq_charas');
+            const oldCharas = safeStorageGet('sq_charas');
             if (oldCharas) {
                 try {
                     const idList = JSON.parse(oldCharas);
@@ -712,7 +737,7 @@ export function loadSaveData() {
                         idList.forEach(id => {
                             gameState.charaInventory[id] = { level: 1, count: 1, exp: 0 };
                         });
-                        localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
+                        safeStorageSet('sq_inventory', JSON.stringify(gameState.charaInventory));
                         console.log('[SQ-Restore] 旧キャラキー (sq_charas) から復元しました。');
                     }
                 } catch(e) {}
@@ -755,6 +780,8 @@ export function loadSaveData() {
     gameState.subjectStats = safeParse('sq_subject_stats', {});
     gameState.unlockedTitles = safeParse('sq_titles', []);
     gameState.claimedGifts = safeParse('sq_claimed_gifts', []);
+    const loadedGiftCodes = safeParse('sq_claimed_gift_codes', []);
+    gameState.claimedGiftCodes = Array.isArray(loadedGiftCodes) ? loadedGiftCodes : [];
     gameState.revengeList = safeParse('sq_revenge', []);
     gameState.unitProgress = safeParse('sq_unit_progress', {});
     gameState.calcRecords = safeParse('sq_calc_records', {});
@@ -821,7 +848,7 @@ export function loadSaveData() {
     gameState.unlockedAvatars = Array.isArray(loadedUnlockedAvatars) ? loadedUnlockedAvatars : [];
 
     // 環境設定（テーマ）のロード
-    const loadedTheme = localStorage.getItem('sq_theme') || 'dark';
+    const loadedTheme = safeStorageGet('sq_theme') || 'dark';
     gameState.theme = loadedTheme === 'light' ? 'light' : 'dark';
     if (typeof window !== 'undefined' && typeof window.applyTheme === 'function') {
         window.applyTheme(gameState.theme);
@@ -841,28 +868,29 @@ export function saveGame() {
     }
 
     // メインセーブデータの安全書き込み
-    localStorage.setItem('sq_xp', gameState.xp);
-    localStorage.setItem('sq_equipped_party', JSON.stringify(gameState.equippedParty));
-    localStorage.setItem('sq_unlocked_slots', String(gameState.unlockedSlots || 1));
-    localStorage.setItem('sq_equip', (gameState.equippedParty && gameState.equippedParty[0]) ? gameState.equippedParty[0] : '1');
-    localStorage.setItem('sq_items_v2', JSON.stringify(gameState.itemLevels));
-    localStorage.setItem('sq_inventory', JSON.stringify(gameState.charaInventory));
-    localStorage.setItem('sq_held_items', JSON.stringify(gameState.heldItemInventory || {}));
-    localStorage.setItem('sq_team_party', JSON.stringify(gameState.teamParty));
-    localStorage.setItem('sq_farm', JSON.stringify(gameState.farm));
-    localStorage.setItem('sq_missions', JSON.stringify(dailyMissions));
-    localStorage.setItem('sq_stats', JSON.stringify(gameState.stats));
-    localStorage.setItem('sq_subject_stats', JSON.stringify(gameState.subjectStats || {}));
-    localStorage.setItem('sq_titles', JSON.stringify(gameState.unlockedTitles));
-    localStorage.setItem('sq_claimed_gifts', JSON.stringify(gameState.claimedGifts));
-    localStorage.setItem('sq_revenge', JSON.stringify(gameState.revengeList || []));
-    localStorage.setItem('sq_unit_progress', JSON.stringify(gameState.unitProgress || {}));
-    localStorage.setItem('sq_calc_records', JSON.stringify(gameState.calcRecords || {}));
-    localStorage.setItem('sq_item_inventory', JSON.stringify(gameState.inventory));
-    localStorage.setItem('sq_studyel', JSON.stringify(gameState.studyel));
-    localStorage.setItem('sq_avatar', JSON.stringify(gameState.avatar));
-    localStorage.setItem('sq_unlocked_avatars', JSON.stringify(gameState.unlockedAvatars || []));
-    localStorage.setItem('sq_theme', gameState.theme || 'dark');
+    safeStorageSet('sq_xp', gameState.xp);
+    safeStorageSet('sq_equipped_party', JSON.stringify(gameState.equippedParty));
+    safeStorageSet('sq_unlocked_slots', String(gameState.unlockedSlots || 1));
+    safeStorageSet('sq_equip', (gameState.equippedParty && gameState.equippedParty[0]) ? gameState.equippedParty[0] : '1');
+    safeStorageSet('sq_items_v2', JSON.stringify(gameState.itemLevels));
+    safeStorageSet('sq_inventory', JSON.stringify(gameState.charaInventory));
+    safeStorageSet('sq_held_items', JSON.stringify(gameState.heldItemInventory || {}));
+    safeStorageSet('sq_team_party', JSON.stringify(gameState.teamParty));
+    safeStorageSet('sq_farm', JSON.stringify(gameState.farm));
+    safeStorageSet('sq_missions', JSON.stringify(dailyMissions));
+    safeStorageSet('sq_stats', JSON.stringify(gameState.stats));
+    safeStorageSet('sq_subject_stats', JSON.stringify(gameState.subjectStats || {}));
+    safeStorageSet('sq_titles', JSON.stringify(gameState.unlockedTitles));
+    safeStorageSet('sq_claimed_gifts', JSON.stringify(gameState.claimedGifts));
+    safeStorageSet('sq_claimed_gift_codes', JSON.stringify(gameState.claimedGiftCodes || []));
+    safeStorageSet('sq_revenge', JSON.stringify(gameState.revengeList || []));
+    safeStorageSet('sq_unit_progress', JSON.stringify(gameState.unitProgress || {}));
+    safeStorageSet('sq_calc_records', JSON.stringify(gameState.calcRecords || {}));
+    safeStorageSet('sq_item_inventory', JSON.stringify(gameState.inventory));
+    safeStorageSet('sq_studyel', JSON.stringify(gameState.studyel));
+    safeStorageSet('sq_avatar', JSON.stringify(gameState.avatar));
+    safeStorageSet('sq_unlocked_avatars', JSON.stringify(gameState.unlockedAvatars || []));
+    safeStorageSet('sq_theme', gameState.theme || 'dark');
 
     // 【自動バックアップ二重保存】万一の破損時に備え、正常なセーブデータのスナップショットを別キーへ退避保存
     try {
@@ -881,13 +909,14 @@ export function saveGame() {
             subjectStats: gameState.subjectStats,
             unlockedTitles: gameState.unlockedTitles,
             claimedGifts: gameState.claimedGifts,
+            claimedGiftCodes: gameState.claimedGiftCodes || [],
             inventory: gameState.inventory,
             studyel: gameState.studyel,
             avatar: gameState.avatar,
             unlockedAvatars: gameState.unlockedAvatars || [],
             theme: gameState.theme || 'dark'
         };
-        localStorage.setItem('sq_save_backup', JSON.stringify(backupSnapshot));
+        safeStorageSet('sq_save_backup', JSON.stringify(backupSnapshot));
     } catch (backupErr) {
         console.warn('[SQ-Security] バックアップ保存スキップ:', backupErr);
     }
