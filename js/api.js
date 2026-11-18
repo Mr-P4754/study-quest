@@ -1183,8 +1183,15 @@ export async function fetchData() {
         // 3. キャラクター (characters)
         rawData.characters = [];
         const rawChars = Array.isArray(data.characters) ? data.characters : [];
-        rawData.characters = rawChars.map(c => {
-            const strId = String(c.ID !== undefined ? c.ID : (c.id !== undefined ? c.id : ''));
+        rawData.characters = rawChars
+            .filter(c => {
+                if (!c || typeof c !== 'object') return false;
+                const rawId = c.ID !== undefined ? c.ID : (c.id !== undefined ? c.id : '');
+                const rawName = c['名前'] !== undefined ? c['名前'] : (c.name !== undefined ? c.name : '');
+                return String(rawId).trim() !== '' && String(rawName).trim() !== '';
+            })
+            .map(c => {
+            const strId = String(c.ID !== undefined ? c.ID : (c.id !== undefined ? c.id : '')).trim();
             const name = String(c['名前'] || c.name || 'Unknown');
             const rarity = String(c['レア'] || c.rarity || 'N');
             const type = String(c['タイプ'] || c.type || 'ATK');
@@ -1192,6 +1199,13 @@ export async function fetchData() {
             const desc = String(c['解説'] || c.desc || '');
             const category = String(c['カテゴリ'] || c.category || '');
             const imgUrl = convertDriveUrl(c['画像URL'] || c.imageUrl || c.image || '');
+            const rawNoGacha = c['ガチャ排出キャンセル'] !== undefined ? c['ガチャ排出キャンセル']
+                : (c['ガチャ除外'] !== undefined ? c['ガチャ除外']
+                : (c.noGacha !== undefined ? c.noGacha : false));
+            const noGacha = rawNoGacha === true
+                || String(rawNoGacha).trim().toUpperCase() === 'TRUE'
+                || String(rawNoGacha).trim() === '1'
+                || String(rawNoGacha).trim() === '○';
 
             return {
                 ...c,
@@ -1210,7 +1224,9 @@ export async function fetchData() {
                 category: category,
                 'カテゴリ': category,
                 imageUrl: imgUrl,
-                '画像URL': imgUrl
+                '画像URL': imgUrl,
+                noGacha: noGacha,
+                'ガチャ排出キャンセル': noGacha
             };
         });
 
@@ -1303,7 +1319,10 @@ export async function fetchData() {
                         desc: "かつて立ちはだかった強敵。今は頼もしい味方だ。",
                         '解説': "かつて立ちはだかった強敵。今は頼もしい味方だ。",
                         imageUrl: b.icon,
-                        '画像URL': b.icon
+                        '画像URL': b.icon,
+                        isBoss: true,
+                        noGacha: true,
+                        'ガチャ排出キャンセル': true
                     });
                 }
             });

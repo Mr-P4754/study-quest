@@ -155,13 +155,25 @@ export async function rollGuaranteedTenGacha(targetRarity, cost) {
 export function executeGacha(times, guaranteedRarity) {
     if (!rawData.characters || rawData.characters.length === 0) return alert("キャラデータがありません");
     const pool = { 'N': [], 'R': [], 'SR': [], 'SSR': [], 'UR': [] };
-    rawData.characters.forEach(c => { if(pool[c.rarity]) pool[c.rarity].push(c); });
+    rawData.characters.forEach(c => {
+        const rawNoGacha = c.noGacha !== undefined ? c.noGacha : c['ガチャ排出キャンセル'];
+        const isNoGacha = rawNoGacha === true
+            || String(rawNoGacha).trim().toUpperCase() === 'TRUE'
+            || String(rawNoGacha).trim() === '1'
+            || String(rawNoGacha).trim() === '○';
+        if (isNoGacha) return;
+        if (c.isBoss || c.isStudyel) return;
+        if (String(c.id).startsWith('boss_') || String(c.id).startsWith('studyel_')) return;
+        if (c.category === 'ボス') return;
+        if (pool[c.rarity]) pool[c.rarity].push(c);
+    });
+    const availableRarities = Object.keys(pool).filter(k => pool[k].length > 0);
+    if (availableRarities.length === 0) return alert("排出可能なキャラデータがありません");
     
     const getRandChar = (targetRarity) => {
         let rPool = pool[targetRarity];
         if (!rPool || rPool.length === 0) {
-            const available = Object.keys(pool).filter(k => pool[k].length > 0);
-            rPool = pool[available[available.length - 1]];
+            rPool = pool[availableRarities[availableRarities.length - 1]];
         }
         return rPool[Math.floor(Math.random() * rPool.length)];
     };

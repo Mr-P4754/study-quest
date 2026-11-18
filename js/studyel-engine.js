@@ -463,6 +463,7 @@ export function restoreCharacters() {
                 desc: formInfo.desc || '',
                 imageUrl: getStudyelSvgDataUri(4, formKey),
                 isStudyel: true,
+                noGacha: true,
                 bonusTime: (st.finalStats && st.finalStats.formId === id) ? (st.finalStats.bonusTime || 0.0) : 0.0,
                 bonusDamage: (st.finalStats && st.finalStats.formId === id) ? (st.finalStats.bonusDamage || 0.0) : 0.0
             };
@@ -470,6 +471,7 @@ export function restoreCharacters() {
         } else {
             // 既存にあっても常に画像やスタディエルフラグを保証
             cMaster.isStudyel = true;
+            cMaster.noGacha = true;
             if (!cMaster.imageUrl || !cMaster.imageUrl.startsWith('data:image')) {
                 cMaster.imageUrl = getStudyelSvgDataUri(4, formKey);
             }
