@@ -15,6 +15,7 @@ import {
 
 import {
     getDisplayName,
+    resolveCharaSkills,
     getGradeMultiplier,
     playSE,
     playBGM,
@@ -337,10 +338,23 @@ export function startTimer() {
 }
 
 /**
+ * 現在のモードで必殺技（アクティブスキル）が有効かを判定
+ * （計算クエスト・タイピングクエスト・サバイバルクエストでは無効）
+ */
+export function isActiveSkillEnabled() {
+    return !(playData.isCalculation || playData.isTyping || playData.isSurvival);
+}
+
+/**
  * 戦闘開始時の持ち物特殊効果（INIT_SP_1 など）を適用
  */
 export function applyBattleStartHeldItemBuffs() {
     playData.pinchShieldTriggered = false;
+    if (!isActiveSkillEnabled()) {
+        playData.currentSP = 0;
+        updateSpUI();
+        return;
+    }
     const party = Array.isArray(gameState.equippedParty) ? gameState.equippedParty : [(gameState.equipped || '1'), null, null];
     const mainCharId = party[0];
     if (mainCharId && gameState.charaInventory && gameState.charaInventory[mainCharId]) {
@@ -381,7 +395,7 @@ export function getCharaStats(options = {}) {
             let finalVal = Number(baseVal) + (level * LV_BONUS_RATE);
             let bonusAmount = Math.max(0, finalVal - 1.0); // 1.0からの超過補正量
 
-            let skills = (userChara && userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type || 'ATK'];
+            let skills = resolveCharaSkills(charaData, userChara);
             skills.forEach(type => { 
                 const weightedBonus = bonusAmount * weight;
                 if(type === 'ALL') { 
@@ -443,6 +457,7 @@ export function getCharaStats(options = {}) {
  * SP（スキルポイント）を加算しUIを更新
  */
 export function addSP(amount = 1) {
+    if (!isActiveSkillEnabled()) return;
     if (typeof playData.currentSP !== 'number') playData.currentSP = 0;
     const oldSP = playData.currentSP;
     playData.currentSP = Math.min(3, playData.currentSP + amount);
@@ -456,6 +471,15 @@ export function addSP(amount = 1) {
  * 戦闘画面のSPゲージと必殺技ボタンの表示を更新
  */
 export function updateSpUI() {
+    const spContainer = document.getElementById('sp-skill-container');
+    if (spContainer) {
+        if (!isActiveSkillEnabled()) {
+            spContainer.classList.add('hidden');
+        } else {
+            spContainer.classList.remove('hidden');
+        }
+    }
+
     const sp = Math.min(3, Math.max(0, playData.currentSP || 0));
     for (let i = 1; i <= 3; i++) {
         const dot = document.getElementById(`sp-dot-${i}`);
@@ -482,7 +506,7 @@ export function updateSpUI() {
 
     if (skillBtn) {
         skillBtn.className = `active-skill-btn skill-btn-${skillAttr.toLowerCase()}`;
-        if (sp >= 1 && !runtimeState.isFinished && !runtimeState.isPaused && (gameState.lives > 0) && (gameState.timeLeft > 0)) {
+        if (isActiveSkillEnabled() && sp >= 1 && !runtimeState.isFinished && !runtimeState.isPaused && (gameState.lives > 0) && (gameState.timeLeft > 0)) {
             skillBtn.disabled = false;
             skillBtn.classList.add('ready');
         } else {
@@ -510,7 +534,7 @@ export function getMainCharaSkillAttribute() {
     const level = (typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
     const baseVal = (inv.isEvolved && inv.customValue) ? inv.customValue : Number(cMaster.value || 1.0);
     const finalVal = Number(baseVal) + (level * LV_BONUS_RATE);
-    const skills = (inv.skills && inv.skills.length > 0) ? inv.skills : [cMaster.type || 'ATK'];
+    const skills = resolveCharaSkills(cMaster, inv);
 
     let stats = { atk: 1.0, time: 1.0, exp: 1.0 };
     skills.forEach(type => {
@@ -545,7 +569,7 @@ export function getMainCharaSkillAttribute() {
  */
 export function triggerActiveSkill() {
     // 【発動の絶対防壁・レースコンディション対策】
-    if (gameState.lives <= 0 || gameState.timeLeft <= 0 || runtimeState.isFinished || runtimeState.isPaused || (playData.currentSP || 0) < 1) {
+    if (!isActiveSkillEnabled() || gameState.lives <= 0 || gameState.timeLeft <= 0 || runtimeState.isFinished || runtimeState.isPaused || (playData.currentSP || 0) < 1) {
         return;
     }
 
@@ -715,12 +739,12 @@ export function finishGame(isClear) {
         let milestoneBonus = isMax ? 0 : Math.floor(correctCount / 50) * 50;
         const currentGrade = playData.questions && playData.questions.length > 0 ? playData.questions[0].grade : '';
         const gradeMultiplier = getGradeMultiplier(currentGrade);
-        let earnedExp = Math.floor(((correctCount * oathMultiplier) + milestoneBonus) * gradeMultiplier);
+        let earnedExp = Math.ceil(((correctCount * oathMultiplier) + milestoneBonus) * gradeMultiplier);
         
         if (playData.activeReliefs && playData.activeReliefs.length > 0) {
             const rCount = playData.activeReliefs.length;
             const penalty = rCount >= 3 ? 0.5 : (rCount === 2 ? 0.7 : 0.9);
-            earnedExp = Math.floor(earnedExp * penalty);
+            earnedExp = Math.ceil(earnedExp * penalty);
         }
         
         let growthResultText = "なし";
@@ -729,15 +753,16 @@ export function finishGame(isClear) {
             if (typeof eqInv.level !== 'number' || eqInv.level < 1) eqInv.level = 1;
             const maxL = RARITY_CAPS[eqInv.currentRarity || cMaster.rarity] || 10;
             let startLv = eqInv.level;
-            let startExp = Number(eqInv.exp) || 0;
+            let startExp = Math.ceil(Number(eqInv.exp) || 0);
             let startStock = eqInv.count || 0;
             
-            eqInv.exp = startExp + earnedExp;
+            eqInv.exp = Math.ceil(startExp + earnedExp);
             while (eqInv.exp >= EXP_REQ) {
                 eqInv.exp -= EXP_REQ;
                 if (eqInv.level < maxL) { eqInv.level++; } 
                 else { eqInv.count = (eqInv.count || 0) + 1; }
             }
+            eqInv.exp = Math.ceil(eqInv.exp);
             
             if (eqInv.level >= maxL && (eqInv.count || 0) > startStock) {
                 growthResultText = `<div style="font-size:0.4em; color:#7f8c8d;">Lv.MAX ストック ${startStock}</div><div style="color:#bdc3c7; font-size:0.4em; margin:5px 0;">↓</div><div style="font-size:0.5em; color:#e67e22;">Lv.MAX ストック ${eqInv.count}</div>`;

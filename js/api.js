@@ -637,7 +637,7 @@ export async function downloadData() {
                 if (item) {
                     if (typeof item.level !== 'number' || item.level < 1) item.level = 1;
                     if (typeof item.count !== 'number' || item.count < 1) item.count = 1;
-                    if (typeof item.exp !== 'number' || item.exp < 0) item.exp = 0;
+                    item.exp = (typeof item.exp === 'number' && item.exp > 0) ? Math.ceil(item.exp) : 0;
                     if (item.heldItem === undefined) item.heldItem = null;
                 }
             });

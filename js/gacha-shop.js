@@ -28,6 +28,9 @@ import {
 
 import {
     getDisplayName,
+    parseSkillTypes,
+    resolveCharaSkills,
+    formatCharaSkillsLabel,
     playSE,
     renderSafeImg
 } from './utils.js?v=10.5.0';
@@ -369,7 +372,11 @@ export function renderZukan() {
             const valB = rOrder[rB] || 0; 
             return zukanSortMode === 'rarity_desc' ? valB - valA : valA - valB; 
         }
-        if (zukanSortMode === 'type') { return (a.type || "").localeCompare(b.type || ""); }
+        if (zukanSortMode === 'type') {
+            const typeA = formatCharaSkillsLabel(a, invA);
+            const typeB = formatCharaSkillsLabel(b, invB);
+            return typeA.localeCompare(typeB);
+        }
         if (zukanSortMode === 'level') { const lvA = invA ? invA.level : -1; const lvB = invB ? invB.level : -1; if (lvA !== lvB) return lvB - lvA; }
         if (zukanSortMode === 'stock') { const cntA = invA ? invA.count : -1; const cntB = invB ? invB.count : -1; if (cntA !== cntB) return cntB - cntA; }
         return 0;
@@ -387,8 +394,9 @@ export function renderZukan() {
             if (typeof data.level !== 'number' || data.level < 1) data.level = 1;
             visual = renderSafeImg(c.imageUrl, '📦', 'char-img');
             const currentRarity = data.currentRarity || c.rarity; 
+            const typeLabel = formatCharaSkillsLabel(c, data, '・');
             decoName = getDisplayName(c, data); 
-            nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${c.type}`;
+            nameText = `<span class="rarity-${currentRarity}">${currentRarity}</span> / ${typeLabel}`;
             lvlBadge = `<div class="char-lvl-badge">Lv.${data.level}</div>`; 
             if(data.count > 0) stockBadge = `<div class="char-stock-badge">+${data.count}</div>`;
             div.onclick = () => openCharaDetail(c.id);
@@ -712,7 +720,11 @@ export function openCharaDetail(id) {
     if(!c || !o) return; 
     if (typeof o.level !== 'number' || o.level < 1) o.level = 1;
     const currentR = o.currentRarity || c.rarity; 
-    const currentSkills = (o.skills && o.skills.length > 0) ? o.skills : [c.type];
+    const currentSkills = resolveCharaSkills(c, o);
+    // すでに全属性揃っているセーブデータは ['ALL'] に正規化
+    if (currentSkills.includes('ALL') && Array.isArray(o.skills) && !(o.skills.length === 1 && o.skills[0] === 'ALL')) {
+        o.skills = ['ALL'];
+    }
     const baseVal = (o.isEvolved && o.customValue) ? o.customValue : Number(c.value);
     
     const cdName = document.getElementById('cd-name'); 
@@ -863,10 +875,11 @@ export function openCharaDetail(id) {
         }
     }
 
+    o.exp = Math.ceil(Number(o.exp) || 0);
     const cdExpText = document.getElementById('cd-exp-text'); 
-    if(cdExpText) cdExpText.innerText = isMax ? 'MAX' : ((o.exp || 0) + ' / ' + EXP_REQ); 
+    if(cdExpText) cdExpText.innerText = isMax ? 'MAX' : (o.exp + ' / ' + EXP_REQ); 
     const cdExpBar = document.getElementById('cd-exp-bar'); 
-    if(cdExpBar) cdExpBar.style.width = isMax ? '100%' : (Math.min(100, ((o.exp || 0) / EXP_REQ * 100)) + '%');
+    if(cdExpBar) cdExpBar.style.width = isMax ? '100%' : (Math.min(100, (o.exp / EXP_REQ * 100)) + '%');
     const cdImg = document.getElementById('cd-img');
     if(cdImg) { if(c.imageUrl && (c.imageUrl.startsWith('http') || c.imageUrl.startsWith('data:image'))) cdImg.src = c.imageUrl; else cdImg.src = ''; }
     document.getElementById('chara-detail-overlay')?.classList.remove('hidden'); 
@@ -983,7 +996,7 @@ export async function useExpItem(itemId, gain) {
     if (inv.level >= maxL) return alert("Lv.MAXです");
 
     gameState.inventory[itemId]--;
-    inv.exp = (Number(inv.exp) || 0) + gain;
+    inv.exp = Math.ceil(Number(inv.exp) || 0) + Math.ceil(Number(gain) || 0);
     
     let lvUp = 0;
     while (inv.exp >= EXP_REQ && inv.level < maxL) { inv.exp -= EXP_REQ; inv.level++; lvUp++; }
@@ -1048,9 +1061,22 @@ export async function executeReincarnation() {
     o.reincarnationCount = (o.reincarnationCount || 0) + 1;
     o.customValue = (o.customValue || Number(c.value)) + 1.0;
     
-    if (!o.skills) o.skills = [c.type];
-    const availableSkills = ['ATK', 'TIME', 'EXP'].filter(s => !o.skills.includes(s));
-    if (availableSkills.length > 0) { o.skills.push(availableSkills[Math.floor(Math.random() * availableSkills.length)]); } else if (!o.skills.includes('ALL')) { o.skills = ['ALL']; }
+    // 現在の所持属性を個別配列に分解（"TIME,ATK" などの複合表記も正確に分解）
+    const existingSkills = parseSkillTypes(
+        (Array.isArray(o.skills) && o.skills.length > 0) ? [o.skills, c.type] : c.type,
+        false
+    );
+
+    if (existingSkills.includes('ALL')) {
+        o.skills = ['ALL'];
+    } else {
+        const availableSkills = ['ATK', 'TIME', 'EXP'].filter(s => !existingSkills.includes(s));
+        if (availableSkills.length > 0) {
+            existingSkills.push(availableSkills[Math.floor(Math.random() * availableSkills.length)]);
+        }
+        // 全属性（ATK / TIME / EXP すべて）が揃った時点で ['ALL'] に統合
+        o.skills = parseSkillTypes(existingSkills, true);
+    }
     
     gameState.stats.achieved_reborn = true;
     saveGame(); 
@@ -1128,7 +1154,7 @@ export function toggleMaterial(id, maxCount) {
 export function getNeededExpForMax(t, currentR) {
     const maxLv = RARITY_CAPS[currentR] || 10;
     if (t.level >= maxLv) return 0;
-    return ((maxLv - t.level) * EXP_REQ) - (Number(t.exp) || 0);
+    return ((maxLv - t.level) * EXP_REQ) - Math.ceil(Number(t.exp) || 0);
 }
 
 export function getSelectedTotalExp() {
@@ -1153,7 +1179,7 @@ export function updateEnhancePreview(gainExp) {
     if (!t || !chara) return;
     const currentR = t.currentRarity || chara.rarity; 
     const maxLv = RARITY_CAPS[currentR] || 10;
-    let simExp = (Number(t.exp) || 0) + gainExp; 
+    let simExp = Math.ceil(Number(t.exp) || 0) + Math.ceil(Number(gainExp) || 0); 
     let simLv = t.level;
     while (simExp >= EXP_REQ && simLv < maxLv) { simExp -= EXP_REQ; simLv++; }
     if (simLv >= maxLv) simExp = 0;
@@ -1207,7 +1233,7 @@ export async function executeBulkEnhance() {
                 count--;
                 usedCount++;
                 actualExpGained += expVal;
-                t.exp = (Number(t.exp) || 0) + expVal;
+                t.exp = Math.ceil(Number(t.exp) || 0) + expVal;
 
                 while (t.exp >= EXP_REQ && t.level < maxLv) {
                     t.exp -= EXP_REQ;

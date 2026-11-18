@@ -316,7 +316,7 @@ export function judge(isCorrect, btn) {
         }
         
         gameState.combo++; 
-        if (gameState.combo > 0 && gameState.combo % 5 === 0) {
+        if (!playData.isSurvival && !playData.isTyping && !playData.isCalculation && gameState.combo > 0 && gameState.combo % 5 === 0) {
             addSP(1);
         }
         gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1; 
@@ -947,9 +947,6 @@ export function handleTypingInput(e) {
             gameState.enemyHP = Math.max(0, gameState.enemyHP - damage); 
             gameState.score += damage; 
             gameState.combo++; 
-            if (gameState.combo > 0 && gameState.combo % 5 === 0) {
-                addSP(1);
-            }
             showCutIn("-" + damage);
             gameState.stats.totalCorrect = (gameState.stats.totalCorrect || 0) + 1;
             gameState.stats.maxCombo = Math.max(gameState.stats.maxCombo || 0, gameState.combo);
@@ -1053,6 +1050,9 @@ export function startCalcGame() {
     gameState.lives = 3;
     gameState.score = 0;
     gameState.combo = 0;
+    playData.currentSP = 0;
+    playData.bonusExp = 0;
+    updateSpUI();
 
     const uienemyName = document.getElementById('ui-enemy-name');
     if (uienemyName) uienemyName.innerText = "CALC TRIAL";
@@ -1215,6 +1215,8 @@ export function startRevengeMode() {
     gameState.timeLeft = gameState.maxTime;
     gameState.maxHP = playData.questions.length * 100;
     gameState.enemyHP = gameState.maxHP;
+    applyBattleStartHeldItemBuffs();
+    playData.bonusExp = 0;
 
     document.getElementById('pause-overlay')?.classList.add('hidden');
     document.getElementById('title-screen')?.classList.add('hidden'); 

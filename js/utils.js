@@ -27,6 +27,73 @@ export function getDisplayName(char, inv, isHtml = true) {
     return name;
 }
 
+/**
+ * 属性スキル文字列・配列を個別の標準属性配列に分解・正規化する
+ * 例: "TIME,ATK" -> ["TIME", "ATK"]
+ * 例: ["TIME,EXP", "ATK"] -> ["ALL"] (ATK/TIME/EXP 3種すべて揃った場合は ALL に統合)
+ * @param {string|string[]} rawInput
+ * @param {boolean} [collapseAll=true] 3属性すべて揃っている場合に ['ALL'] に統合するか
+ * @returns {string[]}
+ */
+export function parseSkillTypes(rawInput, collapseAll = true) {
+    const tokens = [];
+    const pushTokens = (val) => {
+        if (!val) return;
+        if (Array.isArray(val)) {
+            val.forEach(pushTokens);
+            return;
+        }
+        String(val)
+            .split(/[,、・/\s]+/)
+            .map(s => s.trim())
+            .filter(Boolean)
+            .forEach(part => {
+                const upper = part.toUpperCase();
+                let norm = 'ATK';
+                if (upper.includes('ALL')) norm = 'ALL';
+                else if (upper.includes('TIME') || upper.includes('水')) norm = 'TIME';
+                else if (upper.includes('EXP') || upper.includes('雷')) norm = 'EXP';
+                else if (upper.includes('ATK') || upper.includes('FIRE') || upper.includes('炎')) norm = 'ATK';
+                else norm = upper;
+                if (!tokens.includes(norm)) tokens.push(norm);
+            });
+    };
+
+    pushTokens(rawInput);
+    if (tokens.length === 0) tokens.push('ATK');
+
+    if (collapseAll) {
+        if (tokens.includes('ALL') || (tokens.includes('ATK') && tokens.includes('TIME') && tokens.includes('EXP'))) {
+            return ['ALL'];
+        }
+    }
+    return tokens;
+}
+
+/**
+ * キャラクターの現在有効な属性スキル配列を取得する
+ * （所持データ inv.skills とマスター char.type の両方を統合し、全属性習得時は ['ALL'] を返す）
+ * @param {Object} char キャラクターマスターデータ
+ * @param {Object} [inv] ユーザーのキャラクター所持データ
+ * @returns {string[]}
+ */
+export function resolveCharaSkills(char, inv = null) {
+    const masterType = char ? (char.type || char['タイプ'] || 'ATK') : 'ATK';
+    const hasInvSkills = inv && Array.isArray(inv.skills) && inv.skills.length > 0;
+    return parseSkillTypes(hasInvSkills ? [inv.skills, masterType] : masterType, true);
+}
+
+/**
+ * キャラクターの属性表示用テキストを取得する（例: "TIME・ATK" / "ALL"）
+ * @param {Object} char キャラクターマスターデータ
+ * @param {Object} [inv] ユーザーのキャラクター所持データ
+ * @param {string} [separator='・'] 複数属性の区切り文字
+ * @returns {string}
+ */
+export function formatCharaSkillsLabel(char, inv = null, separator = '・') {
+    return resolveCharaSkills(char, inv).join(separator);
+}
+
 export const ALL_GRADES = [
     '小1', '小2', '小3', '小4', '小5', '小6',
     '中1', '中2', '中3',

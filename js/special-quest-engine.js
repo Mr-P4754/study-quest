@@ -6,7 +6,7 @@
  */
 
 import { gameState, rawData, saveGame, runtimeState, LV_BONUS_RATE } from './state.js?v=10.5.0';
-import { getDisplayName, playSE, playBGM, stopBGM, updateMuteButtonsUI, ALL_GRADES, isGradeMatch, renderSafeImg } from './utils.js?v=10.5.0';
+import { getDisplayName, parseSkillTypes, resolveCharaSkills, formatCharaSkillsLabel, playSE, playBGM, stopBGM, updateMuteButtonsUI, ALL_GRADES, isGradeMatch, renderSafeImg } from './utils.js?v=10.5.0';
 import { closeAllCategoryModals, returnToCurrentCategory, showAlert, showConfirm } from './ui-manager.js?v=10.5.0';
 import { cloudSync } from './api.js?v=10.5.0';
 import { AVATAR_PARTS_DEF, AVATAR_MESSAGES, generateAvatarSvg } from './avatar-engine.js?v=10.5.0';
@@ -265,7 +265,8 @@ export function renderPartyFormation() {
                 rarityEl.innerText = currentRarity;
             }
             if (typeEl) {
-                typeEl.innerText = getTypeEmoji(charMaster.type) + ' ' + (charMaster.type || 'ATK');
+                const slotTypeLabel = formatCharaSkillsLabel(charMaster, invData, '・');
+                typeEl.innerText = getTypeEmoji(slotTypeLabel) + ' ' + slotTypeLabel;
             }
             if (lvEl) lvEl.innerText = `Lv.${lv}`;
             if (costEl) costEl.innerText = `Cost ${cost}`;
@@ -350,7 +351,7 @@ function renderPartyZukanGrid() {
             return (rOrder[rA] || 0) - (rOrder[rB] || 0);
         }
         if (partySortMode === 'type') {
-            const typeCompare = (a.type || '').localeCompare(b.type || '');
+            const typeCompare = formatCharaSkillsLabel(a, invA).localeCompare(formatCharaSkillsLabel(b, invB));
             if (typeCompare !== 0) return typeCompare;
             return (rOrder[rB] || 0) - (rOrder[rA] || 0);
         }
@@ -374,6 +375,7 @@ function renderPartyZukanGrid() {
         const currentR = (inv && inv.currentRarity) ? inv.currentRarity : c.rarity;
         const lv = (inv && typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
         const cost = getTbCharaCost(c, inv);
+        const typeLabel = formatCharaSkillsLabel(c, inv, '・');
 
         let badgeHtml = '';
         if (partyIndex === 0) {
@@ -390,7 +392,7 @@ function renderPartyZukanGrid() {
             ${badgeHtml}
             <div class="char-lvl-badge">Lv.${lv}</div>
             ${visual}
-            <div style="font-weight:bold;font-size:0.75rem;margin-top:2px;"><span class="rarity-${currentR}">${currentR}</span> / ${c.type}</div>
+            <div style="font-weight:bold;font-size:0.75rem;margin-top:2px;"><span class="rarity-${currentR}">${currentR}</span> / ${typeLabel}</div>
             <div style="font-size:0.75rem; font-weight:bold; color:#0284c7; margin-top:2px;">Cost ${cost}</div>
         `;
 
@@ -602,11 +604,7 @@ export function getTypeEmoji(type) {
  * @returns {string}
  */
 export function formatSkillsText(skills) {
-    const rawList = Array.isArray(skills) 
-        ? skills 
-        : (typeof skills === 'string' ? skills.split('・') : ['ATK']);
-    
-    return rawList.map(s => normalizeType(s)).join('・');
+    return parseSkillTypes(skills, true).join('・');
 }
 
 // ====================================================
@@ -653,7 +651,7 @@ export function getTbCharaStats(partyMember) {
         const level = (typeof userChara.level === 'number' && userChara.level >= 1) ? userChara.level : 1;
         const baseVal = (userChara.isEvolved && userChara.customValue) ? Number(userChara.customValue) : Number(charaData.value || 1.0);
         const finalVal = baseVal + (level * LV_BONUS_RATE);
-        const skills = (userChara.skills && userChara.skills.length > 0) ? userChara.skills : [charaData.type || 'ATK'];
+        const skills = resolveCharaSkills(charaData, userChara);
 
         skills.forEach(type => {
             if (type === 'ALL') {
@@ -728,15 +726,11 @@ export function calcTbMaxHp(target, isEnemy = false) {
  * @returns {{ expanded: string[], hasAll: boolean }}
  */
 export function expandTbSkills(skills) {
-    const rawList = Array.isArray(skills) 
-        ? skills 
-        : (typeof skills === 'string' ? skills.split('・') : ['ATK']);
-    
+    const rawList = parseSkillTypes(skills, true);
     let hasAll = false;
     const expanded = [];
 
-    rawList.forEach(s => {
-        const norm = normalizeType(s);
+    rawList.forEach(norm => {
         if (norm === 'ALL') {
             hasAll = true;
             if (!expanded.includes('ATK')) expanded.push('ATK');
@@ -947,7 +941,7 @@ export async function startTeamBattle() {
 
         const lv = (typeof inv.level === 'number' && inv.level >= 1) ? inv.level : 1;
         const currentRarity = inv.currentRarity || cMaster.rarity || 'N';
-        const skills = (inv && inv.skills && inv.skills.length > 0) ? inv.skills : [cMaster.type || 'ATK'];
+        const skills = resolveCharaSkills(cMaster, inv);
         const typeStr = skills.join('・');
         const value = (inv.isEvolved && inv.customValue) ? Number(inv.customValue) : Number(cMaster.value || 1.0);
         const name = getDisplayName(cMaster, inv, false);
@@ -1198,7 +1192,8 @@ export function generateTbEnemyTeam(playerParty) {
         // プレイヤー平均レベルに基づく動的レベルスケーリング
         const enemyLevel = calcTbEnemyDynamicLevel(stageNum, targetRarity, playerParty);
         const enemyName = pickedChar ? pickedChar.name : `モンスター Lv.${enemyLevel}`;
-        const assignedType = pickedChar ? (pickedChar.type || 'ATK') : ['ATK', 'TIME', 'EXP'][stageNum - 1];
+        const enemySkills = pickedChar ? resolveCharaSkills(pickedChar, null) : [['ATK', 'TIME', 'EXP'][stageNum - 1]];
+        const assignedType = enemySkills.join('・');
         const enemyValue = (pickedChar ? Number(pickedChar.value || 1.0) : 1.0) * (0.8 + stageNum * 0.25);
         const enemyMaxHp = calcTbMaxHp({ value: enemyValue, level: enemyLevel }, true);
 
@@ -1206,7 +1201,7 @@ export function generateTbEnemyTeam(playerParty) {
             name: enemyName,
             level: enemyLevel,
             type: assignedType,
-            skills: [assignedType],
+            skills: enemySkills,
             rarity: pickedChar ? pickedChar.rarity : targetRarity,
             cost: TB_RARITY_COST[targetRarity] || 2,
             value: enemyValue,
@@ -1870,7 +1865,7 @@ export async function escapeTeamBattle() {
     const wasPaused = tbState.isPaused;
     tbState.isPaused = true;
 
-    if (!(await showConfirm("チームバトルから撤退しますか？\n（ここまでに倒した敵と獲得したXPは保持されます）"))) {
+    if (!(await showConfirm("チームバトルから撤退しますか？\n（ここまでに獲得したXPは保持されます）"))) {
         tbState.isPaused = wasPaused;
         return;
     }
@@ -1880,7 +1875,7 @@ export async function escapeTeamBattle() {
 
 /**
  * バトル終了処理（勝利・敗北・撤退）
- * 倒した敵・与えたダメージに応じた報酬を確実に付与
+ * 倒した敵・与えたダメージに応じたXP報酬を確実に付与
  * @param {boolean} isWin
  * @param {boolean} [isEscape=false]
  */
@@ -1918,50 +1913,21 @@ export function finishTeamBattle(isWin, isEscape = false) {
         gameState.xp += totalExp;
     }
 
-    // 2. 倒した敵キャラクターを図鑑・インベントリに獲得
-    const acquiredNames = [];
-    if (tbState.defeatedEnemies && tbState.defeatedEnemies.length > 0) {
-        tbState.defeatedEnemies.forEach(e => {
-            if (e.master && e.master.id) {
-                const charId = String(e.master.id);
-                if (!gameState.charaInventory[charId]) {
-                    gameState.charaInventory[charId] = {
-                        level: 1,
-                        count: 1,
-                        exp: 0,
-                        currentRarity: e.master.rarity || 'N'
-                    };
-                } else {
-                    if (typeof gameState.charaInventory[charId].level !== 'number' || gameState.charaInventory[charId].level < 1) {
-                        gameState.charaInventory[charId].level = 1;
-                    }
-                    gameState.charaInventory[charId].count = (gameState.charaInventory[charId].count || 0) + 1;
-                }
-                acquiredNames.push(`・${e.name} (${e.rarity || 'N'})`);
-            }
-        });
-    }
-
     saveGame();
     if (cloudSync) {
         cloudSync.requestSync();
     }
 
-    let rewardText = '';
-    if (acquiredNames.length > 0) {
-        rewardText = `\n\n🎁 獲得キャラクター:\n${acquiredNames.join('\n')}`;
-    }
-
-    // 3. 結果表示モーダル
+    // 2. 結果表示モーダル
     if (isWin) {
         playSE('win');
-        showAlert(`🏆 チームバトルクエスト 完全制覇！\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP (制覇ボーナス+2000含む)${rewardText}`);
+        showAlert(`🏆 チームバトルクエスト 完全制覇！\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP (制覇ボーナス+2000含む)`);
     } else if (isEscape) {
         playSE('lose');
-        showAlert(`🚪 チームバトルから撤退しました\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP${rewardText}\n\nここまでに倒した敵と与えたダメージに応じたXPを受け取りました。`);
+        showAlert(`🚪 チームバトルから撤退しました\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP\n\nここまでに倒した敵と与えたダメージに応じたXPを受け取りました。`);
     } else {
         playSE('lose');
-        showAlert(`💀 バトル終了（STAGE ${tbState.stage} で全滅）\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP${rewardText}\n\n倒した敵と与えたダメージに応じた報酬を獲得しました！パーティーや属性相性を見直して再挑戦しよう！`);
+        showAlert(`💀 バトル終了（STAGE ${tbState.stage} で全滅）\n\n獲得スコア: ${tbState.score}\n獲得XP: +${totalExp} XP\n\nここまでに倒した敵と与えたダメージに応じたXPを獲得しました！パーティーや属性相性を見直して再挑戦しよう！`);
     }
 
     returnToCurrentCategory();
@@ -1987,7 +1953,7 @@ export function generatePartyPassword() {
         if (!cMaster || !inv) return [charId, 'N', 'ATK', 1.0];
 
         const rarity = inv.currentRarity || cMaster.rarity || 'N';
-        const skillsStr = (inv.skills && inv.skills.length > 0) ? inv.skills.join(',') : (cMaster.type || 'ATK');
+        const skillsStr = resolveCharaSkills(cMaster, inv).join(',');
         const value = (inv.isEvolved && inv.customValue) ? Number(inv.customValue) : Number(cMaster.value || 1.0);
 
         return [charId, rarity, skillsStr, value];
@@ -2055,12 +2021,13 @@ export function generateTbEnemyTeamFromPassword(password, playerParty) {
             
             const name = cMaster ? `【友】${cMaster.name}` : `【友】謎の刺客`;
             const imageUrl = cMaster ? cMaster.imageUrl : '';
-            const skillsArr = skillsStr ? skillsStr.split(',') : ['ATK'];
+            const parsedSkills = parseSkillTypes(skillsStr, true);
+            const skillsArr = parsedSkills.length > 0 ? parsedSkills : ['ATK'];
 
             enemyTeam.push({
                 name: name,
                 level: enemyLevel,
-                type: skillsArr[0],
+                type: skillsArr.join('・'),
                 skills: skillsArr,
                 rarity: rarity,
                 cost: TB_RARITY_COST[rarity] || 2,

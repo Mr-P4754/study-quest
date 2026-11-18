@@ -75,7 +75,7 @@ export function addFarmExp(gradeOrQ) {
     }
 
     const weight = getFarmGradeWeight(gradeStr);
-    const gainedExp = Math.round(1.0 * weight * 100) / 100;
+    const gainedExp = Math.ceil(1.0 * weight);
 
     let hasUpdated = false;
     const unlocked = Number(gameState.farm.unlockedSlots) || FARM_DEFAULT_SLOTS;
@@ -92,7 +92,7 @@ export function addFarmExp(gradeOrQ) {
         const currentR = inv.currentRarity || (master ? master.rarity : 'N');
         const maxLv = RARITY_CAPS[currentR] || 10;
 
-        inv.exp = Math.round(((Number(inv.exp) || 0) + gainedExp) * 100) / 100;
+        inv.exp = Math.ceil(Number(inv.exp) || 0) + gainedExp;
 
         // レベルアップおよびレアリティ上限到達後のストック還元処理
         while (inv.exp >= EXP_REQ) {
@@ -105,7 +105,7 @@ export function addFarmExp(gradeOrQ) {
                 inv.count = (Number(inv.count) || 0) + 1;
             }
         }
-        inv.exp = Math.round(inv.exp * 100) / 100;
+        inv.exp = Math.ceil(inv.exp);
         hasUpdated = true;
     }
 
@@ -345,8 +345,9 @@ function renderFarmSlots() {
             const currentR = inv.currentRarity || master.rarity;
             const maxLv = RARITY_CAPS[currentR] || 10;
             const isMaxLv = inv.level >= maxLv;
-            const expProgress = isMaxLv ? 100 : Math.min(100, Math.floor(((Number(inv.exp) || 0) / EXP_REQ) * 100));
-            const expText = isMaxLv ? 'MAX (余剰EXPでストック還元)' : `${(Number(inv.exp) || 0).toFixed(1)} / ${EXP_REQ}`;
+            const currentExpInt = Math.ceil(Number(inv.exp) || 0);
+            const expProgress = isMaxLv ? 100 : Math.min(100, Math.floor((currentExpInt / EXP_REQ) * 100));
+            const expText = isMaxLv ? 'MAX (余剰EXPでストック還元)' : `${currentExpInt} / ${EXP_REQ}`;
 
             card.className = 'farm-slot-card farm-slot-active';
             const imgHtml = renderSafeImg(master.imageUrl, '🐾', '', 'width:56px;height:56px;border-radius:10px;object-fit:cover;');

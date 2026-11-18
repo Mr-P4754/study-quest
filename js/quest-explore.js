@@ -15,7 +15,8 @@ import {
     playSE,
     playBGM,
     isGradeMatch,
-    renderSafeImg
+    renderSafeImg,
+    resolveCharaSkills
 } from './utils.js?v=10.5.0';
 
 import {
@@ -84,21 +85,22 @@ export function getOtomoPassive() {
         char = { id: '1', name: 'えんぴつ君', type: 'TIME', rarity: 'N', icon: '✏️' };
     }
 
-    let type = String(char.type || char['タイプ'] || 'TIME').toUpperCase();
-    if (char.skills && Array.isArray(char.skills) && char.skills.includes('ALL')) {
-        type = 'ALL';
+    const inv = (gameState.charaInventory && gameState.charaInventory[charId]) ? gameState.charaInventory[charId] : null;
+    let skills = resolveCharaSkills(char, inv);
+    if (char.isStudyel && String(char.id).includes('transcend')) {
+        skills = ['ALL'];
     }
-    if (char.isStudyel && char.id.includes('transcend')) {
-        type = 'ALL';
-    }
+    const hasAll = skills.includes('ALL');
+    const type = hasAll ? 'ALL' : skills.join('・');
 
     return {
         char,
         type,
-        hasAtk: type === 'ATK' || type === 'ALL',
-        hasTime: type === 'TIME' || type === 'ALL',
-        hasExp: type === 'EXP' || type === 'ALL',
-        hasAll: type === 'ALL'
+        skills,
+        hasAtk: hasAll || skills.includes('ATK'),
+        hasTime: hasAll || skills.includes('TIME'),
+        hasExp: hasAll || skills.includes('EXP'),
+        hasAll
     };
 }
 
